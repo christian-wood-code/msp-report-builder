@@ -1,0 +1,9 @@
+{
+  "name": "integricity-msp-report-builder",
+  "version": "1.0.0",
+  "dependencies": {
+    "docx": "^9.6.1",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2"
+  }
+}

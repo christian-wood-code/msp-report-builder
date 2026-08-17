@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+// Preload logos
+window._logoB64 = '';
+window._iconB64 = '';
+window._fullLogoTransparent = '';
+window._fullLogoWhite = '';
+window._fullLogoHeader = '';
+fetch('logo.b64', {credentials:'omit'}).then(r=>r.text()).then(t=>{window._logoB64=t.trim();});
+fetch('icon.b64', {credentials:'omit'}).then(r=>r.text()).then(t=>{window._iconB64=t.trim();});
+fetch('fulllogo_transparent.b64', {credentials:'omit'}).then(r=>r.text()).then(t=>{window._fullLogoTransparent=t.trim();});
+fetch('fulllogo_white.b64', {credentials:'omit'}).then(r=>r.text()).then(t=>{window._fullLogoWhite=t.trim();});
+fetch('fulllogo_header.b64', {credentials:'omit'}).then(r=>r.text()).then(t=>{window._fullLogoHeader=t.trim();});
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSP Monthly Report Builder - Integricity</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#ffffff; --bg-secondary:#f6f7f9; --bg-tertiary:#eef0f4;
+  --bg-info:#e8f2fb; --bg-success:#e8f5ee; --bg-warning:#fff3e0; --bg-danger:#fdecea;
+  --text:#111827; --text-secondary:#4b5563; --text-tertiary:#9ca3af;
+  --text-info:#0D7CC4; --text-success:#0f7a3c; --text-warning:#e06400; --text-danger:#c0152a;
+  --border:rgba(0,0,0,0.10); --border-md:rgba(0,0,0,0.18);
+  --radius:0px; --radius-lg:0px;
+  --blue:#0D7CC4;
+  --red:#E61B1F;
+  --orange:#F19E1E;
+  --purple:#8C0C6E;
+  --teal:#1A8070;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111827; --bg-secondary:#1f2937; --bg-tertiary:#1a2235;
+  --bg-info:#0c2a4a; --bg-success:#052e16; --bg-warning:#1c1500; --bg-danger:#1f0a0e;
+  --text:#f9fafb; --text-secondary:#d1d5db; --text-tertiary:#6b7280;
+  --text-info:#60aee8; --text-success:#4ade80; --text-warning:#fb923c; --text-danger:#f87171;
+  --border:rgba(255,255,255,0.08); --border-md:rgba(255,255,255,0.16);
+  --blue:#3b9ddd; --red:#f05252; --orange:#fba730; --purple:#c026a8; --teal:#34c8a0;
+}}
+body{font-family:var(--font);background:var(--bg-tertiary);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh;}
+header{background:var(--bg);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.logo-sub{font-size:12px;color:var(--text-secondary);}
+.container{max-width:800px;margin:0 auto;padding:2rem 1.5rem;}
+.step-bar{display:flex;align-items:center;gap:6px;margin-bottom:2rem;}
+.step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;transition:all 0.2s;}
+.step-dot.active{background:var(--bg-info);color:var(--text-info);}
+.step-dot.done{background:var(--bg-success);color:var(--text-success);}
+.step-dot.idle{background:var(--bg-secondary);color:var(--text-tertiary);}
+.step-line{flex:1;height:1px;background:var(--border);}
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1rem;}
+.card-title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+.card-sub{font-size:13px;color:var(--text-secondary);margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.field{margin-bottom:1.25rem;}
+.field:last-child{margin-bottom:0;}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;}
+.hint{font-size:12px;color:var(--text-secondary);margin-bottom:6px;display:block;}
+input[type=text],input[type=number],input[type=date],input[type=password],textarea{width:100%;padding:9px 12px;font-size:14px;font-family:var(--font);background:var(--bg);color:var(--text);border:1px solid var(--border-md);border-radius:var(--radius);outline:none;transition:border-color 0.15s,box-shadow 0.15s;appearance:none;}
+input:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,79,168,0.12);}
+textarea{resize:vertical;}
+input[type=number]{-moz-appearance:textfield;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+@media(max-width:560px){.two-col,.three-col{grid-template-columns:1fr;}}
+button{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;font-size:14px;font-weight:500;font-family:var(--font);border-radius:var(--radius);cursor:pointer;transition:background 0.15s,transform 0.1s;border:1px solid var(--border-md);background:var(--bg);color:var(--text);}
+button:hover{background:var(--bg-secondary);}
+button:active{transform:scale(0.98);}
+button.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+button.primary:hover{opacity:0.9;}
+button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1.25rem;}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:0;}
+.badge-auto{background:var(--bg-success);color:var(--text-success);}
+.badge-manual{background:var(--bg-warning);color:var(--text-warning);}
+.alert{border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:1rem;display:flex;align-items:flex-start;gap:8px;}
+.alert i{flex-shrink:0;margin-top:1px;font-size:16px;}
+.alert-error{background:var(--bg-danger);color:var(--text-danger);border:1px solid rgba(226,75,74,0.3);}
+.alert-info{background:var(--bg-info);color:var(--text-info);border:1px solid rgba(55,138,221,0.3);}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.metric-card{background:var(--bg-secondary);border-radius:var(--radius);padding:12px;}
+.metric-lbl{font-size:11px;color:var(--text-secondary);margin-bottom:4px;}
+.metric-val{font-size:22px;font-weight:600;}
+.c-good{color:var(--text-success);} .c-warn{color:var(--text-warning);} .c-bad{color:var(--text-danger);} .c-neu{color:var(--text);}
+.page{display:none;} .page.active{display:block;}
+.tenant-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border-md);background:var(--bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;margin:0 6px 6px 0;}
+.tenant-chip:hover{background:var(--bg-secondary);}
+.tenant-chip.selected{background:var(--bg-info);color:var(--text-info);border-color:rgba(55,138,221,0.4);}
+.divider{display:flex;align-items:center;gap:12px;margin:1.25rem 0;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.divider span{font-size:12px;color:var(--text-tertiary);white-space:nowrap;}
+/* Policy status pills */
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:0;}
+.pill-enforced{background:var(--bg-success);color:var(--text-success);}
+.pill-report{background:var(--bg-warning);color:var(--text-warning);}
+.pill-missing{background:var(--bg-danger);color:var(--text-danger);}
+.pill-disabled{background:var(--bg-secondary);color:var(--text-secondary);}
+/* Risk table */
+.risk-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
+.risk-table th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.04em;}
+.risk-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.risk-table tr:last-child td{border-bottom:none;}
+.sev-high{color:var(--text-danger);font-weight:600;}
+.sev-medium{color:var(--text-warning);font-weight:600;}
+.sev-low{color:var(--text-secondary);font-weight:600;}
+/* Policy list */
+.policy-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.policy-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius);font-size:13px;}
+.policy-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* Report */
+/* ── Report output - WCAG AA, corporate readability ── */
+.report-wrap{background:#fff;border:none;padding:0;font-size:16px;line-height:1.6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+.rpt-cover{background:linear-gradient(135deg,#0D7CC4 0%,#8C0C6E 100%);padding:2.5rem 2.5rem 2rem;margin-bottom:2.5rem;}
+.rpt-cover-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
+.rpt-cover-badge{background:rgba(255,255,255,0.2);padding:5px 14px;font-size:13px;font-weight:600;color:#fff;letter-spacing:0.03em;}
+.rpt-client{font-size:32px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px;line-height:1.2;color:#fff;}
+.rpt-period{font-size:16px;color:rgba(255,255,255,0.9);margin-bottom:1.5rem;}
+.rpt-meta-row{display:flex;gap:2rem;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.25);padding-top:1.25rem;}
+.rpt-meta-item{font-size:14px;color:rgba(255,255,255,0.85);} .rpt-meta-item strong{color:#fff;font-weight:600;}
+.rpt-section{margin-bottom:2.5rem;}
+.rpt-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;padding-bottom:8px;border-bottom:0.5px solid #e5e7eb;}
+.rpt-section-header-left{display:flex;align-items:center;gap:10px;}
+.rpt-sec-sq{width:13px;height:13px;border-radius:2px;flex-shrink:0;}
+.rpt-section-title{font-size:20px;font-weight:700;color:#1f2937;letter-spacing:-0.1px;}
+.rpt-sec-badge{font-size:10px;font-weight:700;letter-spacing:.07em;color:#9ca3af;}
+.rpt-sub{font-size:13px;font-weight:600;color:#6b7280;margin:1.25rem 0 8px;padding-left:10px;border-left:3px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.04em;}
+.rpt-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:10px;margin-bottom:0.75rem;page-break-inside:avoid;break-inside:avoid;}
+.rpt-kpi-block{page-break-inside:avoid;break-inside:avoid;}
+.rpt-kpi{background:#f9fafb;border:1px solid #e5e7eb;padding:14px 12px;text-align:center;position:relative;overflow:hidden;}
+.rpt-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--kpi-accent,#e5e7eb);}
+.rpt-kpi-val{font-size:26px;font-weight:700;line-height:1.1;margin-bottom:6px;}
+.rpt-kpi-lbl{font-size:12px;color:#4b5563;line-height:1.4;font-weight:500;}
+.rpt-kpi.good .rpt-kpi-val{color:#166534;} .rpt-kpi.good{--kpi-accent:#16a34a;}
+.rpt-kpi.warn .rpt-kpi-val{color:#92400e;} .rpt-kpi.warn{--kpi-accent:#d97706;}
+.rpt-kpi.bad  .rpt-kpi-val{color:#991b1b;} .rpt-kpi.bad{--kpi-accent:#dc2626;}
+.rpt-kpi.neu  .rpt-kpi-val{color:#111827;} .rpt-kpi.neu{--kpi-accent:#9ca3af;}
+.rpt-kpi.info .rpt-kpi-val{color:#1e40af;} .rpt-kpi.info{--kpi-accent:#2563eb;}
+.rpt-callout{display:flex;align-items:flex-start;gap:0;padding:14px 18px;margin:12px 0;font-size:14px;line-height:1.7;border-left:4px solid;}
+.rpt-callout.warn{background:#fffbeb;border-color:#d97706;color:#78350f;}
+.rpt-callout.bad{background:#fef2f2;border-color:#dc2626;color:#7f1d1d;}
+.rpt-callout.good{background:#f0fdf4;border-color:#16a34a;color:#14532d;}
+.rpt-callout.info{background:#eff6ff;border-color:#2563eb;color:#1e3a8a;}
+.rpt-policy-table{width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;}
+.rpt-policy-table thead tr{background:#f3f4f6;}
+.rpt-policy-table th{text-align:left;padding:11px 16px;font-size:13px;font-weight:700;color:#1f2937;border-bottom:2px solid #d1d5db;letter-spacing:0.02em;}
+.rpt-policy-table td{padding:12px 16px;border-bottom:1px solid #f3f4f6;vertical-align:middle;font-size:14px;color:#111827;line-height:1.5;}
+.rpt-policy-table tr:last-child td{border-bottom:none;}
+.rpt-status{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;padding:4px 10px;border:1px solid transparent;}
+.rpt-status.enforced{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
+.rpt-status.report-only{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
+.rpt-status.not-found{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
+.rpt-status.disabled{background:#f3f4f6;color:#6b7280;border-color:#e5e7eb;}
+.rpt-risk-table{width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;}
+.rpt-risk-table th{text-align:left;padding:12px 16px;font-size:13px;font-weight:700;color:#fff;background:#1f2937;border-right:1px solid #374151;letter-spacing:0.02em;}
+.rpt-risk-table th:last-child{border-right:none;}
+.rpt-risk-table td{padding:13px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:14px;line-height:1.6;}
+.rpt-risk-table tr:last-child td{border-bottom:none;}
+.rpt-risk-table tr:nth-child(even) td{background:#f9fafb;}
+.rpt-sev{display:inline-flex;align-items:center;font-size:13px;font-weight:700;padding:4px 10px;border:1px solid transparent;white-space:nowrap;}
+.rpt-sev.high{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
+.rpt-sev.medium{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
+.rpt-sev.low{background:#f0fdf4;color:#166534;border-color:#bbf7d0;}
+.rpt-personal{background:#f0f4ff;border-left:4px solid #4f46e5;padding:1.25rem 1.5rem;margin:1.25rem 0;font-style:italic;color:#1e1b4b;font-size:16px;line-height:1.75;}
+.rpt-rec-card{background:#f9fafb;border:1px solid #e5e7eb;border-left:4px solid;padding:1.25rem;margin:10px 0;}
+.rpt-rec-card-title{font-size:14px;font-weight:700;margin-bottom:8px;}
+.rpt-body{font-size:16px;line-height:1.7;color:#374151;margin-bottom:1rem;}
+.rpt-body strong{color:#111827;font-weight:600;}
+.rpt-footer{border-top:2px solid #e5e7eb;padding-top:1.5rem;margin-top:3rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.rpt-footer-text{font-size:13px;color:#6b7280;letter-spacing:0.01em;}
+@media print{
+  /* ── Hide UI chrome ───────────────────────────────────────────── */
+  header,.step-bar,#err-box,.card-sub,.action-row,button,
+  .page:not(#page-4){display:none!important;}
+
+  /* ── Page setup ───────────────────────────────────────────────── */
+  @page{margin:12mm 14mm 14mm 14mm;size:A4;}
+  html,body{background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .container{padding:0;max-width:100%;margin:0;}
+
+  /* ── Remove card chrome ───────────────────────────────────────── */
+  .card{border:none;padding:0;box-shadow:none;}
+  .report-wrap{border:none;padding:0;background:white;}
+  .rpt-cover{border-radius:0;}
+
+  /* ── Preserve colours ─────────────────────────────────────────── */
+  .rpt-cover,.rpt-kpi,.rpt-callout,.rpt-personal,.rpt-rec-card,
+  .rpt-risk-table th,.rpt-kpi-grid,.rpt-policy-table thead tr,
+  .rpt-sub,*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  /* ── Page break controls ──────────────────────────────────────── */
+  /* Never break inside these elements */
+  .rpt-kpi-block,.rpt-kpi-grid,.rpt-kpi,
+  .rpt-callout,.rpt-section-header,
+  .rpt-policy-table,.rpt-risk-table{
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
+
+  /* Section headers always start on a new block — keep with next element */
+  .rpt-section-header{
+    page-break-after:avoid;
+    break-after:avoid;
+  }
+
+  /* Sub-labels keep with what follows */
+  .rpt-sub{
+    page-break-after:avoid;
+    break-after:avoid;
+  }
+
+  /* Don't orphan the first row of a table */
+  .rpt-policy-table tr,.rpt-risk-table tr{
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
+
+  /* Sections get a little breathing room between them */
+  .rpt-section{
+    page-break-inside:auto;
+    margin-bottom:6mm;
+  }
+
+  /* ── Tighten spacing for print ────────────────────────────────── */
+  .rpt-kpi-grid{gap:6px;margin-bottom:6px;}
+  .rpt-kpi{padding:8px 6px;}
+  .rpt-kpi-val{font-size:20px;}
+  .rpt-kpi-lbl{font-size:9px;}
+  .rpt-sub{font-size:7px;margin-top:8px;margin-bottom:4px;}
+  .rpt-body{font-size:9px;line-height:1.4;}
+  .rpt-callout{padding:7px 10px;margin-bottom:6px;}
+  .rpt-policy-table td,.rpt-policy-table th{padding:5px 8px;font-size:9px;}
+  .rpt-risk-table td,.rpt-risk-table th{padding:5px 7px;font-size:9px;}
+  .rpt-section{margin-bottom:8px;}
+}
+</style>
+</head>
+<body>
+<header>
+  <img src="data:image/png;base64,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" alt="Integricity" style="height:38px;display:block;" />
+  <div class="logo-sub" style="font-size:12px;color:var(--text-secondary);">MSP Monthly Report Builder</div>
+</header>
+<div class="container">
+  <div class="step-bar">
+    <div class="step-dot active" id="dot-1">1</div><div class="step-line"></div>
+    <div class="step-dot idle" id="dot-2">2</div><div class="step-line"></div>
+    <div class="step-dot idle" id="dot-3">3</div><div class="step-line"></div>
+    <div class="step-dot idle" id="dot-4">4</div><div class="step-line"></div>
+    <div class="step-dot idle" id="dot-5">5</div>
+  </div>
+  <div id="err-box" style="display:none"></div>
+
+  <!-- PAGE 1 -->
+  <div class="page active" id="page-1">
+    <div class="card">
+      <div class="card-title">🏢 Client & connection</div>
+      <div class="card-sub">Select a saved client or add a new one. Credentials are stored for this session only.</div>
+      <div id="saved-section" style="display:none;margin-bottom:1.25rem;">
+        <label>Saved clients</label>
+        <span class="hint">Click to select and continue</span>
+        <div id="saved-btns"></div>
+        <div class="divider"><span>or add a new client below</span></div>
+      </div>
+      <div class="field">
+        <label for="c-name">Client label</label>
+        <span class="hint">A name you'll recognise, e.g. "Acme Corp"</span>
+        <input type="text" id="c-name" placeholder="e.g. Acme Corp" />
+      </div>
+      <div class="field">
+        <label for="c-tenant">Tenant ID</label>
+        <span class="hint">Found in Entra admin centre → Overview</span>
+        <input type="text" id="c-tenant" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+      </div>
+      <div class="two-col">
+        <div class="field">
+          <label for="c-client">Client ID</label>
+          <span class="hint">From your App Registration</span>
+          <input type="text" id="c-client" placeholder="xxxxxxxx-xxxx-..." />
+        </div>
+        <div class="field">
+          <label for="c-secret">Client secret</label>
+          <span class="hint">The secret value, not the ID</span>
+          <input type="password" id="c-secret" placeholder="••••••••••••" />
+        </div>
+      </div>
+      <div class="action-row"><button class="primary" onclick="saveCred()">→ Save & continue</button></div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page" id="page-2">
+    <div class="card">
+      <div class="card-title">📅 Report details</div>
+      <div class="card-sub">Set the client name and period, then pull data directly from Intune.</div>
+      <div class="field">
+        <label for="r-client">Client name</label>
+        <input type="text" id="r-client" placeholder="e.g. Acme Corp" />
+      </div>
+      <div class="two-col">
+        <div class="field"><label for="r-from">From</label><input type="date" id="r-from" /></div>
+        <div class="field"><label for="r-to">To</label><input type="date" id="r-to" /></div>
+      </div>
+      <div class="field">
+        <label for="r-preparer">Prepared by</label>
+        <input type="text" id="r-preparer" placeholder="e.g. Sarah Jones, Account Manager" />
+      </div>
+      <div class="action-row">
+        <button onclick="showPage(1)">← Back</button>
+        <button class="primary" id="fetch-btn" onclick="fetchData()">↻ Pull Intune data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 4 -->
+  <div class="page" id="page-3">
+
+    <div class="card" style="background:linear-gradient(135deg,#0D7CC4 0%,#8C0C6E 100%);border:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:17px;font-weight:600;color:#ffffff;margin-bottom:2px;">Review & build report</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.75);">Check the auto-pulled data below, fill in your manual inputs, then build.</div>
+        </div>
+        <button onclick="buildReport()" style="background:#ffffff;color:#0D7CC4;border:none;font-weight:600;font-size:14px;padding:10px 22px;border-radius:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">📄 Build report</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💻 Device & asset management <span class="badge badge-auto">✅ Auto-pulled</span></div>
+      <div class="card-sub">Pulled live from Microsoft Graph. Review before continuing.</div>
+      <div class="metric-grid" id="device-metrics"></div>
+      <div id="device-detail" style="margin-top:0.75rem;font-size:13px;color:var(--text-secondary);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ Security posture <span class="badge badge-auto">✅ Auto-pulled</span></div>
+      <div class="card-sub">Identity, access, and Intune security data.</div>
+      <div class="metric-grid" id="security-metrics"></div>
+      <div id="policy-section" style="margin-top:1rem;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔧 Patch status <span class="badge badge-auto">✅ Auto-pulled</span></div>
+      <div class="card-sub">Based on last Intune check-in. Devices syncing within 30 days are within the current patch cycle.</div>
+      <div class="metric-grid" id="patch-metrics"></div>
+      <div id="patch-detail" style="margin-top:0.75rem;font-size:13px;color:var(--text-secondary);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">👥 User data <span class="badge badge-auto">✅ Auto-pulled</span></div>
+      <div class="card-sub">User accounts, licences, admin roles and sign-in activity.</div>
+      <div class="metric-grid" id="user-metrics"></div>
+      <div id="user-detail" style="margin-top:0.75rem;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📁 SharePoint <span class="badge badge-auto">✅ Auto-pulled</span></div>
+      <div class="card-sub">Site count, storage usage and inactive sites.</div>
+      <div class="metric-grid" id="sp-metrics"></div>
+      <div id="sp-detail" style="margin-top:0.75rem;font-size:13px;color:var(--text-secondary);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ Security risk register <span class="badge badge-auto">✅ Auto-generated</span></div>
+      <div class="card-sub">Automatically identified from pulled data. Review with your account manager before including in client report.</div>
+      <div id="risk-section"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Executive summary <span class="badge badge-manual">✏️ You fill in</span></div>
+      <div class="card-sub">Leave any field blank to omit from report.</div>
+      <div class="field"><label for="m-overview">Month overview</label><span class="hint">1–2 sentences</span><textarea id="m-overview" rows="2" placeholder="e.g. A stable month overall with no major incidents."></textarea></div>
+      <div class="field"><label for="m-highlights">Highlights & key outcomes</label><textarea id="m-highlights" rows="2" placeholder="e.g. Completed Windows 11 rollout ahead of schedule."></textarea></div>
+      <div class="field"><label for="m-concerns">Concerns or actions needed</label><textarea id="m-concerns" rows="2" placeholder="Leave blank if none."></textarea></div>
+      <div class="field"><label for="m-projects">Ongoing project updates</label><textarea id="m-projects" rows="2" placeholder="Leave blank if none."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎫 Ticketing & support <span class="badge badge-manual">✏️ You fill in</span></div>
+      <div class="card-sub">Enter figures from your AutoTask monthly export.</div>
+      <div class="three-col" style="margin-bottom:1rem;">
+        <div class="field" style="margin:0"><label for="t-opened">Tickets opened</label><input type="number" id="t-opened" placeholder="0" min="0" /></div>
+        <div class="field" style="margin:0"><label for="t-closed">Tickets closed</label><input type="number" id="t-closed" placeholder="0" min="0" /></div>
+        <div class="field" style="margin:0"><label for="t-pending">Tickets pending</label><input type="number" id="t-pending" placeholder="0" min="0" /></div>
+      </div>
+      <div class="two-col" style="margin-bottom:1rem;">
+        <div class="field" style="margin:0"><label for="t-response">Avg. response time</label><span class="hint">e.g. 2 hours</span><input type="text" id="t-response" placeholder="e.g. 2 hours" /></div>
+        <div class="field" style="margin:0"><label for="t-resolution">Avg. resolution time</label><span class="hint">e.g. 1.5 days</span><input type="text" id="t-resolution" placeholder="e.g. 1.5 days" /></div>
+      </div>
+      <div class="field"><label for="t-p1">P1 incidents this month</label><span class="hint">What happened, how resolved, follow-up. Leave blank if none.</span><textarea id="t-p1" rows="3" placeholder="e.g. Email outage on 3 May - resolved within 2 hours."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 Recommendations <span class="badge badge-manual">✏️ You fill in</span></div>
+      <div class="card-sub">All fields optional - leave blank to omit from report.</div>
+      <div class="field"><label for="r-personal">Personal message</label><textarea id="r-personal" rows="2" placeholder="e.g. It's been great working with your team this month..."></textarea></div>
+      <div class="field"><label for="r-improvements">Suggested improvements or upgrades</label><textarea id="r-improvements" rows="2" placeholder="e.g. Recommend upgrading remaining Windows 10 machines."></textarea></div>
+      <div class="field"><label for="r-cost">Cost-saving opportunities</label><textarea id="r-cost" rows="2" placeholder="e.g. 5 unused licences identified."></textarea></div>
+      <div class="field"><label for="r-roadmap">Upcoming tech roadmap</label><textarea id="r-roadmap" rows="2" placeholder="e.g. Planning Copilot rollout for Q3."></textarea></div>
+    </div>
+
+    <div class="action-row">
+      <button onclick="showPage(2)">← Back</button>
+      <button class="primary" onclick="buildReport()">📄 Build report</button>
+    </div>
+  </div>
+
+  <!-- PAGE 5 -->
+  <div class="page" id="page-4">
+    <div class="card">
+      <div class="card-title">✅ Report ready</div>
+      <div class="card-sub">Review below. Print / Save as PDF, or copy the text into Word.</div>
+      <div class="action-row" style="margin-bottom:1.25rem;">
+        <button class="primary" onclick="(function(){ var from = document.getElementById('r-from').value; var client = document.getElementById('r-client').value.trim(); var month = from ? new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'}) : ''; document.title = (client && month) ? client + ' - ' + month + ' IT Report' : 'Monthly IT Report'; window.print(); setTimeout(function(){ document.title = 'MSP Report Builder'; }, 2000); })()" >🖨️ Print / Save as PDF</button>
+        <button onclick="exportDocx()" id="export-btn">📄 Export to Word</button>
+        <button onclick="copyText()" id="copy-btn">📋 Copy text</button>
+        <button onclick="showPage(2)">← Edit inputs</button>
+        <button onclick="startOver()">+ New report</button>
+      </div>
+      <div id="report-out" class="report-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var creds = JSON.parse(localStorage.getItem('msp_creds') || '[]');
+var selCred = null;
+var iData = null;
+
+function err(msg) {
+  var b = document.getElementById('err-box');
+  if (msg) {
+    b.innerHTML = '<div class="alert alert-error" style="background:#fef2f2;border:1px solid #fca5a5;border-left:4px solid #dc2626;padding:12px 16px;font-size:14px;color:#7f1d1d;display:flex;align-items:flex-start;gap:10px;margin-bottom:1rem">⚠️ <div>' + msg + '</div></div>';
+    b.style.display = 'block';
+    b.scrollIntoView({behavior:'smooth', block:'nearest'});
+  } else {
+    b.style.display = 'none';
+  }
+}
+
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('page-' + n).classList.add('active');
+  for (var i = 1; i <= 5; i++) {
+    var d = document.getElementById('dot-' + i);
+    d.classList.remove('active','done','idle');
+    if (i < n) { d.classList.add('done'); d.innerHTML = '✓'; }
+    else if (i === n) { d.classList.add('active'); d.textContent = i; }
+    else { d.classList.add('idle'); d.textContent = i; }
+  }
+  err('');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderChips() {
+  var sec = document.getElementById('saved-section');
+  var btns = document.getElementById('saved-btns');
+  if (!creds.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block'; btns.innerHTML = '';
+  creds.forEach(function(c) {
+    var el = document.createElement('div');
+    el.className = 'tenant-chip' + (selCred === c.name ? ' selected' : '');
+    el.innerHTML = '🏢 ' + c.name;
+    el.onclick = function() { selCred = c.name; document.getElementById('r-client').value = c.name; setDates(); renderChips(); showPage(2); };
+    btns.appendChild(el);
+  });
+}
+
+function setDates() {
+  var now = new Date();
+  // First day of previous month
+  var f = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // Last day of previous month
+  var t = new Date(now.getFullYear(), now.getMonth(), 0);
+  // Use local date formatting to avoid UTC timezone shifting the day
+  function localISO(d) {
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + mm + '-' + dd;
+  }
+  document.getElementById('r-from').value = localISO(f);
+  document.getElementById('r-to').value   = localISO(t);
+}
+
+function saveCred() {
+  var n = document.getElementById('c-name').value.trim().substring(0, 100);
+  var t = document.getElementById('c-tenant').value.trim();
+  var c = document.getElementById('c-client').value.trim();
+  var s = document.getElementById('c-secret').value.trim();
+  if (!n||!t||!c||!s) { err('Please fill in all four fields.'); return; }
+  var guidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!guidRe.test(t)) { err('Tenant ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
+  if (!guidRe.test(c)) { err('Client ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
+  if (s.length < 8 || s.length > 256) { err('Client Secret appears too short - check it was copied correctly.'); return; }
+  creds = creds.filter(function(x){ return x.name !== n; });
+  creds.push({name:n, tenantId:t, clientId:c, secret:s});
+  localStorage.setItem('msp_creds', JSON.stringify(creds));
+  selCred = n;
+  ['c-name','c-tenant','c-client','c-secret'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('r-client').value = n;
+  setDates(); renderChips(); showPage(2);
+}
+
+// goPage3 removed - pull button now on page 2
+
+async function fetchData() {
+  if (!document.getElementById('r-client').value.trim()) { err('Please enter a client name.'); return; }
+  if (!document.getElementById('r-from').value || !document.getElementById('r-to').value) { err('Please select a date range.'); return; }
+  if (!selCred) { err('No client selected - please go back and add credentials.'); return; }
+  var btn = document.getElementById('fetch-btn');
+  btn.disabled = true; btn.textContent = '⏳ Connecting…';
+  err('');
+  try {
+    var cred = creds.find(function(x){ return x.name === selCred; });
+    if (!cred) { err('Selected client credentials not found.'); btn.disabled=false; btn.textContent='↻ Pull Intune data'; return; }
+    var res = await fetch('/.netlify/functions/intune', {
+      credentials: 'omit',
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantId: cred.tenantId, clientId: cred.clientId, clientSecret: cred.secret, reportFrom: document.getElementById('r-from').value, reportTo: document.getElementById('r-to').value }),
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
+    iData = data;
+    renderPreview();
+    showPage(3);
+  } catch(e) {
+    err('Connection failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '↻ Pull data';
+  }
+}
+
+function mc(lbl, val, cls) {
+  return '<div class="metric-card"><div class="metric-lbl">'+lbl+'</div><div class="metric-val '+(cls||'c-neu')+'">'+val+'</div></div>';
+}
+
+function pillHtml(status) {
+  if (status === 'enforced')    return '<span class="pill pill-enforced">✅ Enforced</span>';
+  if (status === 'report-only') return '<span class="pill pill-report">⚠️ Report-only</span>';
+  if (status === 'not found')   return '<span class="pill pill-missing">❌ Not found</span>';
+  if (status === 'disabled')    return '<span class="pill pill-disabled">Off</span>';
+  return '<span class="pill pill-disabled">'+status+'</span>';
+}
+
+function renderPreview() {
+  var d = iData;
+  var ps = d.patchStatus || {};
+  var u  = d.users || {};
+  var sp = d.sharepoint || {};
+
+  // Device metrics
+  document.getElementById('device-metrics').innerHTML =
+    mc('Total devices', d.total) +
+    mc('Compliant', d.comp.compliant, 'c-good') +
+    mc('Non-Compliant', d.comp.noncompliant, d.comp.noncompliant > 0 ? 'c-bad' : 'c-good') +
+    (d.comp.unknown > 0 ? mc('Not Evaluated', d.comp.unknown, 'c-warn') : '') +
+    mc('Last Checked In 90d+', d.staleCount||0, (d.staleCount||0) > 0 ? 'c-warn' : 'c-good') +
+    mc('Low Disk <15%', (d.lowDisk||[]).length, (d.lowDisk||[]).length > 0 ? 'c-warn' : 'c-good') +
+    mc('Encrypted', d.encryption.encrypted, 'c-good') +
+    mc('Not Encrypted', d.encryption.notEncrypted, d.encryption.notEncrypted > 0 ? 'c-bad' : 'c-good') +
+    ((d.av && (d.av.active + d.av.notActive + d.av.outOfDate) > 0) ? (
+      mc('AV Active', d.av.active, 'c-good') +
+      mc('AV Not Active', d.av.notActive, d.av.notActive > 0 ? 'c-bad' : 'c-good') +
+      mc('AV Out of Date', d.av.outOfDate, d.av.outOfDate > 0 ? 'c-warn' : 'c-good')
+    ) : '') +
+    (d.win25h2 > 0 ? mc('Win 11 25H2', d.win25h2, 'c-good') : '') +
+    (d.win24h2 > 0 ? mc('Win 11 24H2', d.win24h2, 'c-good') : '') +
+    (d.win11   > 0 ? mc('Windows 11',  d.win11,   'c-good') : '') +
+    (d.win10   > 0 ? mc('Windows 10',  d.win10,   'c-warn') : '') +
+    (d.macOS   > 0 ? mc('macOS',       d.macOS,   'c-neu')  : '') +
+    ('') +
+    (d.linux      > 0 ? mc('Linux',    d.linux,      'c-neu') : '') +
+    (d.iosCount   > 0 ? mc('iOS / iPad', d.iosCount,   'c-neu') : '') +
+    (d.androidCount > 0 ? mc('Android',  d.androidCount,'c-neu') : '') +
+    '';
+
+  // Device detail - unencrypted device list
+  if (document.getElementById('device-detail')) {
+    var devDetail = '';
+    if ((d.notCompliantList||[]).length > 0) {
+      devDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Non-compliant devices</div>';
+      devDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      devDetail += '<tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Primary user</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Last seen</th></tr>';
+      d.notCompliantList.forEach(function(dev) {
+        var ls = dev.lastSync ? new Date(dev.lastSync).toLocaleDateString('en-NZ') : 'Never';
+        devDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.name||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.user||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary)">' + ls + '</td></tr>';
+      });
+      devDetail += '</table>';
+    }
+    if ((d.notEncryptedList||[]).length > 0) {
+      devDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Unencrypted devices</div>';
+      devDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+      devDetail += '<tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Primary user</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">OS</th></tr>';
+      d.notEncryptedList.forEach(function(dev) {
+        devDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.name||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.user||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary)">' + (dev.os||'') + '</td></tr>';
+      });
+      devDetail += '</table>';
+    }
+    document.getElementById('device-detail').innerHTML = devDetail;
+  }
+
+  // Security metrics
+  document.getElementById('security-metrics').innerHTML =
+    (d.score ? mc('Secure Score', d.score.pct + '%', d.score.pct >= 70 ? 'c-good' : d.score.pct >= 50 ? 'c-warn' : 'c-bad') : '') +
+    mc('Risky Users', d.risky, d.risky > 0 ? 'c-bad' : 'c-good') +
+    mc('CA Policies', d.conditionalAccess ? d.conditionalAccess.total : 'N/A') +
+    mc('Compliance Policies', d.compliancePolicies ? d.compliancePolicies.total : 'N/A') +
+    mc('App Protection', d.appProtection ? d.appProtection.total : 'N/A', d.appProtection && d.appProtection.total === 0 ? 'c-warn' : 'c-good') +
+    mc('Security Defaults', d.securityDefaults === true ? 'On' : d.securityDefaults === false ? 'Off' : 'N/A', d.securityDefaults === true ? 'c-good' : 'c-neu');
+
+  // Key policies & auth methods
+  var kp = d.keyPolicies || {}, am = d.authMethods || {};
+  var polHtml = '<div style="margin-top:1rem;"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Key policy status</div><div class="policy-list">';
+  [['Legacy Auth Block',kp.legacyAuthBlock],['MFA - All Users',kp.mfaAllUsers],['Admin Phishing MFA',kp.adminMfa],['Geographic Restriction',kp.geoBlock]].forEach(function(p) {
+    polHtml += '<div class="policy-row"><span class="policy-name">'+p[0]+'</span>' + pillHtml((p[1]||{}).status||'not found') + '</div>';
+  });
+  polHtml += '</div></div><div style="margin-top:1rem;"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Authentication methods</div><div class="policy-list">';
+  [['Microsoft Authenticator',am.authAppEnabled,false],['FIDO2 / Passkeys',am.fido2Enabled,false],['SMS sign-in',am.smsEnabled,true],['Temporary Access Pass',am.tapEnabled,false]].forEach(function(a) {
+    var cls = (a[2]&&a[1]) ? 'pill-report' : a[1] ? 'pill-enforced' : 'pill-disabled';
+    polHtml += '<div class="policy-row"><span class="policy-name">'+a[0]+'</span><span class="pill '+cls+'">'+(a[1]?((a[2]&&a[1])?'⚠️ ':'✅ ')+'Enabled':'Disabled')+'</span></div>';
+  });
+  polHtml += '</div></div>';
+  document.getElementById('policy-section').innerHTML = polHtml;
+
+  // Risk register
+  var risks = d.risks || [];
+  if (risks.length === 0) {
+    document.getElementById('risk-section').innerHTML = '<p style="font-size:13px;color:var(--text-secondary)">No risks identified.</p>';
+  } else {
+    var rHtml = '<table class="risk-table"><thead><tr><th>Severity</th><th>Area</th><th>Finding</th><th>Recommended action</th></tr></thead><tbody>';
+    risks.forEach(function(r) {
+      var cls = r.severity === 'high' ? 'sev-high' : r.severity === 'medium' ? 'sev-medium' : 'sev-low';
+      var icon = r.severity === 'high' ? '🔴' : r.severity === 'medium' ? '🟡' : '🟢';
+      rHtml += '<tr><td class="'+cls+'">'+icon+' '+r.severity.charAt(0).toUpperCase()+r.severity.slice(1)+'</td><td>'+r.area+'</td><td>'+r.finding+'</td><td>'+r.action+'</td></tr>';
+    });
+    rHtml += '</tbody></table>';
+    document.getElementById('risk-section').innerHTML = rHtml;
+  }
+
+  // Patch metrics
+  if (document.getElementById('patch-metrics')) {
+    document.getElementById('patch-metrics').innerHTML =
+      mc('Current (≤30 days)', ps.current||0, 'c-good') +
+      mc('Over 30 days', ps.over30||0, (ps.over30||0)>0?'c-warn':'c-good') +
+      mc('Over 90 days', ps.over90||0, (ps.over90||0)>0?'c-bad':'c-good');
+    var pDetail = '';
+    if ((d.patchOver90||[]).length > 0) {
+      pDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin-bottom:4px;">Devices 90+ days (with primary user)</div>';
+      pDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">User</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Last seen</th></tr>';
+      (d.patchOver90||[]).forEach(function(dev) {
+        pDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+dev.name+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(dev.user||'Unknown')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(dev.lastSeen?new Date(dev.lastSeen).toLocaleDateString('en-NZ'):'Never')+'</td></tr>';
+      });
+      pDetail += '</table>';
+    }
+    document.getElementById('patch-detail').innerHTML = pDetail;
+  }
+
+  // User metrics
+  if (document.getElementById('user-metrics')) {
+    document.getElementById('user-metrics').innerHTML =
+      mc('Total Licensed users', u.total||0) +
+      mc('Guest users', u.guests||0, (u.guests||0)>0?'c-warn':'c-neu') +
+      mc('Licensed not signed in 60d+', u.notSignedIn90Licensed||0, (u.notSignedIn90Licensed||0)>0?'c-warn':'c-good') +
+      mc('Guest not signed in 60d+', u.notSignedIn90Guest||0, (u.notSignedIn90Guest||0)>0?'c-warn':'c-good') +
+      mc('Admin roles', (u.adminRoles||[]).length, (u.adminRoles||[]).length>0?'c-warn':'c-neu') +
+      mc('External sign-ins', (u.externalSignIns||{}).uniqueUsers||0, ((u.externalSignIns||{}).uniqueUsers||0)>0?'c-warn':'c-good');
+    var uDetail = '';
+    if ((u.licenceSummary||[]).length > 0) {
+      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Licences</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
+      u.licenceSummary.forEach(function(l) {
+        var pct2 = l.available > 0 ? l.count / l.available : null;
+        var col2 = (l.available > 0 && l.count > l.available) ? '#991b1b' : '#0D7CC4';
+        var lbl2 = l.available > 0 ? l.count+' / '+l.available : String(l.count);
+        uDetail += '<div style="background:var(--bg-secondary);padding:6px 10px;border:1px solid var(--border);border-left:3px solid '+col2+';min-width:140px">'
+          + '<div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px">'+l.name+'</div>'
+          + '<div style="font-size:18px;font-weight:700;color:'+col2+'">'+lbl2+'</div>'
+          + (l.available > 0 ? '<div style="font-size:10px;color:var(--text-secondary)">used</div>' : '')
+          + '</div>';
+      });
+      uDetail += '</div>';
+    }
+    if ((u.adminRoles||[]).length > 0) {
+      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Admin role holders</div>';
+      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Name</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Roles</th></tr>';
+      u.adminRoles.forEach(function(a) { uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);vertical-align:top">'+a.name+'<br><span style="color:var(--text-secondary);font-size:11px">'+a.upn+'</span></td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(a.roles||[a.role]).join('<br>')+'</td></tr>'; });
+      uDetail += '</table>';
+    }
+    var extSI = u.externalSignIns || {};
+    if (extSI.timedOut) {
+      uDetail += '<div style="font-size:12px;color:var(--text-warning)">⚠ Sign-in log query timed out - try pulling again.</div>';
+    } else if ((extSI.byUser||[]).length > 0) {
+      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-warning);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">External sign-ins (30 days)</div>';
+      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">User</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Events</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Countries</th></tr>';
+      extSI.byUser.forEach(function(e) { uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+e.upn+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+e.eventCount+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(e.countries||[]).join(', ')+'</td></tr>'; });
+      uDetail += '</table>';
+    }
+    document.getElementById('user-detail').innerHTML = uDetail;
+  }
+
+  // SharePoint metrics
+  if (document.getElementById('sp-metrics')) {
+    document.getElementById('sp-metrics').innerHTML =
+      mc('Total sites', sp.siteCount||0) +
+      mc('M365 Groups', sp.groupCount||0, 'c-neu') +
+      (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
+      (sp.classicCount > 0 ? mc('Classic', sp.classicCount, 'c-neu') : '') +
+      mc('Storage used', (sp.totalUsedGB||0)+' GB', 'c-neu') +
+      mc('Inactive 180d+', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
+    var spDetail = '';
+    if (sp.error) { spDetail = '<span style="color:var(--text-danger);font-size:12px;">'+sp.error+'</span>'; }
+
+    document.getElementById('sp-detail').innerHTML = spDetail;
+  }
+}
+
+function v(id) { return (document.getElementById(id).value || '').trim(); }
+function has(id) { return !!v(id); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function kpi(val, lbl, cls) { return '<div class="kpi"><div class="kpi-val '+cls+'">'+val+'</div><div class="kpi-lbl">'+lbl+'</div></div>'; }
+
+  function winVersionLabel(osVersion) {
+    if (!osVersion) return '';
+    var parts = osVersion.split('.');
+    if (parts.length < 4) return osVersion;
+    var build = parseInt(parts[2]);
+    var rev   = parseInt(parts[3]);
+    var ver = '';
+    if      (build >= 26200) ver = 'Win 11 25H2';
+    else if (build >= 26100) ver = 'Win 11 24H2';
+    else if (build >= 22631) ver = 'Win 11 23H2';
+    else if (build >= 22621) ver = 'Win 11 22H2';
+    else if (build >= 22000) ver = 'Win 11 21H2';
+    else if (build >= 19045) ver = 'Win 10 22H2';
+    else if (build >= 19044) ver = 'Win 10 21H2';
+    else if (build >= 19041) ver = 'Win 10 20H2';
+    else return osVersion;
+    var WIN10  = [[7184,'Apr 2026'],[6953,'Mar 2026'],[6796,'Feb 2026'],[6608,'Jan 2026'],[6452,'Dec 2025'],[6293,'Nov 2025'],[6161,'Oct 2025'],[5965,'Sep 2025'],[5830,'Aug 2025'],[5608,'Jul 2025'],[5487,'Jun 2025'],[5371,'May 2025'],[5247,'Apr 2025'],[5073,'Mar 2025'],[4953,'Feb 2025'],[4842,'Jan 2025'],[4651,'Dec 2024'],[4529,'Nov 2024'],[4355,'Oct 2024'],[4239,'Sep 2024'],[4046,'Aug 2024'],[3930,'Jul 2024'],[3803,'Jun 2024'],[3672,'May 2024'],[3570,'Apr 2024'],[3447,'Mar 2024'],[3326,'Feb 2024'],[3260,'Jan 2024']];
+    var W23H2  = [[6649,'Feb 2026'],[6459,'Jan 2026'],[6252,'Dec 2025'],[6092,'Nov 2025'],[5965,'Oct 2025'],[5854,'Sep 2025'],[5674,'Aug 2025'],[5472,'Jul 2025'],[5323,'Jun 2025'],[5073,'May 2025'],[4894,'Apr 2025'],[4651,'Mar 2025'],[4528,'Feb 2025'],[4391,'Jan 2025'],[4169,'Dec 2024'],[4037,'Nov 2024'],[3958,'Oct 2024'],[3863,'Sep 2024'],[3640,'Aug 2024'],[3527,'Jul 2024'],[3374,'Jun 2024'],[3296,'May 2024'],[3155,'Apr 2024'],[2986,'Mar 2024'],[2861,'Feb 2024'],[2792,'Jan 2024']];
+    var W24H2  = [[7840,'Feb 2026'],[7593,'Jan 2026'],[7387,'Dec 2025'],[7147,'Nov 2025'],[6952,'Oct 2025'],[6755,'Sep 2025'],[6528,'Aug 2025'],[6252,'Jul 2025'],[6036,'Jun 2025'],[5854,'May 2025'],[5680,'Apr 2025'],[5461,'Mar 2025'],[5247,'Feb 2025'],[4972,'Jan 2025'],[4651,'Dec 2024'],[4529,'Nov 2024'],[4355,'Oct 2024'],[4112,'Sep 2024']];
+    var W25H2  = [[8246,'Apr 2026'],[7840,'Feb 2026']];
+    var table  = build >= 26200 ? W25H2 : build >= 26100 ? W24H2 : build >= 22631 ? W23H2 : WIN10;
+    var found  = null;
+    for (var i = 0; i < table.length; i++) { if (rev >= table[i][0]) { found = table[i]; break; } }
+    var month  = found ? found[1] : '';
+    return ver + (month ? ' (' + month + ')' : '') + ' - ' + osVersion;
+  }
+
+function buildReport() {
+  var d = iData;
+  var client   = v('r-client');
+  var from     = document.getElementById('r-from').value;
+  var to       = document.getElementById('r-to').value;
+  var preparer = v('r-preparer');
+  var fmt = function(dt){ return new Date(dt).toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'}); };
+  var today = fmt(new Date().toISOString().split('T')[0]);
+  var html = '';
+
+  // Logo inlined above
+
+  // Cover
+  html += '<div class="rpt-cover">';
+  html += '<div class="rpt-cover-top">';
+  var FULL_LOGO = 'data:image/png;base64,' + (window._fullLogoTransparent || window._iconB64 || '');
+  html += '<img src="'+FULL_LOGO+'" style="height:56px;display:block;" alt="Integricity Technology" />';
+  html += '<span class="rpt-cover-badge">Monthly IT Report  ·  ' + new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'}) + '</span>';
+  html += '</div>';
+  html += '<div class="rpt-client">' + esc(client) + '</div>';
+  html += '<div class="rpt-period">Report period: ' + fmt(from) + ' - ' + fmt(to) + '</div>';
+  html += '<div class="rpt-meta-row">';
+  html += '<div class="rpt-meta-item"><strong>Prepared:</strong> ' + today + '</div>';
+  if (preparer) html += '<div class="rpt-meta-item"><strong>By:</strong> ' + esc(preparer) + '</div>';
+  html += '<div class="rpt-meta-item"><strong>Data source:</strong> Microsoft Intune &amp; Graph API</div>';
+  html += '</div></div>';
+
+  function secHeader(title, color, badge) {
+    badge = badge || 'This Month';
+    return '<div class="rpt-section-header">'
+      + '<div class="rpt-section-header-left">'
+      + '<div class="rpt-sec-sq" style="background:'+color+'"></div>'
+      + '<div class="rpt-section-title">'+title+'</div>'
+      + '</div>'
+      + '<div class="rpt-sec-badge">'+badge.toUpperCase()+'</div>'
+      + '</div>';
+  }
+  function rptKpi(val, lbl, cls) {
+    return '<div class="rpt-kpi '+cls+'"><div class="rpt-kpi-val">'+val+'</div><div class="rpt-kpi-lbl">'+lbl+'</div></div>';
+  }
+  function callout(text, type) {
+    return '<div class="rpt-callout '+type+'">'+text+'</div>';
+  }
+  function statusPill(status) {
+    var cls = status === 'enforced' ? 'enforced' : status === 'report-only' ? 'report-only' : status === 'not found' ? 'not-found' : 'disabled';
+    var icons = { enforced:'✅', 'report-only':'⚠️', 'not found':'❌', disabled:'Disabled' };
+    var labels = { enforced:'Enforced', 'report-only':'Report-only', 'not found':'Not found', disabled:'Disabled' };
+    return '<span class="rpt-status '+cls+'">'+(icons[status]||'')+'&nbsp;'+(labels[status]||status)+'</span>';
+  }
+
+  // Executive Summary
+  if (has('m-overview')||has('m-highlights')||has('m-concerns')||has('m-projects')) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Executive Summary', '#0D7CC4');
+    if (has('m-overview')) html += '<p class="rpt-body">' + esc(v('m-overview')) + '</p>';
+    if (has('m-highlights')) html += callout('<strong>Highlights:</strong> ' + esc(v('m-highlights')), 'good');
+    if (has('m-concerns'))   html += callout('<strong>Concerns:</strong> '  + esc(v('m-concerns')),   'warn');
+    if (has('m-projects'))   html += callout('<strong>Projects:</strong> '   + esc(v('m-projects')),   'info');
+    html += '</div>';
+  }
+
+  // Devices
+  html += '<div class="rpt-section">';
+  html += secHeader('Device & Asset Management', '#0D7CC4');
+  html += '<p class="rpt-body">Summary of managed devices enrolled in Microsoft Intune, including compliance status, operating system breakdown, and device health indicators.</p>';
+  // ── OS breakdown with icons - only show non-zero counts ──────────────────
+  var WIN_ICON = '<svg width="16" height="16" viewBox="0 0 88 88" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#00adef" d="M0 12.5L35.7 7.6l0.1 34.4-35.6 0.2z"/><path fill="#00adef" d="M40.1 6.9L88 0v41.8l-47.9 0.4z"/><path fill="#00adef" d="M35.8 45.5l0.1 34.5L0 75.4V45.3z"/><path fill="#00adef" d="M88 45.6V88l-47.9-6.8-0.1-35.8z"/></svg>';
+  var APPLE_ICON = '<svg width="16" height="16" viewBox="0 0 814 1000" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#555" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.2-150.9-103.2C27.5 761.1 0 636 0 517.4c0-190.5 124.4-291.5 246.8-291.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/></svg>';
+  var LINUX_ICON = '<svg width="16" height="16" viewBox="0 0 64 64" style="display:inline-block;vertical-align:-3px;margin-right:5px"><ellipse cx="32" cy="18" rx="13" ry="16" fill="#f5c518"/><circle cx="26" cy="15" r="3" fill="#333"/><circle cx="38" cy="15" r="3" fill="#333"/><circle cx="27" cy="15" r="1.2" fill="#fff"/><circle cx="39" cy="15" r="1.2" fill="#fff"/><path d="M26 22 Q32 26 38 22" stroke="#333" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M19 34 Q22 50 28 56 Q32 60 36 56 Q42 50 45 34 Q44 26 32 24 Q20 26 19 34Z" fill="#f5c518"/><path d="M16 40 Q10 50 16 54 Q22 56 24 50 Q20 46 19 38Z" fill="#f5c518"/><path d="M48 40 Q54 50 48 54 Q42 56 40 50 Q44 46 45 38Z" fill="#f5c518"/></svg>';
+  var ANDROID_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#3ddc84" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C7.08 3.04 6 4.64 6 6.5h12c0-1.86-1.08-3.46-2.47-4.34zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>';
+
+  var osList = [
+    { icon: WIN_ICON, label: "Windows 11 25H2", count: d.win25h2||0, cls: "good" },
+    { icon: WIN_ICON, label: "Windows 11 24H2", count: d.win24h2||0, cls: "good" },
+    { icon: WIN_ICON, label: "Windows 11",      count: d.win11||0,   cls: "good" },
+    { icon: WIN_ICON, label: "Windows 10",      count: d.win10||0,   cls: (d.win10||0)>0?"warn":"good" },
+    { icon: APPLE_ICON,   label: "macOS",         count: d.macOS||0,        cls: "neu" },
+    { icon: APPLE_ICON,   label: "iOS / iPadOS",  count: d.iosCount||0,     cls: "neu" },
+    { icon: ANDROID_ICON, label: "Android",        count: d.androidCount||0, cls: "neu" },
+    { icon: LINUX_ICON,   label: "Linux",          count: d.linux||0,        cls: "neu" },
+  ].filter(function(o){ return o.count > 0; });
+
+  if (osList.length > 0) {
+    html += '<div class="rpt-kpi-block"><div class="rpt-sub">Operating system</div>';
+    html += '<div class="rpt-kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr))">'; 
+    osList.forEach(function(o) {
+      html += '<div class="rpt-kpi '+o.cls+'"><div class="rpt-kpi-val">'+o.count+'</div><div class="rpt-kpi-lbl">'+o.icon+o.label+'</div></div>';
+    });
+    html += '</div></div>'; // end rpt-kpi-block
+  }
+  html += '<div class="rpt-kpi-block"><div class="rpt-sub">Compliance</div>';
+  html += '<div class="rpt-kpi-grid">';
+  html += rptKpi(d.total, 'Total devices', 'info');
+  html += rptKpi(d.comp.compliant, 'Compliant', 'good');
+  html += rptKpi(d.comp.noncompliant, 'Non-Compliant', d.comp.noncompliant > 0 ? 'bad' : 'good');
+  html += rptKpi(d.comp.unknown||0, 'Not evaluated', 'warn');
+  html += rptKpi(d.staleCount||0, 'Last Checked In 90d+', (d.staleCount||0) > 0 ? 'warn' : 'good');
+  html += '</div></div>'; // end rpt-kpi-block
+  if ((d.comp.unknown||0) > 0) {
+    html += '<p style="font-size:13px;color:#6b7280;margin:0.5rem 0 1rem;line-height:1.6;">Devices showing as &ldquo;not evaluated&rdquo; have not yet completed a compliance check-in, have no compliance policy assigned, or are newly enrolled.</p>';
+  }
+  if (d.comp.noncompliant > 0) {
+    html += callout('<strong>'+d.comp.noncompliant+' device'+(d.comp.noncompliant>1?'s are':' is')+' non-compliant</strong>&nbsp;with your organisation\'s policies.', 'bad');
+    if ((d.notCompliantList||[]).length > 0) {
+      html += '<div class="rpt-sub">Non-compliant devices</div>';
+      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last seen</th></tr></thead><tbody>';
+      d.notCompliantList.forEach(function(dev) {
+        var ls = dev.lastSync ? new Date(dev.lastSync).toLocaleDateString('en-NZ') : 'Never';
+        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280">'+ls+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+  }
+  // ── ENCRYPTION: KPIs then list ─────────────────────────────────────────────
+  html += '<div class="rpt-kpi-block"><div class="rpt-sub">Encryption</div>';
+  html += '<div class="rpt-kpi-grid">';
+  html += rptKpi(d.encryption.encrypted, 'Encrypted', 'good');
+  html += rptKpi(d.encryption.notEncrypted, 'Not encrypted', d.encryption.notEncrypted > 0 ? 'bad' : 'good');
+  html += '</div></div>'; // end rpt-kpi-block
+  if (d.encryption.notEncrypted > 0) {
+    html += callout('<strong>'+d.encryption.notEncrypted+' device'+(d.encryption.notEncrypted>1?'s are':' is')+' not encrypted.</strong> This is a significant data protection risk.', 'bad');
+    if ((d.notEncryptedList||[]).length > 0) {
+      html += '<div class="rpt-sub">Unencrypted devices</div>';
+      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>OS</th></tr></thead><tbody>';
+      d.notEncryptedList.forEach(function(dev) {
+        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280">'+esc(dev.os||'')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+  }
+  // ── ANTIVIRUS: KPIs then lists ─────────────────────────────────────────────
+  if (d.av) {
+    html += '<div class="rpt-kpi-block"><div class="rpt-sub">Antivirus</div>';
+    html += '<div class="rpt-kpi-grid">';
+    html += rptKpi(d.av.active||0,    'AV active',      'good');
+    html += rptKpi(d.av.notActive||0, 'AV not active',  (d.av.notActive||0) > 0 ? 'bad'  : 'good');
+    html += rptKpi(d.av.outOfDate||0, 'AV out of date', (d.av.outOfDate||0) > 0 ? 'warn' : 'good');
+    html += '</div></div>'; // end rpt-kpi-block
+    if (d.av.notActive > 0) {
+      html += callout('<strong>'+d.av.notActive+' device'+(d.av.notActive>1?'s have':' has')+' antivirus and real-time protection both disabled - no active AV protection detected.</strong> Investigate and re-enable immediately.', 'bad');
+      if ((d.av.notActiveList||[]).length > 0) {
+        html += '<div class="rpt-sub">Devices with antivirus not active</div>';
+        html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th></tr></thead><tbody>';
+        d.av.notActiveList.forEach(function(dev){ html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td></tr>'; });
+        html += '</tbody></table>';
+      }
+    }
+    if (d.av.outOfDate > 0) {
+      html += callout('<strong>'+d.av.outOfDate+' device'+(d.av.outOfDate>1?'s have':' has')+' antivirus definitions more than 30 days out of date.</strong> Force a definition update via Intune.', 'warn');
+      if ((d.av.outOfDateList||[]).length > 0) {
+        html += '<div class="rpt-sub">Devices with outdated antivirus definitions</div>';
+        html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last updated</th><th>Days old</th></tr></thead><tbody>';
+        d.av.outOfDateList.forEach(function(dev){
+          var lu = dev.lastUpdated ? new Date(dev.lastUpdated).toLocaleDateString('en-NZ') : 'Unknown';
+          html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td>'+lu+'</td><td style="color:#92400e">'+dev.ageDays+'d</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+    }
+  }
+  // ── LOW DISK: KPIs then list ───────────────────────────────────────────────
+  if ((d.lowDisk||[]).length > 0) {
+    html += callout('<strong>'+((d.lowDisk||[]).length)+' device'+((d.lowDisk||[]).length>1?'s have':' has')+' low disk space (&lt;15% free).</strong>', 'warn');
+    html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Free space</th><th>Free (GB)</th></tr></thead><tbody>';
+    (d.lowDisk||[]).forEach(function(x){
+      html += '<tr><td>'+esc(x.name)+'</td><td style="color:#6b7280;font-size:13px">'+esc(x.user||'Unassigned')+'</td><td>'+x.pct+'%</td><td>'+x.gb+' GB</td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+  // ── STALE DEVICES ─────────────────────────────────────────────────────────
+  if (d.win10 > 0) html += callout('<strong>'+d.win10+' device'+(d.win10>1?'s are':' is')+' still running Windows 10.</strong> Microsoft ended support October 2025. Upgrade recommended.', 'warn');
+  if ((d.staleCount||0) > 0) {
+    html += callout('<strong>'+(d.staleCount||0)+' device'+((d.staleCount||0)>1?'s have':' has')+' not checked in for 90+ days.</strong> These may be offline or decommissioned.', 'warn');
+    if ((d.patchOver90||[]).length > 0) {
+      html += '<div class="rpt-sub">Devices not checked in for 90+ days</div>';
+      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last seen</th></tr></thead><tbody>';
+      (d.patchOver90||[]).forEach(function(dev) {
+        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td>'+(dev.lastSeen?new Date(dev.lastSeen).toLocaleDateString('en-NZ'):'Never')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+  }
+  html += '</div>';
+
+  // Security
+  html += '<div class="rpt-section">';
+  html += secHeader('Security Posture', '#8C0C6E');
+  html += '<p class="rpt-body">Overview of the tenant&#39;s security configuration including Microsoft Secure Score, Conditional Access (CA) policy status, authentication methods, and identity protection alerts.</p>';
+  if (d.score) {
+    html += '<div class="rpt-kpi-grid">';
+    html += rptKpi(d.score.pct+'%', 'Secure Score', d.score.pct>=70?'good':d.score.pct>=50?'warn':'bad');
+    if (d.conditionalAccess) {
+      html += rptKpi(d.conditionalAccess.enabled, 'CA Enforced', 'good');
+      html += rptKpi(d.conditionalAccess.reportOnly, 'CA Report-only', d.conditionalAccess.reportOnly>0?'warn':'good');
+    }
+    html += rptKpi(d.risky, 'Risky Users', d.risky>0?'bad':'good');
+    if (d.compliancePolicies) html += rptKpi(d.compliancePolicies.total, 'Compliance policies', 'neu');
+    if (d.appProtection)      html += rptKpi(d.appProtection.total, 'App protection', d.appProtection.total===0?'warn':'good');
+    html += '</div>';
+    var scoreMsg = d.score.pct >= 70
+      ? 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+') - a healthy baseline.'
+      : d.score.pct >= 50
+        ? 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+'). There is meaningful room to improve.'
+        : 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+'). This requires attention.';
+    html += '<p class="rpt-body">'+scoreMsg+'</p>';
+  }
+  html += '<div class="rpt-sub">Key policy status</div>';
+  var kp = d.keyPolicies || {};
+  html += '<table class="rpt-policy-table"><thead><tr><th>Policy</th><th>Status</th></tr></thead><tbody>';
+  [['Legacy Authentication Block', kp.legacyAuthBlock],['MFA - All Users', kp.mfaAllUsers],['Admin Phishing-Resistant MFA', kp.adminMfa],['Geographic Restriction', kp.geoBlock]].forEach(function(p) {
+    var info = p[1] || {}; var status = info.status || 'not found';
+    html += '<tr><td>'+p[0]+'</td><td>'+statusPill(status)+'</td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div class="rpt-sub">Authentication methods</div>';
+  html += '<table class="rpt-policy-table"><thead><tr><th>Method</th><th>Status</th></tr></thead><tbody>';
+  var am = d.authMethods || {};
+  [['Microsoft Authenticator', am.authAppEnabled, false],['FIDO2 / Passkeys', am.fido2Enabled, false],['SMS sign-in', am.smsEnabled, true],['Temporary Access Pass', am.tapEnabled, am.tapReusable]].forEach(function(a) {
+    var enabled = a[1]; var isWarn = a[2];
+    var label = enabled ? (isWarn ? 'Enabled - review recommended' : 'Enabled') : 'Disabled';
+    var cls = enabled ? (isWarn ? 'report-only' : 'enforced') : 'disabled';
+    html += '<tr><td>'+a[0]+'</td><td><span class="rpt-status '+cls+'">'+label+'</span></td></tr>';
+  });
+  html += '</tbody></table>';
+  if (d.risky > 0) html += callout('<strong>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</strong> by Entra ID Protection. Reset passwords immediately.', 'bad');
+  html += '</div>';
+
+  // ── Patch Status ───────────────────────────────────────────────────────────
+  var ps = d.patchStatus || {};
+  if (ps.current !== undefined) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Patch Status', '#0D7CC4');
+    html += '<p class="rpt-body">Patch currency is based on the last Intune check-in date. Devices that have not checked in within 30 days may be running unpatched software.</p>';
+    html += '<div class="rpt-kpi-grid">';
+    html += rptKpi(ps.current||0, 'Current (≤30 days)', 'good');
+    html += rptKpi(ps.over30||0, 'Over 30 days', (ps.over30||0)>0?'warn':'good');
+    html += rptKpi(ps.over90||0, 'Over 90 days', (ps.over90||0)>0?'bad':'good');
+    html += '</div>';
+    if ((ps.over30||0) > 0) html += callout('<strong>'+(ps.over30||0)+' device'+((ps.over30||0)>1?'s have':' has')+' not checked in for 30-90 days</strong> - 1 to 2 patch cycles behind.', 'warn');
+    if ((d.patchOver90||[]).length > 0) {
+      html += callout('<strong>'+((d.patchOver90||[]).length)+' device'+((d.patchOver90||[]).length>1?'s have':' has')+' not checked in for 90+ days</strong> - 3 or more patch cycles behind.', 'bad');
+      html += '<div class="rpt-sub">Devices with patch version older than 90 days</div>';
+      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Latest patch version</th></tr></thead><tbody>';
+      (d.patchOver90||[]).forEach(function(dev) {
+        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280;font-size:13px">'+esc(dev.os||'Unknown')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+
+    html += '</div>';
+  }
+
+  // ── User Data ───────────────────────────────────────────────────────────────
+  var u = d.users || {};
+  if (u.total > 0) {
+    html += '<div class="rpt-section">';
+    html += secHeader('User Data', '#8C0C6E');
+    html += '<p class="rpt-body">Summary of M365 licensed users, guest accounts, shared mailboxes and administrative role holders, and sign-in activity including accounts not used in the last 90 days and logins from outside Australia and New Zealand.</p>';
+    html += '<div class="rpt-kpi-grid">';
+    html += rptKpi(u.total||0, 'Total Licensed users', 'info');
+    html += rptKpi(u.guests||0, 'Guest users', (u.guests||0)>0?'warn':'neu');
+    html += rptKpi(u.sharedMailboxes||0, 'Shared mailboxes', 'neu');
+    html += rptKpi(u.notSignedIn90Licensed||0, 'M365 Users - Not Signed in for 90 days+', (u.notSignedIn90Licensed||0)>0?'warn':'good');
+    html += rptKpi(u.notSignedIn90Guest||0, 'Guests - not signed in 90d+', (u.notSignedIn90Guest||0)>0?'warn':'good');
+    html += rptKpi((u.adminRoles||[]).length, 'Admin role holders', (u.adminRoles||[]).length>0?'warn':'neu');
+    html += rptKpi((u.externalSignIns||{}).total||0, 'Overseas sign-ins (30d)', ((u.externalSignIns||{}).total||0)>0?'warn':'good');
+    html += '</div>';
+    if ((u.notSignedIn90Licensed||0) > 0) {
+      html += callout('<strong>'+(u.notSignedIn90Licensed)+'M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</strong> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn');
+      if ((u.notSignedIn90LicensedList||[]).length > 0) {
+        html += '<div class="rpt-sub">M365 licensed users - not signed in 90+ days</div>';
+        html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Days inactive</th></tr></thead><tbody>';
+        u.notSignedIn90LicensedList.forEach(function(usr) {
+          var ls = (usr.lastSignIn && usr.lastSignIn !== null) ? new Date(usr.lastSignIn).toLocaleDateString('en-NZ') : 'Never';
+          html += '<tr><td>'+esc(usr.name||'')+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn||'')+'</td><td>'+ls+'</td><td>'+(usr.daysSince!==null&&usr.daysSince!==undefined?usr.daysSince:'Never')+'</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+    }
+    if ((u.notSignedIn90Guest||0) > 0) {
+      html += callout('<strong>'+(u.notSignedIn90Guest)+' guest account'+(u.notSignedIn90Guest>1?'s have':' has')+' not signed in for 90+ days.</strong> Review for stale guest access and remove if no longer needed.', 'warn');
+      if ((u.notSignedIn90GuestList||[]).length > 0) {
+        html += '<div class="rpt-sub">Guest accounts - not signed in 90+ days</div>';
+        html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Days inactive</th></tr></thead><tbody>';
+        u.notSignedIn90GuestList.forEach(function(usr) {
+          var ls = (usr.lastSignIn && usr.lastSignIn !== null) ? new Date(usr.lastSignIn).toLocaleDateString('en-NZ') : 'Never';
+          html += '<tr><td>'+esc(usr.name||'')+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn||'')+'</td><td>'+ls+'</td><td>'+(usr.daysSince!==null&&usr.daysSince!==undefined?usr.daysSince:'Never')+'</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+    }
+    var extSignIns = u.externalSignIns || {};
+    var extUsers   = extSignIns.byUser || [];
+    var extWindow  = extSignIns.windowDays || 30;
+    var extTotal   = extSignIns.total || 0;
+    var windowLabel = extWindow < 30 ? extWindow+'-day window (30-day timed out)' : 'last 30 days';
+    if (extSignIns.timedOut && extWindow === 0) {
+      html += callout('<strong>Overseas sign-in query timed out.</strong> The sign-in log could not be retrieved. Try pulling data again.', 'warn');
+    } else if (extUsers.length > 0) {
+      html += '<div class="rpt-sub">Unexpected overseas sign-ins - '+windowLabel+'</div>';
+      html += callout('<strong>'+extTotal+' successful login'+(extTotal>1?'s':'')+'</strong> from unexpected locations by <strong>'+extSignIns.uniqueUsers+' user'+(extSignIns.uniqueUsers>1?'s':'')+'</strong>. Australia, New Zealand and Malaysia are excluded as expected locations. Review for suspicious access.', 'warn');
+      html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Country / Territory</th><th>Successful logins</th></tr></thead><tbody>';
+      extUsers.forEach(function(usr) {
+        html += '<tr><td>'+esc(usr.name||usr.upn.split('@')[0])+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn)+'</td><td>'+esc((usr.countries||[]).join(', '))+'</td><td>'+usr.eventCount+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      var windowNote = extWindow < 30 ? ' (checked '+windowLabel+')' : '';
+      html += callout('No unexpected overseas sign-ins detected in the '+windowLabel+'. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
+    }
+    if ((u.licenceSummary||[]).length > 0) {
+      html += '<div class="rpt-sub">Licence assignment</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:1rem;">';
+      u.licenceSummary.forEach(function(l) {
+        var pct = l.available > 0 ? Math.round((l.count / l.available) * 100) : null;
+        var overSub = l.available > 0 && l.count > l.available;
+        var barColor = overSub ? '#C0152A' : '#d1d5db';
+        var countColor = overSub ? '#C0152A' : '#111827';
+        var usedLbl = l.available > 0 ? l.count+' / '+l.available : String(l.count);
+        var bar = l.available > 0
+          ? '<div style="height:4px;background:#e5e7eb;border-radius:2px;margin-top:6px;"><div style="height:4px;background:'+barColor+';border-radius:2px;width:'+Math.min(pct,100)+'%"></div></div>'
+          : '';
+        html += '<div style="border:1px solid #e5e7eb;padding:12px 14px;background:#f9fafb;border-left:4px solid '+barColor+';">';
+        html += '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;line-height:1.3;text-transform:uppercase;letter-spacing:0.04em">'+esc(l.name)+'</div>';
+        html += '<div style="font-size:28px;font-weight:800;color:'+countColor+';line-height:1">'+usedLbl+'</div>';
+        if (l.available > 0) html += '<div style="font-size:11px;color:#9ca3af;margin-top:4px">used of '+l.available+' available</div>';
+        else html += '<div style="font-size:11px;color:#9ca3af;margin-top:4px">assigned</div>';
+        html += bar;
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    if ((u.adminRoles||[]).length > 0) {
+      html += '<div class="rpt-sub">Users with admin (privileged) roles</div>';
+      html += '<table class="rpt-policy-table"><thead><tr><th>User</th><th>Roles</th></tr></thead><tbody>';
+      u.adminRoles.forEach(function(a) {
+        var roles = (a.roles||[a.role]).map(function(r){ return esc(r); }).join('<br>');
+        html += '<tr><td><strong>'+esc(a.name)+'</strong><br><span style="color:#6b7280;font-size:13px">'+esc(a.upn)+'</span></td><td>'+roles+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
+    html += '</div>';
+  }
+
+  // ── SharePoint ──────────────────────────────────────────────────────────────
+  var sp = d.sharepoint || {};
+  if ((sp.siteCount||0) > 0 || sp.error) {
+    html += '<div class="rpt-section">';
+    html += secHeader('SharePoint / MS Teams', '#1A8070');
+    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.</p>';
+    if (sp.error) {
+      html += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
+    } else {
+      // SharePoint overview - 2-column card grid (modelled on Entra Groups Overview)
+      var spN = 'font-size:26px;font-weight:800;line-height:1;margin-bottom:3px;';
+      var spL = 'font-size:12px;color:#6b7280;';
+      var spCb = 'padding:14px 18px;border-bottom:1px solid #e5e7eb;';
+      var spCr = 'padding:14px 18px;border-bottom:1px solid #e5e7eb;border-left:1px solid #e5e7eb;';
+      var spCbl = 'padding:14px 18px;';
+      var spCrl = 'padding:14px 18px;border-left:1px solid #e5e7eb;';
+      var spStorageNum = sp.totalUsedGB ? sp.totalUsedGB+' GB' : 'Unknown';
+      var spStorageColor = (sp.totalUsedGB||0) > 500 ? '#C0152A' : '#0D7CC4';
+      var spInactiveColor = (sp.inactiveSiteCount||0) > 0 ? '#D97706' : '#1A8070';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb;margin-bottom:1.25rem;">';
+      html += '<div style="'+spCb+'"><div style="'+spN+'color:#0D7CC4">'+((sp.siteCount)||0)+'</div><div style="'+spL+'">Total sites</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.groupCount)||0)+'</div><div style="'+spL+'">M365 Group sites</div></div>';
+      html += '<div style="'+spCb+'"><div style="'+spN+'color:#1A8070">'+((sp.commCount)||0)+'</div><div style="'+spL+'">Communication sites</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:#6b7280">'+((sp.classicCount)||0)+'</div><div style="'+spL+'">Classic / other sites</div></div>';
+      html += '<div style="'+spCb+'"><div style="'+spN+'color:'+spStorageColor+'">'+spStorageNum+'</div><div style="'+spL+'">Storage used</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:'+spInactiveColor+'">'+((sp.inactiveSiteCount)||0)+'</div><div style="'+spL+'">Inactive 180d+</div></div>';
+      var spM365Groups = sp.m365GroupCount !== null && sp.m365GroupCount !== undefined ? sp.m365GroupCount : 'N/A';
+      var spSecGroups  = sp.securityGroupCount !== null && sp.securityGroupCount !== undefined ? sp.securityGroupCount : 'N/A';
+      html += '<div style="'+spCbl+'"><div style="'+spN+'color:#0D7CC4">'+spM365Groups+'</div><div style="'+spL+'">M365 Groups</div></div>';
+      html += '<div style="'+spCrl+'"><div style="'+spN+'color:#0D7CC4">'+spSecGroups+'</div><div style="'+spL+'">Security groups</div></div>';
+      html += '</div>';
+      if ((sp.inactiveSiteCount||0) > 0) {
+        html += callout('<strong>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</strong> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
+      }
+
+    }
+    html += '</div>';
+  }
+
+  // Ticketing
+  var hasTickets = has('t-opened')||has('t-closed')||has('t-pending')||has('t-response')||has('t-resolution')||has('t-p1');
+  if (hasTickets) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Ticketing & Support', '#1A8070');
+    if (has('t-opened')||has('t-closed')||has('t-pending')) {
+      html += '<div class="rpt-kpi-grid">';
+      if (has('t-opened'))  html += rptKpi(v('t-opened'),  'Opened',  'neu');
+      if (has('t-closed'))  html += rptKpi(v('t-closed'),  'Closed',  'good');
+      if (has('t-pending')) html += rptKpi(v('t-pending'), 'Pending', parseInt(v('t-pending'))>5?'warn':'neu');
+      html += '</div>';
+    }
+    if (has('t-response')||has('t-resolution')) {
+      html += '<div class="rpt-kpi-grid">';
+      if (has('t-response'))   html += rptKpi(esc(v('t-response')),   'Avg response time',   'neu');
+      if (has('t-resolution')) html += rptKpi(esc(v('t-resolution')), 'Avg resolution time', 'neu');
+      html += '</div>';
+    }
+    if (has('t-p1')) html += callout('<strong>P1 incident:</strong> ' + esc(v('t-p1')), 'bad');
+    else html += callout('No P1 incidents recorded this period.', 'good');
+    html += '</div>';
+  }
+
+  // Recommendations
+  var hasRec = has('r-personal')||has('r-improvements')||has('r-cost')||has('r-roadmap');
+  if (hasRec) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Recommendations & Opportunities', '#E06400');
+    if (has('r-personal')) html += '<div class="rpt-personal">' + esc(v('r-personal')) + '</div>';
+    if (has('r-improvements')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#0D7CC4">🔧 Suggested improvements</div><p class="rpt-body" style="margin:0">'+esc(v('r-improvements'))+'</p></div>';
+    if (has('r-cost')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#1A8070">💰 Cost-saving opportunities</div><p class="rpt-body" style="margin:0">'+esc(v('r-cost'))+'</p></div>';
+    if (has('r-roadmap')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#8C0C6E">🗺️ Tech roadmap</div><p class="rpt-body" style="margin:0">'+esc(v('r-roadmap'))+'</p></div>';
+    html += '</div>';
+  }
+
+  // ── Security Risk Register (moved to bottom) ───────────────────────────────
+  var risks = d.risks || [];
+  if (risks.length > 0) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Security Risk Register', '#E61B1F');
+    html += '<p class="rpt-body">The following risks have been identified based on the data collected from this tenant. Items are ranked by severity. High-severity items require prompt attention.</p>';
+    html += '<table class="rpt-risk-table"><thead><tr><th style="width:90px">Severity</th><th style="width:140px">Area</th><th>Finding</th><th>Recommended action</th></tr></thead><tbody>';
+    risks.forEach(function(r) {
+      html += '<tr><td><span class="rpt-sev '+r.severity+'">'+r.severity.charAt(0).toUpperCase()+r.severity.slice(1)+'</span></td>';
+      html += '<td style="color:#6b7280">'+r.area+'</td>';
+      html += '<td>'+r.finding+'</td><td style="color:#374151">'+r.action+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+
+  // Footer
+  html += '<div class="rpt-footer">';
+  var FOOTER_LOGO = 'data:image/png;base64,' + (window._fullLogoWhite || window._logoB64 || '');
+  html += '<img src="'+FOOTER_LOGO+'" style="height:24px;display:block;opacity:0.5;" alt="Integricity Technology" />';
+  html += '<span class="rpt-footer-text">Prepared by Integricity &middot; '+today+' &middot; Microsoft Intune &amp; Graph API &middot; Confidential</span>';
+  html += '</div>';
+
+  document.getElementById('report-out').innerHTML = html;
+  showPage(4);
+}
+
+
+function copyText() {
+  var text = document.getElementById('report-out').innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var b = document.getElementById('copy-btn');
+    b.textContent = '✓ Copied!';
+    setTimeout(function(){ b.textContent = '📋 Copy text'; }, 2000);
+  });
+}
+
+function startOver() {
+  iData = null;
+  ['m-overview','m-highlights','m-concerns','m-projects','t-opened','t-closed','t-pending','t-response','t-resolution','t-p1','r-personal','r-improvements','r-cost','r-roadmap']
+    .forEach(function(id){ document.getElementById(id).value = ''; });
+  renderChips(); showPage(1);
+}
+
+renderChips(); setDates();
+
+async function exportDocx() {
+  var btn = document.getElementById('export-btn');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+  try {
+    var client   = document.getElementById('r-client').value.trim();
+    var from     = document.getElementById('r-from').value;
+    var to       = document.getElementById('r-to').value;
+    var preparer = (document.getElementById('r-preparer').value || '').trim();
+    var today    = new Date().toLocaleDateString('en-NZ', {day:'numeric',month:'long',year:'numeric'});
+    var manual = {
+      overview:    (document.getElementById('m-overview').value    || '').trim(),
+      highlights:  (document.getElementById('m-highlights').value  || '').trim(),
+      concerns:    (document.getElementById('m-concerns').value     || '').trim(),
+      projects:    (document.getElementById('m-projects').value     || '').trim(),
+      ticketsOpened:  (document.getElementById('t-opened').value   || '').trim(),
+      ticketsClosed:  (document.getElementById('t-closed').value   || '').trim(),
+      ticketsPending: (document.getElementById('t-pending').value  || '').trim(),
+      avgResponse:    (document.getElementById('t-response').value  || '').trim(),
+      avgResolution:  (document.getElementById('t-resolution').value|| '').trim(),
+      p1:          (document.getElementById('t-p1').value          || '').trim(),
+      personal:    (document.getElementById('r-personal').value    || '').trim(),
+      improvements:(document.getElementById('r-improvements').value|| '').trim(),
+      cost:        (document.getElementById('r-cost').value        || '').trim(),
+      roadmap:     (document.getElementById('r-roadmap').value     || '').trim(),
+    };
+
+    // Always fetch logos fresh at export time - don't rely on window._ vars
+    btn.textContent = '⏳ Loading assets…';
+    var logoFetches = await Promise.all([
+      fetch('fulllogo_transparent.b64', {credentials:'omit'}).then(function(r){ return r.ok ? r.text() : ''; }).catch(function(){ return ''; }),
+      fetch('fulllogo_header.b64', {credentials:'omit'}).then(function(r){ return r.ok ? r.text() : ''; }).catch(function(){ return ''; }),
+    ]);
+    var fullLogoTransparent = logoFetches[0].trim();
+    var fullLogoHeader      = logoFetches[1].trim();
+
+    btn.textContent = '⏳ Building document…';
+    var res = await fetch('/.netlify/functions/export-docx', {
+      method: 'POST',
+      credentials: 'omit',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client, from, to, preparer, today,
+        iData: iData, manual,
+        fullLogoTransparent: fullLogoTransparent,
+        fullLogoHeader: fullLogoHeader,
+      }),
+    });
+
+    var rawText = await res.text();
+    var data;
+    try { data = JSON.parse(rawText); } catch(parseErr) { throw new Error('Server returned invalid response: ' + rawText.substring(0,200)); }
+    if (data.error) throw new Error(data.error);
+    if (!data.base64) throw new Error('No document data returned. Server said: ' + JSON.stringify(data).substring(0,200));
+
+    // Validate the base64 before attempting to decode
+    var b64clean = data.base64.replace(/\s/g, '');
+    if (!/^[A-Za-z0-9+/]+=*$/.test(b64clean)) throw new Error('Document data is corrupted - please try again');
+
+    var binary = atob(b64clean);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = data.filename; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) {
+    alert('Export failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '📄 Export to Word';
+  }
+}
+
+</script>
+</body>
+</html>

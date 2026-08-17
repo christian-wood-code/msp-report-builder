@@ -1,0 +1,9 @@
+[
+  {
+    "id": "example-client",
+    "displayName": "Example Client Ltd",
+    "tenantId": "00000000-0000-0000-0000-000000000000",
+    "clientId": "00000000-0000-0000-0000-000000000000",
+    "clientSecret": "REPLACE_WITH_REAL_SECRET"
+  }
+]
