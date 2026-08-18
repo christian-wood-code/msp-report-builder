@@ -300,9 +300,9 @@ exports.handler = async (event) => {
     // ── Cover ────────────────────────────────────────────────────────────────
     // Navy cover matching PDF v11 style
     const monthLabel = new Date(from).toLocaleDateString("en-NZ",{month:"long",year:"numeric"});
-    const NAVY = "0D1B2E";
-    const NAVY2 = "1E3558";
-    const MUTED = "8AAFD4";
+    const NAVY = "0F172A";
+    const NAVY2 = "1A2744";
+    const MUTED = "94A3B8";
     if (hasLogo) {
       children.push(new Table({
         width: { size: PW, type: WidthType.DXA }, columnWidths: [PW],

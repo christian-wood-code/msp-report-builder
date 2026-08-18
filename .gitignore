@@ -20,3 +20,6 @@ npm-debug.log*
 # Environment (none used, but exclude just in case)
 .env
 .env.local
+
+# Local backups made before overwriting an asset in place
+*.bak
