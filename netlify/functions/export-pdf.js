@@ -29,7 +29,7 @@ const PDF = {
 };
 const SEVERITY_RGB = { high: PDF.red, medium: PDF.amber, low: PDF.slate };
 
-function buildPdfDoc({ client, from, to, iData: d, manual = {} }) {
+function buildPdfDoc({ client, from, to, iData: d, manual = {}, fullLogoTransparent }) {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const PW = doc.internal.pageSize.getWidth();
   const PH = doc.internal.pageSize.getHeight();
@@ -95,6 +95,17 @@ function buildPdfDoc({ client, from, to, iData: d, manual = {} }) {
   doc.text(`${fmtDate(from)} – ${fmtDate(to)}`, M, 70);
   doc.setFontSize(9);
   doc.text('Integricity Technology · Confidential', M, 86);
+
+  // Logo (white-text-on-transparent variant, matches HTML/Word cover) top-right of the band
+  const coverLogo = Buffer.from(fullLogoTransparent || '', 'base64');
+  if (coverLogo.length > 100) {
+    const logoH = 26, logoW = logoH * (960 / 247); // native aspect ratio of fulllogo_transparent.b64
+    // 'SLOW' = best FlateDecode compression effort -- jsPDF embeds PNGs as a
+    // raw decoded bitmap by default (no passthrough of the PNG's own
+    // compression), so this is the difference between a ~40KB and ~950KB
+    // logo embed, not an image-quality tradeoff (lossless either way).
+    try { doc.addImage(coverLogo, 'PNG', PW - M - logoW, (BANDH - logoH) / 2, logoW, logoH, undefined, 'SLOW'); } catch (_) { /* ignore malformed logo payload */ }
+  }
 
   y = BANDH + 24;
 
