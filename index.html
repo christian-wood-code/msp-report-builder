@@ -193,10 +193,15 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
   .rpt-sub,*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 
   /* ── Page break controls ──────────────────────────────────────── */
-  /* Never break inside these elements */
+  /* Never break inside these elements (small/bounded -- safe to force
+     onto one page). Tables are deliberately excluded here: a long
+     .rpt-policy-table/.rpt-risk-table forced to avoid breaking as a
+     whole gets pushed entirely onto the next page when it doesn't fit
+     in the remaining space, leaving a large blank gap. The per-row
+     rule further down (keeping individual <tr>s intact) is the correct
+     way to avoid orphaned rows without also avoiding the whole table. */
   .rpt-kpi-block,.rpt-kpi-grid,.rpt-kpi,
-  .rpt-callout,.rpt-section-header,
-  .rpt-policy-table,.rpt-risk-table{
+  .rpt-callout,.rpt-section-header{
     page-break-inside:avoid;
     break-inside:avoid;
   }
