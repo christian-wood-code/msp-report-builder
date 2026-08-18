@@ -42,8 +42,13 @@ function buildPdfDoc({ client, from, to, iData: d, manual = {}, fullLogoTranspar
   const setDraw = c => doc.setDrawColor(...c);
   const ensure = need => { if (y + need > PH - M - 24) { doc.addPage(); y = M; } };
 
+  // A title reserves a MIN_FOLLOW minimum beyond its own height, or it can be
+  // placed with nothing left on the page for its stat cards/first table row,
+  // which then bounce to the next page and leave the title stranded above a
+  // large blank gap (confirmed via the sibling apps' identical pattern).
+  const MIN_FOLLOW = 90;
   const sectionTitle = (title, rightLabel = '') => {
-    ensure(44);
+    ensure(44 + MIN_FOLLOW);
     setFill([239, 246, 255]); doc.roundedRect(M, y - 3, 15, 15, 4, 4, 'F');
     setText(PDF.navy); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
     doc.text(title, M + 22, y + 8);
