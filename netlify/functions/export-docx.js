@@ -2,7 +2,7 @@
 
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, BorderStyle, WidthType, ShadingType,
+  AlignmentType, BorderStyle, WidthType, ShadingType, TabStopType,
   LevelFormat, Footer, PageNumber, ImageRun,
 } = require("docx");
 
@@ -38,46 +38,28 @@ const para = (children, { before=0, after=0, align=AlignmentType.LEFT, border } 
 
 const spacer = (h = 120) => new Paragraph({ children: [], spacing: { before: h, after: 0 } });
 
-const sectionHeader = (title, color) => {
-  // Coloured square icon + bold dark title + THIS MONTH badge — matches v11 PDF
-  const SQ = 120; // square width in DXA
-  return new Table({
-    width: { size: PW, type: WidthType.DXA },
-    columnWidths: [SQ, PW - SQ - 1400, 1400],
-    rows: [new TableRow({ children: [
-      // Coloured square
-      new TableCell({
-        width: { size: SQ, type: WidthType.DXA },
-        shading: { fill: color, type: ShadingType.CLEAR },
-        borders: { top: bdr(color,1), bottom: bdr(color,1), left: bdr(color,1), right: bdr(color,1) },
-        margins: { top: 0, bottom: 0, left: 0, right: 0 },
-        children: [new Paragraph({ children: [], spacing: { before: 0, after: 0 } })],
-      }),
-      // Title
-      new TableCell({
-        width: { size: PW - SQ - 1400, type: WidthType.DXA },
-        borders: { top: none(), bottom: none(), left: none(), right: none() },
-        margins: { top: 60, bottom: 60, left: 120, right: 80 },
-        children: [new Paragraph({
-          children: [run(title, { size: 32, bold: true, color: C.DARK })],
-          spacing: { before: 0, after: 0 },
-          keepNext: true,
-        })],
-      }),
-      // "This Month" badge
-      new TableCell({
-        width: { size: 1400, type: WidthType.DXA },
-        borders: { top: none(), bottom: none(), left: none(), right: none() },
-        margins: { top: 60, bottom: 60, left: 80, right: 0 },
-        children: [new Paragraph({
-          children: [run('THIS MONTH', { size: 14, bold: true, color: C.LGRAY })],
-          alignment: AlignmentType.RIGHT,
-          spacing: { before: 0, after: 0 },
-        })],
-      }),
-    ]})],
-  });
-};
+// Coloured accent bar + bold dark title + THIS MONTH badge — matches v11 PDF.
+// This used to be a Table (a coloured-square cell + title cell + badge cell),
+// with `keepNext` set on the title cell's own paragraph. That keepNext was a
+// no-op for our purposes: Word only chains "keep with next" between sibling
+// paragraphs, so a paragraph nested inside a table cell can't pull the WHOLE
+// TABLE forward to stay with whatever follows it in the document body —
+// confirmed by an isolated repro where the header+rule were left orphaned at
+// the page foot while the section's content jumped to the next page alone.
+// A single top-level paragraph *can* chain via keepNext, so the coloured
+// square is now a left-border accent (same visual effect) on one paragraph
+// that also carries the title and the right-aligned badge via a tab stop.
+const sectionHeader = (title, color) => new Paragraph({
+  tabStops: [{ type: TabStopType.RIGHT, position: PW }],
+  border: { left: bdr(color, 64), top: none(), bottom: none(), right: none() },
+  indent: { left: 200 },
+  spacing: { before: 40, after: 40 },
+  keepNext: true,
+  children: [
+    run(title, { size: 32, bold: true, color: C.DARK }),
+    run('\tTHIS MONTH', { size: 14, bold: true, color: C.LGRAY }),
+  ],
+});
 const sectionHeaderBlock = (title, color) => [
   new Paragraph({ children: [], spacing: { before: 400, after: 0 } }),
   sectionHeader(title, color),
@@ -85,6 +67,7 @@ const sectionHeaderBlock = (title, color) => [
     children: [],
     border: { top: none(), bottom: bdr(C.BORDER, 4), left: none(), right: none() },
     spacing: { before: 60, after: 120 },
+    keepNext: true,
   }),
 ];
 
