@@ -1017,7 +1017,7 @@ function buildReport() {
     html += rptKpi((u.externalSignIns||{}).total||0, 'Overseas sign-ins (30d)', ((u.externalSignIns||{}).total||0)>0?'warn':'good');
     html += '</div>';
     if ((u.notSignedIn90Licensed||0) > 0) {
-      html += callout('<strong>'+(u.notSignedIn90Licensed)+'M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</strong> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn');
+      html += callout('<strong>'+(u.notSignedIn90Licensed)+' M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</strong> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn');
       if ((u.notSignedIn90LicensedList||[]).length > 0) {
         html += '<div class="rpt-sub">M365 licensed users - not signed in 90+ days</div>';
         html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Days inactive</th></tr></thead><tbody>';

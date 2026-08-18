@@ -3,7 +3,7 @@
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, BorderStyle, WidthType, ShadingType,
-  LevelFormat, Header, Footer, PageNumber, ImageRun,
+  LevelFormat, Footer, PageNumber, ImageRun,
 } = require("docx");
 
 // ── Brand colours ────────────────────────────────────────────────────────────
@@ -335,7 +335,11 @@ exports.handler = async (event) => {
       children.push(para([run(`Monthly IT Report - ${client}`, { size: 52, bold: true, color: C.BLUE })], { after: 80 }));
       children.push(para([run(`${fmt(from)} - ${fmt(to)}  ·  Prepared: ${today}${preparer ? " · " + preparer : ""}`, { size: 20, color: C.GRAY })], { after: 200 }));
     }
-    children.push(spacer(200));
+    // No extra spacer here -- sectionHeaderBlock() (used by every section
+    // below, including Executive Summary/Device & Asset Management) already
+    // adds its own 400-twip leading gap, and the cover table above already
+    // has its own bottom margin. Stacking a third gap on top produced a
+    // visibly oversized blank band between the cover and the first section.
 
     // ── Executive Summary ────────────────────────────────────────────────────
     if (manual.overview || manual.highlights || manual.concerns || manual.projects) {
@@ -797,13 +801,10 @@ exports.handler = async (event) => {
       },
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } } },
-        headers: { default: new Header({ children: [new Paragraph({
-          children: hasHeader
-            ? [new ImageRun({ data: headerLogo, transformation: { width: 93, height: 24 }, type: "png" }), run(`    Monthly IT Report  ·  ${client}`, { size: 17, color: C.GRAY })]
-            : [run(`Monthly IT Report  ·  ${client}`, { size: 17, bold: true, color: C.BLUE })],
-          border: { bottom: bdr(C.BORDER, 4), top: none(), left: none(), right: none() },
-          spacing: { after: 0 },
-        })] }) },
+        // No running page header -- the cover page already carries the logo
+        // and "Monthly IT Report · client" text, so repeating it as a
+        // running header on every page (including the cover itself) was
+        // redundant clutter.
         footers: { default: new Footer({ children: [new Paragraph({
           children: [run("Integricity Technology  ·  Confidential    ", { size: 16, color: C.LGRAY }), new TextRun({ children: [PageNumber.CURRENT], font: "Arial", size: 16, color: C.LGRAY })],
           alignment: AlignmentType.CENTER,
