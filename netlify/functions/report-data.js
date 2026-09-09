@@ -11,6 +11,7 @@
 // fallback if omitted).
 
 const { findClient } = require('./lib/clients-store');
+const { requireReportHubKey } = require('./lib/require-report-hub-key');
 const intuneHandler = require('./intune').handler;
 
 const CORS = {
@@ -19,6 +20,9 @@ const CORS = {
 };
 
 exports.handler = async (event) => {
+  const denied = requireReportHubKey(event);
+  if (denied) return { ...denied, headers: { ...CORS, ...denied.headers } };
+
   const q = event.queryStringParameters || {};
   const id = q.clientId;
   if (!id) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: 'clientId is required' }) };

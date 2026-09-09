@@ -7,13 +7,17 @@
 // unaffected and doesn't require a client to be listed here at all.
 
 const { publicClientList } = require('./lib/clients-store');
+const { requireReportHubKey } = require('./lib/require-report-hub-key');
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Content-Type': 'application/json',
 };
 
-exports.handler = async () => {
+exports.handler = async (event) => {
+  const denied = requireReportHubKey(event);
+  if (denied) return { ...denied, headers: { ...CORS, ...denied.headers } };
+
   try {
     return { statusCode: 200, headers: CORS, body: JSON.stringify({ clients: publicClientList() }) };
   } catch (err) {
