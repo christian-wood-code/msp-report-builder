@@ -227,7 +227,23 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   doc.text(new Date(from).toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' }), M, 96);
   doc.setFontSize(9);
   doc.text(`Account manager: ${preparer || 'Integricity Technology'}    Generated: ${today}`, M, 110);
-  y = BANDH + 26;
+  y = BANDH + 22;
+
+  // Disclaimer -- sits directly under the cover band on every report so a
+  // reader (client or prospect) sees it before anything else. See
+  // msp-report-builder's docs for the full-length version shown to
+  // prospects before they submit credentials.
+  const disclaimerText = 'This report is a point-in-time, automated summary generated from data available via '
+    + 'Microsoft Graph at the time of generation. It is provided as an informational snapshot to support your own '
+    + 'evaluation and is not a comprehensive security audit, a compliance certification, or a guarantee of your '
+    + "organisation's security posture. Integricity Technology accepts no liability for decisions made on the basis "
+    + 'of this report. For a full assessment and remediation plan, contact us to discuss an engagement.';
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); setText(C.lgray);
+  const discLines = doc.splitTextToSize(disclaimerText, CW);
+  doc.text(discLines, M, y);
+  y += discLines.length * 9 + 14;
+  setDraw(C.border); doc.setLineWidth(0.7); doc.line(M, y - 6, PW - M, y - 6);
+  y += 6;
 
   // ══════════════════════════ Executive Summary ═══════════════════════════
   if (manual.overview || manual.highlights || manual.concerns || manual.projects) {
