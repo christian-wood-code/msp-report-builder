@@ -312,7 +312,7 @@ exports.handler = async (event) => {
 
     const [
       devR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
-      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, m365GroupsR, secGroupsR,
+      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, m365GroupsR, secGroupsR, subsR,
     ] = await Promise.all([
       withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
@@ -331,6 +331,10 @@ exports.handler = async (event) => {
       withTimeout(graphAll(token, "/roleManagement/directory/roleDefinitions?$select=id,displayName&$top=200"), FAST, emptyAll),
       withTimeout(graphOne(token, "/groups?$filter=groupTypes/any(c:c+eq+'Unified')&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
       withTimeout(graphOne(token, "/groups?$filter=securityEnabled+eq+true+and+mailEnabled+eq+false&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
+      // Commercial subscriptions (not the same as /subscribedSkus) -- used only
+      // for upcoming renewal dates via nextLifecycleDateTime. Same
+      // Organization.Read.All permission as the licence-count call above.
+      withTimeout(graphAll(token, "/directory/subscriptions"), FAST, emptyAll),
     ]);
 
     // ── Sign-in query — maximally optimised ──────────────────────────────────
@@ -588,6 +592,29 @@ exports.handler = async (event) => {
         .map(([name, count]) => ({ name, count, available: 0 }));
     }
 
+    // ── Upcoming licence renewals ────────────────────────────────────────────
+    // /directory/subscriptions (companySubscription) is a different resource
+    // from /subscribedSkus above -- it carries nextLifecycleDateTime, the date
+    // a subscription moves to its next state if not renewed. That field alone
+    // doesn't distinguish monthly vs annual billing (no such field exists on
+    // this resource), but a monthly-billed subscription's next lifecycle date
+    // is always <=~31 days away by definition. Excluding anything within 35
+    // days filters those out, leaving annual (or longer) commitments; the
+    // upper 90-day bound is the heads-up window the report gives clients.
+    const licenceRenewals = (subsR.results || [])
+      .filter(s => s.nextLifecycleDateTime && s.status === "Enabled" && !s.isTrial)
+      .map(s => {
+        const daysAway = Math.round((new Date(s.nextLifecycleDateTime).getTime() - now_ms) / MS_DAY);
+        return {
+          name: skuNames[s.skuId] || s.skuPartNumber || "Unknown licence",
+          seats: s.totalLicenses || 0,
+          renewalDate: s.nextLifecycleDateTime,
+          daysAway,
+        };
+      })
+      .filter(r => r.daysAway > 35 && r.daysAway <= 90)
+      .sort((a, b) => a.daysAway - b.daysAway);
+
     // ── Admin roles ───────────────────────────────────────────────────────────
     const roleDefMap = {};
     for (const rd of roleDefsR.results) { if (rd.id) roleDefMap[rd.id] = rd.displayName || rd.id; }
@@ -772,6 +799,7 @@ exports.handler = async (event) => {
         notSignedIn90Guest: notSignedIn90Guest.length,
         notSignedIn90GuestList: notSignedIn90Guest.slice(0, 50),
         licenceSummary,
+        licenceRenewals,
         adminRoles: adminRoleMembers,
         externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: signInsRFinal.error === "timeout", windowDays: signInWindow },
       },

@@ -631,6 +631,33 @@ exports.handler = async (event) => {
         children.push(spacer(140));
       }
 
+      // Upcoming licence renewals
+      if ((u.licenceRenewals||[]).length > 0) {
+        children.push(subLabel("Upcoming licence renewals (next 90 days)"));
+        children.push(callout(`${u.licenceRenewals.length} licence subscription${u.licenceRenewals.length>1?"s are":" is"} due for annual renewal within 90 days. Monthly-billed subscriptions are excluded from this list.`, "info"));
+        children.push(spacer(140));
+        const rCols = [Math.floor(PW*0.4), Math.floor(PW*0.15), Math.floor(PW*0.25), Math.floor(PW*0.2)];
+        children.push(new Table({ width:{size:PW,type:WidthType.DXA}, columnWidths:rCols, rows:[
+          new TableRow({children:[
+            cell(para([run("Licence",{size:18,bold:true,color:C.WHITE})]),{width:rCols[0],bg:C.DARK,borders:allB(C.DARK)}),
+            cell(para([run("Seats",{size:18,bold:true,color:C.WHITE})]),{width:rCols[1],bg:C.DARK,borders:allB(C.DARK)}),
+            cell(para([run("Renewal date",{size:18,bold:true,color:C.WHITE})]),{width:rCols[2],bg:C.DARK,borders:allB(C.DARK)}),
+            cell(para([run("Days away",{size:18,bold:true,color:C.WHITE})]),{width:rCols[3],bg:C.DARK,borders:allB(C.DARK)}),
+          ]}),
+          ...u.licenceRenewals.map((r,i) => {
+            const bg = i%2===0?C.BGRAY2:C.WHITE;
+            const rd = r.renewalDate ? new Date(r.renewalDate).toLocaleDateString("en-NZ") : "";
+            return new TableRow({children:[
+              cell(para([run(r.name||"",{size:18})]),{width:rCols[0],bg,borders:allB(C.BORDER)}),
+              cell(para([run(String(r.seats ?? ""),{size:17,color:C.GRAY})]),{width:rCols[1],bg,borders:allB(C.BORDER)}),
+              cell(para([run(rd,{size:17,color:C.GRAY})]),{width:rCols[2],bg,borders:allB(C.BORDER)}),
+              cell(para([run(String(r.daysAway ?? ""),{size:17,color:C.GRAY})]),{width:rCols[3],bg,borders:allB(C.BORDER)}),
+            ]});
+          }),
+        ]}));
+        children.push(spacer(140));
+      }
+
       // Admin roles
       if ((u.adminRoles||[]).length > 0) {
         children.push(subLabel("Users with admin (privileged) roles"));

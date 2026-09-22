@@ -408,6 +408,13 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
       }
     }
     if ((u.licenceSummary || []).length) { subLabel('Licence assignment'); licenceCards(u.licenceSummary); }
+    if ((u.licenceRenewals || []).length) {
+      subLabel('Upcoming licence renewals (next 90 days)');
+      callout(`${u.licenceRenewals.length} licence subscription${u.licenceRenewals.length > 1 ? 's are' : ' is'} due for annual renewal within 90 days. Monthly-billed subscriptions are excluded from this list.`, 'info');
+      dataTable(['Licence', 'Seats', 'Renewal date', 'Days away'], u.licenceRenewals.map(r => [
+        r.name || '', String(r.seats ?? ''), fmtDate(r.renewalDate), String(r.daysAway ?? ''),
+      ]));
+    }
     if ((u.adminRoles || []).length) {
       subLabel('Users with admin (privileged) roles');
       dataTable(['User', 'Roles'], u.adminRoles.map(a => [`${a.name || ''}\n${a.upn || ''}`, (a.roles || [a.role]).join('\n')]));
