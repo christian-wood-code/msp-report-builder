@@ -688,6 +688,18 @@ function renderPreview() {
       });
       uDetail += '</div>';
     }
+    uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Upcoming licence renewals (next 90 days)</div>';
+    if (u.licenceRenewalsError) {
+      uDetail += '<div style="font-size:12px;color:var(--text-warning);margin-bottom:10px;">Licence renewal data unavailable - check that Organization.Read.All permission is granted.</div>';
+    } else if ((u.licenceRenewals||[]).length > 0) {
+      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Licence</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Seats</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Billing</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Renewal date</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Days away</th></tr>';
+      u.licenceRenewals.forEach(function(r) {
+        uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.name+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.seats+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.cycle+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(r.renewalDate?new Date(r.renewalDate).toLocaleDateString('en-NZ'):'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.daysAway+'</td></tr>';
+      });
+      uDetail += '</table>';
+    } else {
+      uDetail += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">No annual licence renewals due in the next 90 days.</div>';
+    }
     if ((u.adminRoles||[]).length > 0) {
       uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Admin role holders</div>';
       uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Name</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Roles</th></tr>';
@@ -1085,6 +1097,19 @@ function buildReport() {
         html += '</div>';
       });
       html += '</div>';
+    }
+    html += '<div class="rpt-sub">Upcoming licence renewals (next 90 days)</div>';
+    if (u.licenceRenewalsError) {
+      html += callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
+    } else if ((u.licenceRenewals||[]).length > 0) {
+      html += callout('<strong>'+u.licenceRenewals.length+' licence subscription'+(u.licenceRenewals.length>1?'s are':' is')+'</strong> due for renewal within 90 days. Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.', 'info');
+      html += '<table class="rpt-policy-table"><thead><tr><th>Licence</th><th>Seats</th><th>Billing</th><th>Renewal date</th><th>Days away</th></tr></thead><tbody>';
+      u.licenceRenewals.forEach(function(r) {
+        html += '<tr><td>'+esc(r.name||'')+'</td><td>'+(r.seats||0)+'</td><td>'+esc(r.cycle||'')+'</td><td>'+(r.renewalDate?new Date(r.renewalDate).toLocaleDateString('en-NZ'):'')+'</td><td>'+(r.daysAway!=null?r.daysAway:'')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      html += callout('No annual licence renewals due in the next 90 days.', 'good');
     }
     if ((u.adminRoles||[]).length > 0) {
       html += '<div class="rpt-sub">Users with admin (privileged) roles</div>';
