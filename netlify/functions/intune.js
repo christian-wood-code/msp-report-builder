@@ -598,9 +598,9 @@ exports.handler = async (event) => {
     // a subscription moves to its next state if not renewed. That field alone
     // doesn't distinguish monthly vs annual billing (no such field exists on
     // this resource), but a monthly-billed subscription's next lifecycle date
-    // is always <=~31 days away by definition. Excluding anything within 35
-    // days filters those out, leaving annual (or longer) commitments; the
-    // upper 90-day bound is the heads-up window the report gives clients.
+    // is always <=~31 days away by definition, so that gap is used purely to
+    // LABEL each row "Monthly" vs "Annual/Multi-year" for the reader -- both
+    // are now included, not just annual, per client request.
     //
     // Note: Microsoft creates a NEW subscription record each renewal and
     // leaves the prior one behind as status "Suspended"/"LockedOut" with a
@@ -617,9 +617,10 @@ exports.handler = async (event) => {
           seats: s.totalLicenses || 0,
           renewalDate: s.nextLifecycleDateTime,
           daysAway,
+          cycle: daysAway <= 35 ? "Monthly" : "Annual/Multi-year",
         };
       })
-      .filter(r => r.daysAway > 35 && r.daysAway <= 90)
+      .filter(r => r.daysAway >= 0 && r.daysAway <= 90)
       .sort((a, b) => a.daysAway - b.daysAway);
 
     // ── Admin roles ───────────────────────────────────────────────────────────

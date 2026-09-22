@@ -412,9 +412,9 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     if (u.licenceRenewalsError) {
       callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
     } else if ((u.licenceRenewals || []).length) {
-      callout(`${u.licenceRenewals.length} licence subscription${u.licenceRenewals.length > 1 ? 's are' : ' is'} due for annual renewal within 90 days. Monthly-billed subscriptions are excluded from this list.`, 'info');
-      dataTable(['Licence', 'Seats', 'Renewal date', 'Days away'], u.licenceRenewals.map(r => [
-        r.name || '', String(r.seats ?? ''), fmtDate(r.renewalDate), String(r.daysAway ?? ''),
+      callout(`${u.licenceRenewals.length} licence subscription${u.licenceRenewals.length > 1 ? 's are' : ' is'} due for renewal within 90 days. Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.`, 'info');
+      dataTable(['Licence', 'Seats', 'Billing', 'Renewal date', 'Days away'], u.licenceRenewals.map(r => [
+        r.name || '', String(r.seats ?? ''), r.cycle || '', fmtDate(r.renewalDate), String(r.daysAway ?? ''),
       ]));
     } else {
       callout('No annual licence renewals due in the next 90 days.', 'good');
