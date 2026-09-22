@@ -601,6 +601,13 @@ exports.handler = async (event) => {
     // is always <=~31 days away by definition. Excluding anything within 35
     // days filters those out, leaving annual (or longer) commitments; the
     // upper 90-day bound is the heads-up window the report gives clients.
+    //
+    // Note: Microsoft creates a NEW subscription record each renewal and
+    // leaves the prior one behind as status "Suspended"/"LockedOut" with a
+    // stale nextLifecycleDateTime, rather than updating one record in place
+    // -- filtering to status "Enabled" is what keeps this to the live,
+    // still-current subscription per SKU, not a superseded leftover.
+    const licenceRenewalsError = subsR.error === "timeout" ? "timeout" : null;
     const licenceRenewals = (subsR.results || [])
       .filter(s => s.nextLifecycleDateTime && s.status === "Enabled" && !s.isTrial)
       .map(s => {
@@ -800,6 +807,7 @@ exports.handler = async (event) => {
         notSignedIn90GuestList: notSignedIn90Guest.slice(0, 50),
         licenceSummary,
         licenceRenewals,
+        licenceRenewalsError,
         adminRoles: adminRoleMembers,
         externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: signInsRFinal.error === "timeout", windowDays: signInWindow },
       },
