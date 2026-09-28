@@ -827,6 +827,17 @@ function buildReport() {
     html += '</div>';
   }
 
+  // Month-on-Month Changes -- deterministic, template-based commentary (see
+  // lib/metrics-commentary.js), omitted entirely when null (no prior period
+  // on file for this tenant, or the archive lookup failed/timed out).
+  if ((d.commentary||[]).length > 0) {
+    html += '<div class="rpt-section">';
+    html += secHeader('Month-on-Month Changes', '#E06400');
+    html += '<p class="rpt-body">Notable changes since last month\'s report, based on the summary metrics from each run.</p>';
+    d.commentary.forEach(function(line) { html += callout(esc(line), 'info'); });
+    html += '</div>';
+  }
+
   // Devices
   html += '<div class="rpt-section">';
   html += secHeader('Device & Asset Management', '#0D7CC4');

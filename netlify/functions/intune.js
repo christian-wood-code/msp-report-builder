@@ -780,7 +780,7 @@ exports.handler = async (event) => {
 
     const scoreRaw = scoreR.data?.value?.[0] ?? null;
 
-    return respond(200, {
+    const report = {
       total: devR.results.length,
       comp, staleCount, lowDisk, mobileCount, iosCount, androidCount, win10, win11, win24h2, win25h2, macOS, linux,
       encryption, notEncryptedList, notCompliantList, patchStatus, patchOver90: patchOver90Devices, // full list — no cap
@@ -825,7 +825,28 @@ exports.handler = async (event) => {
         error: spUsageR.error || spStorageR.error || null,
       },
       risks,
-    });
+    };
+
+    // ── Month-on-month commentary ────────────────────────────────────────────
+    // Reads/writes a small metrics-only snapshot (see lib/metrics-commentary.js)
+    // to Integricity's own SharePoint (a separate Graph identity from this
+    // tenant's, see lib/report-archive.js) so the report can note what changed
+    // since last month. Soft-fail throughout: any problem here (env vars not
+    // configured yet, an outage, a permission lapse) leaves report.commentary
+    // as null rather than breaking report generation.
+    try {
+      const { snapshot, buildCommentary } = require("./lib/metrics-commentary");
+      const { getLastMetrics, saveMetrics, prevPeriod } = require("./lib/report-archive");
+      const reportPeriod = (reportTo ? new Date(reportTo) : new Date(now_ms)).toISOString().slice(0, 7); // "YYYY-MM"
+      const currentMetrics = snapshot(report);
+      const prevMetrics = await getLastMetrics(tenantId, prevPeriod(reportPeriod));
+      report.commentary = buildCommentary(currentMetrics, prevMetrics);
+      await saveMetrics(tenantId, reportPeriod, currentMetrics);
+    } catch (e) {
+      report.commentary = null;
+    }
+
+    return respond(200, report);
   } catch (e) {
     return respond(500, { error: "Internal error: " + e.message });
   }

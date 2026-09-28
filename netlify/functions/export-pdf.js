@@ -256,6 +256,16 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     if (manual.projects) callout('Projects: ' + manual.projects, 'info');
   }
 
+  // ══════════════════════ Month-on-Month Changes ═══════════════════════════
+  // Deterministic, template-based commentary (see lib/metrics-commentary.js)
+  // -- omitted entirely when null (no prior period on file for this tenant,
+  // or the archive lookup failed/timed out), never shown empty.
+  if (d.commentary && d.commentary.length) {
+    sectionHeader('Month-on-Month Changes', C.orange,
+      "Notable changes since last month's report, based on the summary metrics from each run.");
+    d.commentary.forEach(line => callout(line, 'info'));
+  }
+
   // ══════════════════════════ Device & Asset Management ═══════════════════
   sectionHeader('Device & Asset Management', C.blue,
     'Summary of managed devices enrolled in Microsoft Intune, including compliance status, operating system breakdown, and device health indicators.');

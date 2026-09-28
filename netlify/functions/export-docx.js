@@ -333,6 +333,16 @@ exports.handler = async (event) => {
       if (manual.projects)   { children.push(callout("Projects: "   + manual.projects,   "info")); children.push(spacer(140)); }
     }
 
+    // ── Month-on-Month Changes ────────────────────────────────────────────────
+    // Deterministic, template-based commentary (see lib/metrics-commentary.js)
+    // -- omitted entirely when null (no prior period on file for this tenant,
+    // or the archive lookup failed/timed out), never shown empty.
+    if (d.commentary && d.commentary.length) {
+      children.push(...sectionHeaderBlock("Month-on-Month Changes", C.ORANGE));
+      children.push(para([run("Notable changes since last month's report, based on the summary metrics from each run.", {size:19,color:"374151"})], {after:120}));
+      d.commentary.forEach(line => { children.push(callout(line, "info")); children.push(spacer(140)); });
+    }
+
     // ── Devices ──────────────────────────────────────────────────────────────
     children.push(...sectionHeaderBlock("Device & Asset Management", C.BLUE));
     children.push(para([run("Summary of managed devices enrolled in Microsoft Intune, including compliance status, operating system breakdown, and device health indicators.", {size:19,color:"374151"})], {after:120}));
