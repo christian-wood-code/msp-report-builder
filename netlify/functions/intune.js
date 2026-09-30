@@ -278,7 +278,12 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return respond(400, { error: "Invalid JSON" }); }
 
-  const { tenantId, clientId, clientSecret, reportFrom, reportTo } = body;
+  const { tenantId, clientId, clientSecret, reportFrom, reportTo, retainMetrics } = body;
+  // Default true (existing clients / report-hub calls that don't send this
+  // field keep today's behaviour). false = one-off engagement: don't save
+  // this run's metrics, and wipe any prior history for this tenant too --
+  // see the "Month-on-month commentary" block near the end of this handler.
+  const shouldRetainMetrics = retainMetrics !== false;
   if (!tenantId || !clientId || !clientSecret) return respond(400, { error: "Missing credentials" });
   if (!GUID_RE.test(tenantId) || !GUID_RE.test(clientId)) return respond(400, { error: "Invalid credential format" });
   if (typeof clientSecret !== "string" || clientSecret.length < 8 || clientSecret.length > 256) return respond(400, { error: "Invalid credential format" });
@@ -829,19 +834,26 @@ exports.handler = async (event) => {
 
     // ── Month-on-month commentary ────────────────────────────────────────────
     // Reads/writes a small metrics-only snapshot (see lib/metrics-commentary.js)
-    // to Integricity's own SharePoint (a separate Graph identity from this
-    // tenant's, see lib/report-archive.js) so the report can note what changed
-    // since last month. Soft-fail throughout: any problem here (env vars not
-    // configured yet, an outage, a permission lapse) leaves report.commentary
-    // as null rather than breaking report generation.
+    // to Netlify Blobs, scoped to this site -- no separate credentials, see
+    // lib/report-archive.js -- so the report can note what changed since last
+    // month. Soft-fail throughout: any problem here (an outage, a bad key)
+    // leaves report.commentary as null rather than breaking report generation.
     try {
       const { snapshot, buildCommentary } = require("./lib/metrics-commentary");
-      const { getLastMetrics, saveMetrics, prevPeriod } = require("./lib/report-archive");
-      const reportPeriod = (reportTo ? new Date(reportTo) : new Date(now_ms)).toISOString().slice(0, 7); // "YYYY-MM"
-      const currentMetrics = snapshot(report);
-      const prevMetrics = await getLastMetrics(tenantId, prevPeriod(reportPeriod));
-      report.commentary = buildCommentary(currentMetrics, prevMetrics);
-      await saveMetrics(tenantId, reportPeriod, currentMetrics);
+      const { getLastMetrics, saveMetrics, deleteAllMetrics, prevPeriod } = require("./lib/report-archive");
+      if (!shouldRetainMetrics) {
+        // One-off engagement: don't save this run, and wipe any history that
+        // may already exist for this tenant from an earlier run -- ticking
+        // this box means "get rid of everything", not just "don't add more".
+        report.commentary = null;
+        await deleteAllMetrics(tenantId);
+      } else {
+        const reportPeriod = (reportTo ? new Date(reportTo) : new Date(now_ms)).toISOString().slice(0, 7); // "YYYY-MM"
+        const currentMetrics = snapshot(report);
+        const prevMetrics = await getLastMetrics(tenantId, prevPeriod(reportPeriod));
+        report.commentary = buildCommentary(currentMetrics, prevMetrics);
+        await saveMetrics(tenantId, reportPeriod, currentMetrics);
+      }
     } catch (e) {
       report.commentary = null;
     }

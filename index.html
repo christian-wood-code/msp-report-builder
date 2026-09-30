@@ -313,6 +313,12 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
         <label for="r-preparer">Prepared by</label>
         <input type="text" id="r-preparer" placeholder="e.g. Sarah Jones, Account Manager" />
       </div>
+      <div class="field" style="display:flex;align-items:flex-start;gap:8px;">
+        <input type="checkbox" id="r-oneoff" style="margin-top:3px;" />
+        <label for="r-oneoff" style="font-weight:normal;">
+          One-off report - don't save this run's summary metrics for month-on-month comparisons, and delete any previously stored metrics for this tenant
+        </label>
+      </div>
       <div class="action-row">
         <button onclick="showPage(1)">← Back</button>
         <button class="primary" id="fetch-btn" onclick="fetchData()">↻ Pull Intune data</button>
@@ -525,7 +531,7 @@ async function fetchData() {
       credentials: 'omit',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId: cred.tenantId, clientId: cred.clientId, clientSecret: cred.secret, reportFrom: document.getElementById('r-from').value, reportTo: document.getElementById('r-to').value }),
+      body: JSON.stringify({ tenantId: cred.tenantId, clientId: cred.clientId, clientSecret: cred.secret, reportFrom: document.getElementById('r-from').value, reportTo: document.getElementById('r-to').value, retainMetrics: !document.getElementById('r-oneoff').checked }),
     });
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);

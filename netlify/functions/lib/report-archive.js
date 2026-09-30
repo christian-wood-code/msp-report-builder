@@ -1,56 +1,35 @@
 "use strict";
 
-// Talks to Integricity's OWN SharePoint (a separate Graph identity from the
-// client's tenant -- an app registration in Integricity's tenant, scoped to
-// exactly one site via Sites.Selected) to store/retrieve small,
-// metrics-only snapshots for month-on-month trend commentary. Every
-// exported function is soft-fail by design: a problem here (missing env
-// vars, an outage, a permission lapse) must never break report generation,
-// only silently skip commentary for that run. See
+// Stores/retrieves small, metrics-only snapshots (see lib/metrics-commentary.js)
+// for month-on-month trend commentary, using Netlify Blobs -- scoped
+// automatically to this site by the Functions runtime, no separate
+// credentials to create, store, or rotate (unlike the SharePoint-based
+// design this replaced: no app registration, no client secret, no external
+// write-capable identity to leak). Blobs are encrypted at rest and in
+// transit, and reachable only through this site. See
 // docs/IT_Health_Snapshot_Data_Access_Authorization.pdf for what this
-// stores and why, and the Architecture doc for the full setup steps.
+// stores and why.
 //
-// Retention: rolling 13 months per tenant -- enough for one full
-// year-over-year comparison plus a spare month. Pruning runs best-effort
-// after each successful save; a failed prune never fails the save itself.
+// Every exported function is soft-fail by design: a problem here (an
+// outage, a bad key, anything) must never break report generation, only
+// silently skip commentary for that run.
+//
+// Keys: "{tenantId}/{yyyy-mm}" -- tenantId is the client's own Entra
+// directory ID (always present on every report call, wizard or report-hub,
+// so this works for any repeat run without needing our internal
+// clients-store.js identifiers). Retention: rolling 13 months per tenant,
+// pruned best-effort after each successful save.
 
-const ARCHIVE_TIMEOUT_MS = 5000;
+const { getStore } = require("@netlify/blobs");
 
-function withTimeout(promise, ms, fallback) {
-  return Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
+const STORE_NAME = "msp-report-metrics";
+const RETENTION_MONTHS = 13;
+
+function store() {
+  return getStore(STORE_NAME);
 }
 
-let cachedToken = null, cachedTokenExp = 0;
-
-async function getArchiveToken() {
-  const now = Date.now();
-  if (cachedToken && now < cachedTokenExp - 60000) return cachedToken;
-  const tenantId = process.env.ARCHIVE_TENANT_ID;
-  const clientId = process.env.ARCHIVE_CLIENT_ID;
-  const clientSecret = process.env.ARCHIVE_CLIENT_SECRET;
-  if (!tenantId || !clientId || !clientSecret) throw new Error("Archive credentials not configured");
-  const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret,
-      scope: "https://graph.microsoft.com/.default",
-    }),
-  });
-  const d = await res.json();
-  if (d.error) throw new Error(d.error_description || d.error);
-  cachedToken = d.access_token;
-  cachedTokenExp = now + (d.expires_in || 3600) * 1000;
-  return cachedToken;
-}
-
-function fileName(period) { return `${period}-metrics.json`; } // period = "YYYY-MM"
-
-function driveBase() {
-  const siteId = process.env.ARCHIVE_SITE_ID, driveId = process.env.ARCHIVE_DRIVE_ID;
-  if (!siteId || !driveId) return null;
-  return `https://graph.microsoft.com/v1.0/sites/${siteId}/drives/${driveId}`;
-}
+function key(tenantId, period) { return `${tenantId}/${period}`; } // period = "YYYY-MM"
 
 // Returns the prior calendar-month key for a "YYYY-MM" period string.
 function prevPeriod(period) {
@@ -60,58 +39,50 @@ function prevPeriod(period) {
 }
 
 async function getLastMetrics(tenantId, period) {
-  const base = driveBase();
-  if (!base || !tenantId) return null;
+  if (!tenantId) return null;
   try {
-    const run = (async () => {
-      const token = await getArchiveToken();
-      const path = `/${tenantId}/${fileName(period)}`;
-      const res = await fetch(`${base}/root:${path}:/content`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.status === 404) return null;
-      if (!res.ok) return null;
-      return await res.json();
-    })();
-    return await withTimeout(run, ARCHIVE_TIMEOUT_MS, null);
+    return await store().get(key(tenantId, period), { type: "json" });
   } catch (e) {
     return null; // soft-fail -- no prior period available, commentary is just omitted
   }
 }
 
 async function saveMetrics(tenantId, period, metrics) {
-  const base = driveBase();
-  if (!base || !tenantId) return false;
+  if (!tenantId) return false;
   try {
-    const run = (async () => {
-      const token = await getArchiveToken();
-      const path = `/${tenantId}/${fileName(period)}`;
-      const res = await fetch(`${base}/root:${path}:/content`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(metrics),
-      });
-      if (res.ok) pruneOldMetrics(tenantId, base, token).catch(() => {}); // best-effort, not awaited past this
-      return res.ok;
-    })();
-    return await withTimeout(run, ARCHIVE_TIMEOUT_MS, false);
+    await store().setJSON(key(tenantId, period), metrics);
+    pruneOldMetrics(tenantId).catch(() => {}); // best-effort, not awaited past this
+    return true;
   } catch (e) {
     return false;
   }
 }
 
-async function pruneOldMetrics(tenantId, base, token) {
-  const res = await fetch(`${base}/root:/${tenantId}:/children`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) return;
-  const d = await res.json();
+async function pruneOldMetrics(tenantId) {
+  const { blobs } = await store().list({ prefix: `${tenantId}/` });
   const cutoff = new Date();
-  cutoff.setUTCMonth(cutoff.getUTCMonth() - 13);
-  for (const item of (d.value || [])) {
-    const m = /^(\d{4})-(\d{2})-metrics\.json$/.exec(item.name || "");
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - RETENTION_MONTHS);
+  for (const b of blobs) {
+    const m = /\/(\d{4})-(\d{2})$/.exec(b.key);
     if (!m) continue;
     const fileDate = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1));
-    if (fileDate < cutoff) {
-      await fetch(`${base}/items/${item.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
-    }
+    if (fileDate < cutoff) await store().delete(b.key).catch(() => {});
   }
 }
 
-module.exports = { getLastMetrics, saveMetrics, prevPeriod };
+// Deletes every stored snapshot for a tenant -- used both for the "one-off,
+// don't retain" wizard option (delete anything from before too, not just
+// skip saving this run) and for the standalone admin deletion endpoint.
+// Returns the number of entries deleted.
+async function deleteAllMetrics(tenantId) {
+  if (!tenantId) return 0;
+  try {
+    const { blobs } = await store().list({ prefix: `${tenantId}/` });
+    for (const b of blobs) await store().delete(b.key).catch(() => {});
+    return blobs.length;
+  } catch (e) {
+    return 0;
+  }
+}
+
+module.exports = { getLastMetrics, saveMetrics, deleteAllMetrics, prevPeriod };
