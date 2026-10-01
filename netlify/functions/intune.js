@@ -726,19 +726,15 @@ exports.handler = async (event) => {
       // sites -- was silently falling into the Classic/Other bucket. Fixed
       // by matching on a prefix instead (see 2026-10 investigation).
       //
-      // "Total sites" (spSiteCount) only counts recognized Group/
-      // Communication sites -- classic/other-template sites are tracked
-      // (spClassicCount) but excluded from both the headline total and the
-      // report output, since that bucket is still an unreliable catch-all
-      // (it also absorbs any row whose template value doesn't match
-      // expectations at all, not just genuine legacy sites).
-      const siteGB = parseInt(row[storageUsedKey] || "0") / 1e9;
-      // Storage used follows the same inclusion rule as the site count --
-      // classic/other sites are excluded from the reported total, not just
-      // from the count, so the two figures stay consistent with each other.
-      if      (tl.startsWith("group"))       { spGroupCount++; spSiteCount++; spTotalUsedGB += siteGB; }
-      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) { spCommCount++; spSiteCount++; spTotalUsedGB += siteGB; }
+      // "Total sites" and "Storage used" include every site regardless of
+      // template type -- Classic/Other sites are shown as their own
+      // breakdown figure (spClassicCount) but still count toward both
+      // headline totals, same as Group/Communication sites.
+      spSiteCount++;
+      if      (tl.startsWith("group"))       spGroupCount++;
+      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) spCommCount++;
       else                           spClassicCount++;
+      spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
 
       const lastActivity = row[lastActivityKey] || null;
       // Only flag sites with a known last activity date older than 180 days.

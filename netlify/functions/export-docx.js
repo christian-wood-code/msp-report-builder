@@ -761,6 +761,7 @@ exports.handler = async (event) => {
           k(sp.siteCount||0,    "Total sites",         "info"),
           k(sp.groupCount||0,   "M365 Group sites",    "neu"),
           k(sp.commCount||0,    "Communication sites", "neu"),
+          k(sp.classicCount||0,       "Classic / other",  "neu"),
           ...((sp.m365GroupCount||0) > 0  ? [k(sp.m365GroupCount,  "M365 Groups",      "neu")] : []),
           ...((sp.securityGroupCount||0) > 0 ? [k(sp.securityGroupCount, "Security groups", "neu")] : []),
           k(`${sp.totalUsedGB||0} GB`, "Storage used",   "neu"),
