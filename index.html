@@ -1225,7 +1225,7 @@ function buildReport() {
     if (u.licenceRenewalsError) {
       html += callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
     } else if ((u.licenceRenewals||[]).length > 0) {
-      html += callout('<strong>'+u.licenceRenewals.length+' licence subscription'+(u.licenceRenewals.length>1?'s are':' is')+'</strong> due for renewal within 90 days. Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.', 'info');
+      html += callout('<div style="flex:0 0 240px;max-width:45%;padding-right:32px;font-weight:700;">'+u.licenceRenewals.length+' licence subscription'+(u.licenceRenewals.length>1?'s are':' is')+' due for renewal within 90 days.</div><div style="flex:1;">Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.</div>', 'info');
       html += '<table class="rpt-policy-table"><thead><tr><th>Licence</th><th>Seats</th><th>Billing</th><th>Renewal date</th><th>Days away</th></tr></thead><tbody>';
       u.licenceRenewals.forEach(function(r) {
         html += '<tr><td>'+esc(r.name||'')+'</td><td>'+(r.seats||0)+'</td><td>'+esc(r.cycle||'')+'</td><td>'+(r.renewalDate?new Date(r.renewalDate).toLocaleDateString('en-NZ'):'')+'</td><td>'+(r.daysAway!=null?r.daysAway:'')+'</td></tr>';
