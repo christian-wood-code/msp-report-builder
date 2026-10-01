@@ -33,9 +33,9 @@ called out explicitly near the end.
 | Functions directory | `netlify/functions` |
 | Publish directory | `.` (repo root — `index.html` sits at the top level) |
 | Build command | none — no build step |
-| Runtime dependency | `docx` (declared in `package.json`) |
+| Runtime dependencies | `docx`, `jspdf`, `jspdf-autotable`, `@netlify/blobs` (declared in `package.json`; `@netlify/blobs` is pinned to an exact version because a caret range on the newest patch once failed to resolve on Netlify and silently blocked two deploys) |
 | Scheduled functions | none in this project |
-| Env vars required | none — credentials are entered per-session by the user in the browser, not stored as Netlify env vars |
+| Env vars | none required for the browser wizard (credentials are entered in the browser, never stored as Netlify env vars). Optional/integration: `REPORT_HUB_SHARED_KEY` (auth for `clients` / `report-data`), `INTUNE_CLIENTS_JSON` (report-hub client credentials), `ARCHIVE_ADMIN_KEY` (enables `delete-client-metrics`). Netlify Blobs needs none |
 
 ## Step 1 — Get a GitHub token without `gh`
 
@@ -113,8 +113,7 @@ build of this project:
 
 ```bash
 npm install
-node --check netlify/functions/intune.js
-node --check netlify/functions/export-docx.js
+for f in netlify/functions/*.js netlify/functions/lib/*.js; do node --check "$f"; done
 netlify deploy --prod
 ```
 
@@ -201,16 +200,22 @@ Once everything above is done once, a future code change is just:
 ```bash
 cd /path/to/msp-report-builder-github
 npm install        # only needed if package.json changed
-node --check netlify/functions/intune.js
-node --check netlify/functions/export-docx.js
+for f in netlify/functions/*.js netlify/functions/lib/*.js; do node --check "$f"; done
 netlify deploy --prod
 ```
 
 Or, if Step 6 (Git link) was completed by the human:
 
 ```bash
-git add -A
+git status                     # look at what changed first
+git add <the files you changed>  # stage specific files, not `git add -A`, so stray local files never get committed
 git commit -m "Describe the change"
 git push
 # Netlify builds and deploys automatically — no netlify CLI needed at all
+```
+
+**A push is not proof of a deploy.** A failed build leaves the site serving the last good version, so confirm the new deploy reached `ready`:
+
+```bash
+netlify api listSiteDeploys --data '{"site_id":"<site id from netlify status>"}'   # newest entry: state "ready", commit_ref = your commit
 ```
