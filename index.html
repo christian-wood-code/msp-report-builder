@@ -92,8 +92,9 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .tenant-chip:hover{background:var(--bg-secondary);}
 .tenant-chip.selected{background:var(--bg-info);color:var(--text-info);border-color:rgba(55,138,221,0.4);}
 .tenant-chip.editing{border-color:var(--orange);box-shadow:0 0 0 2px rgba(241,158,30,0.25);}
-.tenant-chip .chip-edit{padding:2px 4px;margin-left:2px;border:none;background:transparent;font-size:13px;line-height:1;opacity:0.55;cursor:pointer;border-radius:3px;}
+.tenant-chip .chip-edit,.tenant-chip .chip-del{padding:2px 4px;margin-left:2px;border:none;background:transparent;font-size:13px;line-height:1;opacity:0.55;cursor:pointer;border-radius:3px;}
 .tenant-chip .chip-edit:hover,.tenant-chip .chip-edit:focus-visible{opacity:1;background:var(--bg-tertiary);}
+.tenant-chip .chip-del:hover,.tenant-chip .chip-del:focus-visible{opacity:1;background:var(--bg-danger);}
 .divider{display:flex;align-items:center;gap:12px;margin:1.25rem 0;}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 .divider span{font-size:12px;color:var(--text-tertiary);white-space:nowrap;}
@@ -268,10 +269,10 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
   <div class="page active" id="page-1">
     <div class="card">
       <div class="card-title">🏢 Client & connection</div>
-      <div class="card-sub">Select a saved client or add a new one. Credentials are stored for this session only.</div>
+      <div class="card-sub">Select a saved client or add a new one. Saved details, including the client secret, are kept in this browser on this device until you delete them (🗑️). The secret is never stored on Integricity's servers.</div>
       <div id="saved-section" style="display:none;margin-bottom:1.25rem;">
         <label>Saved clients</label>
-        <span class="hint">Click a client to select it and continue, or ✏️ to edit its details</span>
+        <span class="hint">Click a client to select it and continue, ✏️ to edit its details, or 🗑️ to delete it</span>
         <div id="saved-btns"></div>
         <div class="divider"><span>or add a new client below</span></div>
       </div>
@@ -493,8 +494,16 @@ function renderChips() {
     pen.title = 'Edit ' + c.name;
     pen.setAttribute('aria-label', 'Edit ' + c.name);
     pen.onclick = function(e) { e.stopPropagation(); editCred(c.name); };
+    var bin = document.createElement('button');
+    bin.type = 'button';
+    bin.className = 'chip-del';
+    bin.textContent = '🗑️';
+    bin.title = 'Delete ' + c.name;
+    bin.setAttribute('aria-label', 'Delete ' + c.name);
+    bin.onclick = function(e) { e.stopPropagation(); deleteCred(c.name); };
     el.appendChild(label);
     el.appendChild(pen);
+    el.appendChild(bin);
     el.onclick = function() { selCred = c.name; document.getElementById('r-client').value = c.name; setDates(); renderChips(); showPage(2); };
     btns.appendChild(el);
   });
@@ -519,6 +528,17 @@ function editCred(name) {
   var nameField = document.getElementById('c-name');
   nameField.scrollIntoView({behavior:'smooth', block:'center'});
   nameField.focus();
+}
+
+// Remove a saved client (and its stored secret) from this browser. Confirms
+// first because there's no undo.
+function deleteCred(name) {
+  if (!confirm('Delete saved client "' + name + '"?\n\nIts tenant ID, client ID and client secret will be removed from this browser. This can\'t be undone.')) return;
+  creds = creds.filter(function(x){ return x.name !== name; });
+  localStorage.setItem('msp_creds', JSON.stringify(creds));
+  if (selCred === name) selCred = null;
+  if (editingCred === name) cancelEdit(); // also clears the form so the deleted secret isn't left sitting in a field
+  renderChips();
 }
 
 function resetEditUI() {
