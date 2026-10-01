@@ -768,7 +768,7 @@ exports.handler = async (event) => {
           ...((sp.m365GroupCount||0) > 0  ? [k(sp.m365GroupCount,  "M365 Groups",      "neu")] : []),
           ...((sp.securityGroupCount||0) > 0 ? [k(sp.securityGroupCount, "Security groups", "neu")] : []),
           k(`${sp.totalUsedGB||0} GB`, "Storage used",   "neu"),
-          k(sp.inactiveSiteCount||0,"Inactive 180d+",    (sp.inactiveSiteCount||0)>0?"warn":"good"),
+          k(sp.inactiveSiteCount||0,"Inactive Sites and Channels 180 days +",    (sp.inactiveSiteCount||0)>0?"warn":"good"),
         ];
         if (sp.allocatedGB) spKpis.splice(2,0,k(`${sp.allocatedGB} GB`,"Storage allocated","neu"));
         children.push(kpiGrid(spKpis));

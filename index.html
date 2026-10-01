@@ -821,7 +821,7 @@ function renderPreview() {
       (sp.classicCount > 0 ? mc('Classic sites', sp.classicCount, 'c-neu') : '') +
       (sp.otherCount > 0 ? mc('Other', sp.otherCount, 'c-neu') : '') +
       mc('Storage used', (sp.totalUsedGB||0)+' GB', 'c-neu') +
-      mc('Inactive 180d+', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
+      mc('Inactive Sites and Channels 180 days +', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
     var spDetail = '';
     if (sp.error) { spDetail = '<span style="color:var(--text-danger);font-size:12px;">'+sp.error+'</span>'; }
     // Review-step only (never in the exported report): the raw "Root Web
@@ -1271,7 +1271,7 @@ function buildReport() {
       if ((sp.classicCount||0) > 0) spCells.push({v:sp.classicCount, c:'#6b7280', l:'Classic sites'});
       if ((sp.otherCount||0) > 0)   spCells.push({v:sp.otherCount,   c:'#6b7280', l:'Other'});
       spCells.push({v:spStorageNum, c:spStorageColor, l:'Storage used'});
-      spCells.push({v:(sp.inactiveSiteCount||0), c:spInactiveColor, l:'Inactive 180d+'});
+      spCells.push({v:(sp.inactiveSiteCount||0), c:spInactiveColor, l:'Inactive Sites and Channels 180 days +'});
       spCells.push({v:spM365Groups, c:'#0D7CC4', l:'M365 Groups'});
       spCells.push({v:spSecGroups,  c:'#0D7CC4', l:'Security groups'});
       var spLastRow = Math.floor((spCells.length - 1) / 2);

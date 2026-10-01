@@ -474,7 +474,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
         ...((sp.securityGroupCount ?? 0) > 0 ? [k(sp.securityGroupCount, 'Security groups', 'neu')] : []),
         ...(sp.allocatedGB ? [k(`${sp.allocatedGB} GB`, 'Storage allocated', 'neu')] : []),
         k(`${sp.totalUsedGB ?? 0} GB`, 'Storage used', 'neu'),
-        k(sp.inactiveSiteCount ?? 0, 'Inactive 180d+', (sp.inactiveSiteCount ?? 0) > 0 ? 'warn' : 'good'),
+        k(sp.inactiveSiteCount ?? 0, 'Inactive Sites and Channels 180 days +', (sp.inactiveSiteCount ?? 0) > 0 ? 'warn' : 'good'),
       ];
       kpiGrid(spKpis);
       if (sp.allocatedGB && sp.totalUsedGB) {
