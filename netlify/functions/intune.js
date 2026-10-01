@@ -713,14 +713,27 @@ exports.handler = async (event) => {
       const template   = (rootTemplateKey   && row[rootTemplateKey])   || "";
 
       // Skip personal OneDrive sites
+      const tl = template.toLowerCase();
       if (siteUrl.toLowerCase().includes("/personal/")) continue;
       if (siteTypeKey && (row[siteTypeKey] || "").toLowerCase().includes("onedrive")) continue;
-      if (template.toLowerCase() === "msf" || template.toLowerCase() === "personal") continue;
+      if (tl.startsWith("msf") || tl.startsWith("personal")) continue;
 
-      spSiteCount++;
-      const tl = template.toLowerCase();
-      if      (tl === "group")       spGroupCount++;
-      else if (tl === "sitepagepublishing" || tl === "communication") spCommCount++;
+      // Root Web Template values from Microsoft's own usage report are
+      // suffixed with a template-version number -- e.g. "GROUP#0",
+      // "SITEPAGEPUBLISHING#0", "STS#3" -- never the bare word. The exact-
+      // match check this replaced (tl === "group") could never match real
+      // data, so every site -- including genuine Group and Communication
+      // sites -- was silently falling into the Classic/Other bucket. Fixed
+      // by matching on a prefix instead (see 2026-10 investigation).
+      //
+      // "Total sites" (spSiteCount) only counts recognized Group/
+      // Communication sites -- classic/other-template sites are tracked
+      // (spClassicCount) but excluded from both the headline total and the
+      // report output, since that bucket is still an unreliable catch-all
+      // (it also absorbs any row whose template value doesn't match
+      // expectations at all, not just genuine legacy sites).
+      if      (tl.startsWith("group"))       { spGroupCount++; spSiteCount++; }
+      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) { spCommCount++; spSiteCount++; }
       else                           spClassicCount++;
       spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
 

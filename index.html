@@ -730,7 +730,6 @@ function renderPreview() {
       mc('Total sites', sp.siteCount||0) +
       mc('M365 Groups', sp.groupCount||0, 'c-neu') +
       (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
-      (sp.classicCount > 0 ? mc('Classic', sp.classicCount, 'c-neu') : '') +
       mc('Storage used', (sp.totalUsedGB||0)+' GB', 'c-neu') +
       mc('Inactive 180d+', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
     var spDetail = '';
@@ -1163,13 +1162,12 @@ function buildReport() {
       html += '<div style="'+spCb+'"><div style="'+spN+'color:#0D7CC4">'+((sp.siteCount)||0)+'</div><div style="'+spL+'">Total sites</div></div>';
       html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.groupCount)||0)+'</div><div style="'+spL+'">M365 Group sites</div></div>';
       html += '<div style="'+spCb+'"><div style="'+spN+'color:#1A8070">'+((sp.commCount)||0)+'</div><div style="'+spL+'">Communication sites</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#6b7280">'+((sp.classicCount)||0)+'</div><div style="'+spL+'">Classic / other sites</div></div>';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:'+spStorageColor+'">'+spStorageNum+'</div><div style="'+spL+'">Storage used</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:'+spInactiveColor+'">'+((sp.inactiveSiteCount)||0)+'</div><div style="'+spL+'">Inactive 180d+</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:'+spStorageColor+'">'+spStorageNum+'</div><div style="'+spL+'">Storage used</div></div>';
+      html += '<div style="'+spCb+'"><div style="'+spN+'color:'+spInactiveColor+'">'+((sp.inactiveSiteCount)||0)+'</div><div style="'+spL+'">Inactive 180d+</div></div>';
       var spM365Groups = sp.m365GroupCount !== null && sp.m365GroupCount !== undefined ? sp.m365GroupCount : 'N/A';
       var spSecGroups  = sp.securityGroupCount !== null && sp.securityGroupCount !== undefined ? sp.securityGroupCount : 'N/A';
-      html += '<div style="'+spCbl+'"><div style="'+spN+'color:#0D7CC4">'+spM365Groups+'</div><div style="'+spL+'">M365 Groups</div></div>';
-      html += '<div style="'+spCrl+'"><div style="'+spN+'color:#0D7CC4">'+spSecGroups+'</div><div style="'+spL+'">Security groups</div></div>';
+      html += '<div style="'+spCrl+'"><div style="'+spN+'color:#0D7CC4">'+spM365Groups+'</div><div style="'+spL+'">M365 Groups</div></div>';
+      html += '<div style="'+spCbl+'"><div style="'+spN+'color:#0D7CC4">'+spSecGroups+'</div><div style="'+spL+'">Security groups</div></div>';
       html += '</div>';
       if ((sp.inactiveSiteCount||0) > 0) {
         html += callout('<strong>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</strong> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
