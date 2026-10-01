@@ -730,7 +730,9 @@ function renderPreview() {
       mc('Total sites', sp.siteCount||0) +
       mc('M365 Groups', sp.groupCount||0, 'c-neu') +
       (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
-      (sp.classicCount > 0 ? mc('Classic', sp.classicCount, 'c-neu') : '') +
+      (sp.teamsCount > 0 ? mc('Teams sites', sp.teamsCount, 'c-neu') : '') +
+      (sp.classicCount > 0 ? mc('Classic sites', sp.classicCount, 'c-neu') : '') +
+      (sp.otherCount > 0 ? mc('Other', sp.otherCount, 'c-neu') : '') +
       mc('Storage used', (sp.totalUsedGB||0)+' GB', 'c-neu') +
       mc('Inactive 180d+', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
     var spDetail = '';
@@ -1163,7 +1165,9 @@ function buildReport() {
       html += '<div style="'+spCb+'"><div style="'+spN+'color:#0D7CC4">'+((sp.siteCount)||0)+'</div><div style="'+spL+'">Total sites</div></div>';
       html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.groupCount)||0)+'</div><div style="'+spL+'">M365 Group sites</div></div>';
       html += '<div style="'+spCb+'"><div style="'+spN+'color:#1A8070">'+((sp.commCount)||0)+'</div><div style="'+spL+'">Communication sites</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#6b7280">'+((sp.classicCount)||0)+'</div><div style="'+spL+'">Classic / other sites</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.teamsCount)||0)+'</div><div style="'+spL+'">Teams sites</div></div>';
+      html += '<div style="'+spCb+'"><div style="'+spN+'color:#6b7280">'+((sp.classicCount)||0)+'</div><div style="'+spL+'">Classic sites</div></div>';
+      html += '<div style="'+spCr+'"><div style="'+spN+'color:#6b7280">'+((sp.otherCount)||0)+'</div><div style="'+spL+'">Other</div></div>';
       html += '<div style="'+spCb+'"><div style="'+spN+'color:'+spStorageColor+'">'+spStorageNum+'</div><div style="'+spL+'">Storage used</div></div>';
       html += '<div style="'+spCr+'"><div style="'+spN+'color:'+spInactiveColor+'">'+((sp.inactiveSiteCount)||0)+'</div><div style="'+spL+'">Inactive 180d+</div></div>';
       var spM365Groups = sp.m365GroupCount !== null && sp.m365GroupCount !== undefined ? sp.m365GroupCount : 'N/A';

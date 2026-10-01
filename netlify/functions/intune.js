@@ -687,7 +687,7 @@ exports.handler = async (event) => {
     const isDeletedKey   = spKeys.find(k => k.toLowerCase().includes("is deleted"))     || "";
 
     const cutoff180 = now_ms - 180 * MS_DAY;
-    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spClassicCount = 0, spTotalUsedGB = 0;
+    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spTeamsCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
 
     // Additional column keys confirmed from live API
@@ -723,17 +723,29 @@ exports.handler = async (event) => {
       // "SITEPAGEPUBLISHING#0", "STS#3" -- never the bare word. The exact-
       // match check this replaced (tl === "group") could never match real
       // data, so every site -- including genuine Group and Communication
-      // sites -- was silently falling into the Classic/Other bucket. Fixed
-      // by matching on a prefix instead (see 2026-10 investigation).
+      // sites -- was silently falling into one catch-all bucket. Fixed by
+      // matching on a prefix instead (see 2026-10 investigation).
+      //
+      // "Teams Sites" = STS#3 (a modern team site deliberately not
+      // connected to an M365 Group) and TEAMCHANNEL#0/#1 (a private or
+      // shared Teams channel's own hidden site) -- grouped together because
+      // both are current, Teams-related working sites, just not the
+      // Group-connected flavour counted above.
+      // "Classic Sites" = STS#0 specifically -- the genuinely old-style
+      // classic team site template, nothing else.
+      // "Other" = anything left over: tenant system/infrastructure sites
+      // (App Catalog, Search Center, My Site host, etc.), STS#1/STS#2, or
+      // any unrecognized template value.
       //
       // "Total sites" and "Storage used" include every site regardless of
-      // template type -- Classic/Other sites are shown as their own
-      // breakdown figure (spClassicCount) but still count toward both
-      // headline totals, same as Group/Communication sites.
+      // template type -- each bucket is shown as its own breakdown figure
+      // but all of them count toward both headline totals.
       spSiteCount++;
       if      (tl.startsWith("group"))       spGroupCount++;
       else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) spCommCount++;
-      else                           spClassicCount++;
+      else if (tl.startsWith("sts#3") || tl.startsWith("teamchannel")) spTeamsCount++;
+      else if (tl.startsWith("sts#0")) spClassicCount++;
+      else                           spOtherCount++;
       spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
 
       const lastActivity = row[lastActivityKey] || null;
@@ -835,7 +847,9 @@ exports.handler = async (event) => {
         siteCount: spSiteCount,
         groupCount: spGroupCount,
         commCount: spCommCount,
+        teamsCount: spTeamsCount,
         classicCount: spClassicCount,
+        otherCount: spOtherCount,
         m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
         securityGroupCount: secGroupsR.data?.["@odata.count"] ?? null,
         totalUsedGB: spTotalUsedGB,
