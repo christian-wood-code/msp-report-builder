@@ -248,6 +248,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
   .rpt-risk-table td,.rpt-risk-table th{padding:5px 7px;font-size:9px;}
   .rpt-section{margin-bottom:8px;}
 }
+@media print{#sp-diag{display:none !important;}}
 </style>
 </head>
 <body>
@@ -441,6 +442,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
         <button onclick="showPage(2)">← Edit inputs</button>
         <button onclick="startOver()">+ New report</button>
       </div>
+      <details id="sp-diag" style="display:none;margin-bottom:1rem;font-size:13px;"><summary style="cursor:pointer;color:var(--text-secondary);">SharePoint template diagnostics (not part of the report)</summary><div id="sp-diag-body" style="margin-top:8px;"></div></details>
       <div id="report-out" class="report-wrap"></div>
     </div>
   </div>
@@ -623,6 +625,9 @@ async function fetchData() {
     if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
     iData = data;
     renderPreview();
+    var diag = document.getElementById('sp-detail').innerHTML;
+    document.getElementById('sp-diag-body').innerHTML = diag;
+    document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
     buildReport(); // Review step skipped: build straight away and land on the Report ready step
   } catch(e) {
     err('Connection failed: ' + e.message);
@@ -1246,7 +1251,7 @@ function buildReport() {
   if ((sp.siteCount||0) > 0 || sp.error) {
     html += '<div class="rpt-section">';
     html += secHeader('SharePoint / MS Teams', '#1A8070');
-    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites. Storage is shown in binary gigabytes (1 GB = 2^30 bytes), the same basis as the SharePoint admin center.</p>';
+    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.</p>';
     if (sp.error) {
       html += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
     } else {

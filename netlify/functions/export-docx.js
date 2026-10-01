@@ -753,7 +753,7 @@ exports.handler = async (event) => {
     const sp = d.sharepoint || {};
     if ((sp.siteCount||0) > 0 || sp.error) {
       children.push(...sectionHeaderBlock("SharePoint / MS Teams", C.TEAL));
-      children.push(para([run("Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites. Storage is shown in binary gigabytes (1 GB = 2^30 bytes), the same basis as the SharePoint admin center.", {size:19,color:"374151"})], {after:120}));
+      children.push(para([run("Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.", {size:19,color:"374151"})], {after:120}));
       if (sp.error) {
         children.push(callout("SharePoint data unavailable - check that Reports.Read.All permission is granted.", "warn"));
       } else {
