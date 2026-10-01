@@ -623,7 +623,7 @@ async function fetchData() {
     if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
     iData = data;
     renderPreview();
-    showPage(3);
+    buildReport(); // Review step skipped: build straight away and land on the Report ready step
   } catch(e) {
     err('Connection failed: ' + e.message);
   } finally {
