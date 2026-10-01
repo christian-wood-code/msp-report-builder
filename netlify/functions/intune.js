@@ -732,10 +732,13 @@ exports.handler = async (event) => {
       // report output, since that bucket is still an unreliable catch-all
       // (it also absorbs any row whose template value doesn't match
       // expectations at all, not just genuine legacy sites).
-      if      (tl.startsWith("group"))       { spGroupCount++; spSiteCount++; }
-      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) { spCommCount++; spSiteCount++; }
+      const siteGB = parseInt(row[storageUsedKey] || "0") / 1e9;
+      // Storage used follows the same inclusion rule as the site count --
+      // classic/other sites are excluded from the reported total, not just
+      // from the count, so the two figures stay consistent with each other.
+      if      (tl.startsWith("group"))       { spGroupCount++; spSiteCount++; spTotalUsedGB += siteGB; }
+      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) { spCommCount++; spSiteCount++; spTotalUsedGB += siteGB; }
       else                           spClassicCount++;
-      spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
 
       const lastActivity = row[lastActivityKey] || null;
       // Only flag sites with a known last activity date older than 180 days.
@@ -761,11 +764,13 @@ exports.handler = async (event) => {
     }
     spTotalUsedGB = Math.round(spTotalUsedGB * 10) / 10;
 
-    // Use storage trend for more accurate total if available
-    const spStorageRows = spStorageR.rows || [];
-    const spLatestRow = spStorageRows.length > 0 ? spStorageRows[spStorageRows.length - 1] : null;
-    const spTrendRaw = spLatestRow ? parseInt(spLatestRow["Storage Used (Byte)"] || "0") : 0;
-    if (spTrendRaw > 0) spTotalUsedGB = Math.round(spTrendRaw / 1e9 * 10) / 10;
+    // NOTE: this used to be overwritten with a tenant-wide figure from the
+    // getSharePointSiteUsageStorage trend report ("for more accurate
+    // total") -- removed because that report has no per-site breakdown, so
+    // it always includes classic/other sites' storage with no way to
+    // exclude it, silently undoing the exclusion above. spStorageR is kept
+    // (still fetched) only as a fallback data source elsewhere if needed;
+    // spTotalUsedGB is now always the per-site sum computed above.
 
     // ── Risk register ─────────────────────────────────────────────────────────
     const risks = [];
