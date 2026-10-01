@@ -819,9 +819,7 @@ function renderPreview() {
   if (document.getElementById('sp-metrics')) {
     document.getElementById('sp-metrics').innerHTML =
       mc('Total sites', sp.siteCount||0) +
-      mc('M365 Groups', sp.groupCount||0, 'c-neu') +
       (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
-      (sp.teamsCount != null ? mc('Teams', sp.teamsCount, 'c-neu') : '') +
       (sp.channelCount > 0 ? mc('Teams channels', sp.channelCount, 'c-neu') : '') +
       (sp.classicCount > 0 ? mc('Classic sites', sp.classicCount, 'c-neu') : '') +
       (sp.otherCount > 0 ? mc('Other', sp.otherCount, 'c-neu') : '') +
@@ -1261,7 +1259,6 @@ function buildReport() {
       var spStorageNum = sp.totalUsedGB ? sp.totalUsedGB+' GB' : 'Unknown';
       var spStorageColor = (sp.totalUsedGB||0) > 500 ? '#C0152A' : '#0D7CC4';
       var spInactiveColor = (sp.inactiveSiteCount||0) > 0 ? '#D97706' : '#1A8070';
-      var spM365Groups = sp.m365GroupCount !== null && sp.m365GroupCount !== undefined ? sp.m365GroupCount : 'N/A';
       var spSecGroups  = sp.securityGroupCount !== null && sp.securityGroupCount !== undefined ? sp.securityGroupCount : 'N/A';
       // Cells are built as a list so a card can be left out (Classic / Other
       // are omitted when 0) without hand-realigning borders: each cell's
@@ -1272,12 +1269,10 @@ function buildReport() {
         {v:(sp.commCount||0),    c:'#1A8070', l:'Communication sites'},
         {v:(sp.channelCount||0), c:'#0D7CC4', l:'Teams channels'}
       ];
-      if (sp.teamsCount != null) spCells.splice(3, 0, {v:sp.teamsCount, c:'#0D7CC4', l:'Teams'});
       if ((sp.classicCount||0) > 0) spCells.push({v:sp.classicCount, c:'#6b7280', l:'Classic sites'});
       if ((sp.otherCount||0) > 0)   spCells.push({v:sp.otherCount,   c:'#6b7280', l:'Other'});
       spCells.push({v:spStorageNum, c:spStorageColor, l:'Storage used'});
       spCells.push({v:(sp.inactiveSiteCount||0), c:spInactiveColor, l:'Inactive Sites and Channels 180 days +'});
-      spCells.push({v:spM365Groups, c:'#0D7CC4', l:'M365 Groups'});
       spCells.push({v:spSecGroups,  c:'#0D7CC4', l:'Security groups'});
       var spLastRow = Math.floor((spCells.length - 1) / 2);
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb;margin-bottom:1.25rem;">';
