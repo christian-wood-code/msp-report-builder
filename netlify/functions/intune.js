@@ -706,6 +706,7 @@ exports.handler = async (event) => {
     const cutoff180 = now_ms - 180 * MS_DAY;
     let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
+    const otherSitesList = []; // diagnostics only: every site counted under Other
     const spTemplates = new Map(); // raw Root Web Template value -> { template, kind, count, gb }
 
     // Additional column keys confirmed from live API
@@ -757,6 +758,15 @@ exports.handler = async (event) => {
       else if (kind === "classic")       spClassicCount++;
       else                               spOtherCount++;
       spTotalUsedGB += siteGB;
+      if ((kind === "other" || kind === "teams") && otherSitesList.length < 500) {
+        otherSitesList.push({
+          url: siteUrl || null,
+          template: template.trim() || "(blank)",
+          owner: ownerName || ownerUpn || null,
+          lastActivity: row[lastActivityKey] || null,
+          gb: Math.round(siteGB * 100) / 100,
+        });
+      }
 
       // Raw template values actually seen, so the review step can show what
       // Microsoft returned instead of us guessing at it.
@@ -876,6 +886,7 @@ exports.handler = async (event) => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 30)
           .map(t => ({ template: t.template, kind: t.kind, count: t.count, gb: Math.round(t.gb * 10) / 10 })),
+        otherSites: otherSitesList, // diagnostics panel only (capped at 500)
         m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
         securityGroupCount: secGroupsR.data?.["@odata.count"] ?? null,
         totalUsedGB: spTotalUsedGB,

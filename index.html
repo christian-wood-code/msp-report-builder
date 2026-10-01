@@ -649,6 +649,16 @@ async function fetchData() {
   }
 }
 
+function downloadOtherSites() {
+  var rows = (iData && iData.sharepoint && iData.sharepoint.otherSites) || [];
+  var q = function(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+  var csv = ['Site URL,Template,Owner,Last activity,GB'].concat(rows.map(function(r){ return [r.url, r.template, r.owner, r.lastActivity, r.gb].map(q).join(','); })).join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'sharepoint-other-sites.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 function mc(lbl, val, cls) {
   return '<div class="metric-card"><div class="metric-lbl">'+lbl+'</div><div class="metric-val '+(cls||'c-neu')+'">'+val+'</div></div>';
 }
@@ -851,6 +861,18 @@ function renderPreview() {
         spDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:monospace">'+esc(t.template)+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(kindLabels[t.kind]||esc(t.kind))+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.count+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.gb+'</td></tr>';
       });
       spDetail += '</table>';
+    }
+    if (!sp.error && (sp.otherSites||[]).length > 0) {
+      var os = sp.otherSites;
+      spDetail += '<details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:600;color:var(--text-secondary);">Sites counted as Other ('+os.length+(sp.otherCount>os.length?' of '+sp.otherCount+', first '+os.length+' shown':'')+')</summary>';
+      spDetail += '<div style="margin:8px 0;"><button type="button" onclick="downloadOtherSites()">Download CSV</button></div>';
+      spDetail += '<div style="max-height:360px;overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>';
+      ['Site URL','Template','Owner','Last activity','GB'].forEach(function(h){ spDetail += '<th style="text-align:left;padding:4px 8px;background:var(--bg-secondary);position:sticky;top:0;">'+h+'</th>'; });
+      spDetail += '</tr>';
+      os.forEach(function(r) {
+        spDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);word-break:break-all;font-family:monospace">'+esc(r.url||'(none)')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.template)+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.owner||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.lastActivity||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.gb+'</td></tr>';
+      });
+      spDetail += '</table></div></details>';
     }
 
     document.getElementById('sp-detail').innerHTML = spDetail;
