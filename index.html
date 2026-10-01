@@ -91,6 +91,9 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .tenant-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border-md);background:var(--bg);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;margin:0 6px 6px 0;}
 .tenant-chip:hover{background:var(--bg-secondary);}
 .tenant-chip.selected{background:var(--bg-info);color:var(--text-info);border-color:rgba(55,138,221,0.4);}
+.tenant-chip.editing{border-color:var(--orange);box-shadow:0 0 0 2px rgba(241,158,30,0.25);}
+.tenant-chip .chip-edit{padding:2px 4px;margin-left:2px;border:none;background:transparent;font-size:13px;line-height:1;opacity:0.55;cursor:pointer;border-radius:3px;}
+.tenant-chip .chip-edit:hover,.tenant-chip .chip-edit:focus-visible{opacity:1;background:var(--bg-tertiary);}
 .divider{display:flex;align-items:center;gap:12px;margin:1.25rem 0;}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
 .divider span{font-size:12px;color:var(--text-tertiary);white-space:nowrap;}
@@ -268,9 +271,13 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
       <div class="card-sub">Select a saved client or add a new one. Credentials are stored for this session only.</div>
       <div id="saved-section" style="display:none;margin-bottom:1.25rem;">
         <label>Saved clients</label>
-        <span class="hint">Click to select and continue</span>
+        <span class="hint">Click a client to select it and continue, or ✏️ to edit its details</span>
         <div id="saved-btns"></div>
         <div class="divider"><span>or add a new client below</span></div>
+      </div>
+      <div id="edit-banner" class="alert alert-info" style="display:none;align-items:center;justify-content:space-between;">
+        <span>✏️ Editing <strong id="edit-name"></strong> - change any field below, then save.</span>
+        <button type="button" onclick="cancelEdit()">Cancel</button>
       </div>
       <div class="field">
         <label for="c-name">Client label</label>
@@ -294,7 +301,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
           <input type="password" id="c-secret" placeholder="••••••••••••" />
         </div>
       </div>
-      <div class="action-row"><button class="primary" onclick="saveCred()">→ Save & continue</button></div>
+      <div class="action-row"><button class="primary" id="save-cred-btn" onclick="saveCred()">→ Save & continue</button></div>
     </div>
   </div>
 
@@ -441,6 +448,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 <script>
 var creds = JSON.parse(localStorage.getItem('msp_creds') || '[]');
 var selCred = null;
+var editingCred = null; // original name of the saved client currently being edited, or null
 var iData = null;
 
 function err(msg) {
@@ -475,11 +483,55 @@ function renderChips() {
   sec.style.display = 'block'; btns.innerHTML = '';
   creds.forEach(function(c) {
     var el = document.createElement('div');
-    el.className = 'tenant-chip' + (selCred === c.name ? ' selected' : '');
-    el.innerHTML = '🏢 ' + c.name;
+    el.className = 'tenant-chip' + (selCred === c.name ? ' selected' : '') + (editingCred === c.name ? ' editing' : '');
+    var label = document.createElement('span');
+    label.textContent = '🏢 ' + c.name; // textContent, not innerHTML: a client name must never be parsed as HTML
+    var pen = document.createElement('button');
+    pen.type = 'button';
+    pen.className = 'chip-edit';
+    pen.textContent = '✏️';
+    pen.title = 'Edit ' + c.name;
+    pen.setAttribute('aria-label', 'Edit ' + c.name);
+    pen.onclick = function(e) { e.stopPropagation(); editCred(c.name); };
+    el.appendChild(label);
+    el.appendChild(pen);
     el.onclick = function() { selCred = c.name; document.getElementById('r-client').value = c.name; setDates(); renderChips(); showPage(2); };
     btns.appendChild(el);
   });
+}
+
+// Load a saved client's details into the form below so any of them (label,
+// tenant ID, client ID, secret) can be changed. Saving replaces that entry in
+// place, including when the label itself is renamed.
+function editCred(name) {
+  var c = creds.find(function(x){ return x.name === name; });
+  if (!c) return;
+  editingCred = name;
+  document.getElementById('c-name').value   = c.name;
+  document.getElementById('c-tenant').value = c.tenantId;
+  document.getElementById('c-client').value = c.clientId;
+  document.getElementById('c-secret').value = c.secret;
+  document.getElementById('edit-name').textContent = c.name;
+  document.getElementById('edit-banner').style.display = 'flex';
+  document.getElementById('save-cred-btn').textContent = '→ Save changes & continue';
+  err('');
+  renderChips();
+  var nameField = document.getElementById('c-name');
+  nameField.scrollIntoView({behavior:'smooth', block:'center'});
+  nameField.focus();
+}
+
+function resetEditUI() {
+  editingCred = null;
+  document.getElementById('edit-banner').style.display = 'none';
+  document.getElementById('save-cred-btn').textContent = '→ Save & continue';
+}
+
+function cancelEdit() {
+  ['c-name','c-tenant','c-client','c-secret'].forEach(function(id){ document.getElementById(id).value = ''; });
+  resetEditUI();
+  err('');
+  renderChips();
 }
 
 function setDates() {
@@ -508,10 +560,22 @@ function saveCred() {
   if (!guidRe.test(t)) { err('Tenant ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
   if (!guidRe.test(c)) { err('Client ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
   if (s.length < 8 || s.length > 256) { err('Client Secret appears too short - check it was copied correctly.'); return; }
-  creds = creds.filter(function(x){ return x.name !== n; });
-  creds.push({name:n, tenantId:t, clientId:c, secret:s});
+  var entry = {name:n, tenantId:t, clientId:c, secret:s};
+  var editIdx = editingCred ? creds.findIndex(function(x){ return x.name === editingCred; }) : -1;
+  if (editIdx >= 0) {
+    // Renaming onto a *different* saved client would silently overwrite it.
+    if (n !== editingCred && creds.some(function(x){ return x.name === n; })) {
+      err('A saved client called "' + n.replace(/</g, '&lt;') + '" already exists - choose a different label.');
+      return;
+    }
+    creds[editIdx] = entry; // replace in place so the chip keeps its position
+  } else {
+    creds = creds.filter(function(x){ return x.name !== n; });
+    creds.push(entry);
+  }
   localStorage.setItem('msp_creds', JSON.stringify(creds));
   selCred = n;
+  resetEditUI();
   ['c-name','c-tenant','c-client','c-secret'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('r-client').value = n;
   setDates(); renderChips(); showPage(2);
