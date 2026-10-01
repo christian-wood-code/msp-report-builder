@@ -138,6 +138,7 @@ node server.js          # or: netlify dev
 - Antivirus detection is Windows Defender-aware only; third-party AV is inferred, not identified by name
 - macOS devices are excluded from the encryption count — Intune does not reliably report FileVault state
 - SharePoint figures come from Microsoft's usage report, which runs 24–48 hours behind and includes hidden Teams-channel and system sites, so totals differ from the SharePoint admin center's Active sites list. Storage is in binary gigabytes, matching the admin center
+- Usage-report entries with no template, no recorded activity and 0 GB are left out of every SharePoint count (they don't appear in the admin center's Active sites); the number excluded is shown in the diagnostics panel
 - Licence renewal Monthly vs Annual/Multi-year labels are inferred from days to renewal (Graph does not expose billing frequency)
 - The manual-entry sections (Executive Summary, Ticketing & Support, Recommendations & Opportunities) are not currently collected, because the wizard's Review step was removed; they are omitted from the report
 - Saved clients' secrets sit in browser local storage in plain text on that device

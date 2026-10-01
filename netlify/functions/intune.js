@@ -706,6 +706,7 @@ exports.handler = async (event) => {
     const cutoff180 = now_ms - 180 * MS_DAY;
     let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
+    let spExcludedBlank = 0; // blank-template, no-activity, 0 GB entries left out of all counts
     const otherSitesList = []; // diagnostics only: every site counted under Other
     const spTemplates = new Map(); // raw Root Web Template value -> { template, kind, count, gb }
 
@@ -750,6 +751,11 @@ exports.handler = async (event) => {
       // type - each bucket is its own breakdown figure and all of them count
       // toward both headline totals, so the buckets always sum to the total.
       const siteGB = parseInt(row[storageUsedKey] || "0") / BYTES_PER_GB;
+      // Placeholder entries: no template, no recorded activity and no storage.
+      // They don't appear as sites in the SharePoint admin center,
+      // so they are left out of every count; the number is kept for the
+      // diagnostics panel only.
+      if (!template.trim() && !row[lastActivityKey] && siteGB === 0) { spExcludedBlank++; continue; }
       spSiteCount++;
       if      (kind === "group")         spGroupCount++;
       else if (kind === "communication") spCommCount++;
@@ -886,6 +892,7 @@ exports.handler = async (event) => {
           .sort((a, b) => b.count - a.count)
           .slice(0, 30)
           .map(t => ({ template: t.template, kind: t.kind, count: t.count, gb: Math.round(t.gb * 10) / 10 })),
+        excludedBlankCount: spExcludedBlank,
         otherSites: otherSitesList, // diagnostics panel only (capped at 500)
         m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
         securityGroupCount: secGroupsR.data?.["@odata.count"] ?? null,
