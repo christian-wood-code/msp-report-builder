@@ -591,8 +591,13 @@ exports.handler = async (event) => {
     // Build licence summary from subscribedSkus (preferred — includes available count)
     let licenceSummary = skusR.results
       .filter(s => s.skuId && s.skuPartNumber && (s.consumedUnits || 0) > 0)
-      .map(s => ({ name: skuNames[s.skuId] || s.skuPartNumber, count: s.consumedUnits || 0, available: s.prepaidUnits?.enabled || 0 }))
-      .sort((a, b) => b.count - a.count);
+      .map(s => {
+        const name = skuNames[s.skuId] || s.skuPartNumber;
+        // Free/viral SKUs (Power Automate/Power Apps/Power BI Free, etc.) are listed after the paid ones
+        const free = /(^|_)(FREE|VIRAL)(_|$)|^POWER_BI_STANDARD$/i.test(s.skuPartNumber) || /\(free\)/i.test(name);
+        return { name, count: s.consumedUnits || 0, available: s.prepaidUnits?.enabled || 0, free };
+      })
+      .sort((a, b) => (a.free - b.free) || (b.count - a.count));
 
     // Fallback: if subscribedSkus returned nothing, count from user assignedLicenses
     if (licenceSummary.length === 0 && usersR.results.length > 0) {
