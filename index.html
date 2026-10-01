@@ -436,7 +436,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
       <div class="card-title">✅ Report ready</div>
       <div class="card-sub">Review below. Print / Save as PDF, or copy the text into Word.</div>
       <div class="action-row" style="margin-bottom:1.25rem;">
-        <button class="primary" onclick="(function(){ var from = document.getElementById('r-from').value; var client = document.getElementById('r-client').value.trim(); var month = from ? new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'}) : ''; document.title = (client && month) ? client + ' - ' + month + ' IT Report' : 'Monthly IT Report'; window.print(); setTimeout(function(){ document.title = 'MSP Report Builder'; }, 2000); })()" >🖨️ Print / Save as PDF</button>
+        <button class="primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
         <button onclick="exportDocx()" id="export-btn">📄 Export to Word</button>
         <button onclick="copyText()" id="copy-btn">📋 Copy text</button>
         <button onclick="showPage(2)">← Edit inputs</button>
@@ -464,6 +464,19 @@ function err(msg) {
     b.style.display = 'none';
   }
 }
+
+// Pre-load a sensible PDF filename: the browser takes it from document.title at print time,
+// so set it on beforeprint (covers the Print button and Ctrl+P) and restore afterwards.
+var _origTitle = document.title;
+window.addEventListener('beforeprint', function() {
+  var rp = document.getElementById('page-4');
+  if (!rp || !rp.classList.contains('active')) return;
+  var from = document.getElementById('r-from').value;
+  var client = document.getElementById('r-client').value.trim();
+  var month = from ? new Date(from + 'T00:00:00').toLocaleDateString('en-NZ', {month:'long', year:'numeric'}) : '';
+  document.title = (client && month) ? client + ' - ' + month + ' IT Report' : (client ? client + ' - IT Report' : 'Monthly IT Report');
+});
+window.addEventListener('afterprint', function() { document.title = _origTitle; });
 
 function showPage(n) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
