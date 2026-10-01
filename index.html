@@ -821,7 +821,7 @@ function renderPreview() {
       mc('Total sites', sp.siteCount||0) +
       mc('M365 Groups', sp.groupCount||0, 'c-neu') +
       (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
-      (sp.teamsCount > 0 ? mc('Teams sites', sp.teamsCount, 'c-neu') : '') +
+      (sp.teamsCount != null ? mc('Teams', sp.teamsCount, 'c-neu') : '') +
       (sp.channelCount > 0 ? mc('Teams channels', sp.channelCount, 'c-neu') : '') +
       (sp.classicCount > 0 ? mc('Classic sites', sp.classicCount, 'c-neu') : '') +
       (sp.otherCount > 0 ? mc('Other', sp.otherCount, 'c-neu') : '') +
@@ -833,7 +833,7 @@ function renderPreview() {
     // Template" values Microsoft returned and which bucket each one was counted
     // in, so a surprising count (e.g. 0 Teams channels) can be checked at a glance.
     if (!sp.error && (sp.templateBreakdown||[]).length > 0) {
-      var kindLabels = { group:'M365 Group sites', communication:'Communication sites', teams:'Teams sites', channel:'Teams channels', classic:'Classic sites', other:'Other' };
+      var kindLabels = { group:'M365 Group sites', communication:'Communication sites', teams:'Other (team site, no group)', channel:'Teams channels', classic:'Classic sites', other:'Other' };
       spDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Site templates detected (review only - not in the exported report)</div>';
       spDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Template value from Microsoft</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Counted as</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Sites</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">GB</th></tr>';
       sp.templateBreakdown.forEach(function(t) {
@@ -1270,9 +1270,9 @@ function buildReport() {
         {v:(sp.siteCount||0),    c:'#0D7CC4', l:'Total sites'},
         {v:(sp.groupCount||0),   c:'#0D7CC4', l:'M365 Group sites'},
         {v:(sp.commCount||0),    c:'#1A8070', l:'Communication sites'},
-        {v:(sp.teamsCount||0),   c:'#0D7CC4', l:'Teams sites'},
         {v:(sp.channelCount||0), c:'#0D7CC4', l:'Teams channels'}
       ];
+      if (sp.teamsCount != null) spCells.splice(3, 0, {v:sp.teamsCount, c:'#0D7CC4', l:'Teams'});
       if ((sp.classicCount||0) > 0) spCells.push({v:sp.classicCount, c:'#6b7280', l:'Classic sites'});
       if ((sp.otherCount||0) > 0)   spCells.push({v:sp.otherCount,   c:'#6b7280', l:'Other'});
       spCells.push({v:spStorageNum, c:spStorageColor, l:'Storage used'});

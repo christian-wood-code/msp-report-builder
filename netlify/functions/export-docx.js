@@ -761,7 +761,7 @@ exports.handler = async (event) => {
           k(sp.siteCount||0,    "Total sites",         "info"),
           k(sp.groupCount||0,   "M365 Group sites",    "neu"),
           k(sp.commCount||0,    "Communication sites", "neu"),
-          k(sp.teamsCount||0,   "Teams sites",      "neu"),
+          ...(sp.teamsCount != null ? [k(sp.teamsCount, "Teams", "neu")] : []),
           k(sp.channelCount||0, "Teams channels",   "neu"),
           ...((sp.classicCount||0) > 0 ? [k(sp.classicCount, "Classic sites", "neu")] : []),
           ...((sp.otherCount||0) > 0 ? [k(sp.otherCount, "Other", "neu")] : []),

@@ -326,7 +326,7 @@ exports.handler = async (event) => {
 
     const [
       devR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
-      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, m365GroupsR, secGroupsR, subsR,
+      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, m365GroupsR, secGroupsR, subsR, teamsR,
     ] = await Promise.all([
       withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
@@ -349,6 +349,9 @@ exports.handler = async (event) => {
       // for upcoming renewal dates via nextLifecycleDateTime. Same
       // Organization.Read.All permission as the licence-count call above.
       withTimeout(graphAll(token, "/directory/subscriptions"), FAST, emptyAll),
+      // Count of Microsoft Teams (M365 Groups that are Teams-enabled). One call,
+      // same group-read permission as the group counts above.
+      withTimeout(graphOne(token, "/groups?$filter=resourceProvisioningOptions/Any(x:x+eq+'Team')&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
     ]);
 
     // ── Sign-in query — maximally optimised ──────────────────────────────────
@@ -696,7 +699,7 @@ exports.handler = async (event) => {
     const isDeletedKey   = spKeys.find(k => k.toLowerCase().includes("is deleted"))     || "";
 
     const cutoff180 = now_ms - 180 * MS_DAY;
-    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spTeamsCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
+    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
     const spTemplates = new Map(); // raw Root Web Template value -> { template, kind, count, gb }
 
@@ -744,7 +747,7 @@ exports.handler = async (event) => {
       spSiteCount++;
       if      (kind === "group")         spGroupCount++;
       else if (kind === "communication") spCommCount++;
-      else if (kind === "teams")         spTeamsCount++;
+      else if (kind === "teams")         spOtherCount++; // STS#3 no-group team site: rare, folded into Other
       else if (kind === "channel")       spChannelCount++;
       else if (kind === "classic")       spClassicCount++;
       else                               spOtherCount++;
@@ -857,7 +860,8 @@ exports.handler = async (event) => {
         siteCount: spSiteCount,
         groupCount: spGroupCount,
         commCount: spCommCount,
-        teamsCount: spTeamsCount,
+        // Number of Teams (Teams-enabled M365 Groups) from Graph; null if unavailable
+        teamsCount: teamsR.data?.["@odata.count"] ?? null,
         channelCount: spChannelCount,
         classicCount: spClassicCount,
         otherCount: spOtherCount,
