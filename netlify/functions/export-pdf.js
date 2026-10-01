@@ -233,13 +233,22 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   // reader (client or prospect) sees it before anything else. See
   // msp-report-builder's docs for the full-length version shown to
   // prospects before they submit credentials.
+  // The retention sentence depends on what actually happened to THIS run's
+  // data (d.metricsRetained, set by intune.js only when the month-on-month
+  // snapshot was really saved) so the cover never over- or under-states it.
+  const retentionText = d.metricsRetained
+    ? 'This report is generated directly from your live Microsoft Graph data at the time of generation. '
+      + 'Integricity retains only a small set of summary figures from it (such as device counts and Secure Score - '
+      + 'no raw tenant data) for up to 13 months, to show month-on-month changes; this document itself will be '
+      + 'securely destroyed within 30 days.'
+    : 'This report is generated directly from your live Microsoft Graph data at the time of generation and '
+      + 'nothing is retained afterward; this document itself will be securely destroyed within 30 days.';
   const disclaimerText = 'This report is a point-in-time, automated summary generated from data available via '
     + 'Microsoft Graph at the time of generation. It is provided as an informational snapshot to support your own '
     + 'evaluation and is not a comprehensive security audit, a compliance certification, or a guarantee of your '
     + "organisation's security posture. Integricity Technology accepts no liability for decisions made on the basis "
-    + 'of this report. This report is generated directly from your live Microsoft Graph data at the time of '
-    + 'generation and nothing is retained afterward; this document itself will be securely destroyed within 30 '
-    + 'days. For a full assessment and remediation plan, contact us to discuss an engagement.';
+    + 'of this report. ' + retentionText
+    + ' For a full assessment and remediation plan, contact us to discuss an engagement.';
   doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5); setText(C.lgray);
   const discLines = doc.splitTextToSize(disclaimerText, CW);
   doc.text(discLines, M, y);
@@ -459,7 +468,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
         k(sp.commCount ?? 0, 'Communication sites', 'neu'),
         k(sp.teamsCount ?? 0, 'Teams sites', 'neu'),
         k(sp.channelCount ?? 0, 'Teams channels', 'neu'),
-        k(sp.classicCount ?? 0, 'Classic sites', 'neu'),
+        ...((sp.classicCount ?? 0) > 0 ? [k(sp.classicCount, 'Classic sites', 'neu')] : []),
         ...((sp.otherCount ?? 0) > 0 ? [k(sp.otherCount, 'Other', 'neu')] : []),
         ...((sp.m365GroupCount ?? 0) > 0 ? [k(sp.m365GroupCount, 'M365 Groups', 'neu')] : []),
         ...((sp.securityGroupCount ?? 0) > 0 ? [k(sp.securityGroupCount, 'Security groups', 'neu')] : []),

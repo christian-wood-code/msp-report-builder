@@ -824,6 +824,18 @@ function renderPreview() {
       mc('Inactive 180d+', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
     var spDetail = '';
     if (sp.error) { spDetail = '<span style="color:var(--text-danger);font-size:12px;">'+sp.error+'</span>'; }
+    // Review-step only (never in the exported report): the raw "Root Web
+    // Template" values Microsoft returned and which bucket each one was counted
+    // in, so a surprising count (e.g. 0 Teams channels) can be checked at a glance.
+    if (!sp.error && (sp.templateBreakdown||[]).length > 0) {
+      var kindLabels = { group:'M365 Group sites', communication:'Communication sites', teams:'Teams sites', channel:'Teams channels', classic:'Classic sites', other:'Other' };
+      spDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Site templates detected (review only - not in the exported report)</div>';
+      spDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Template value from Microsoft</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Counted as</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Sites</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">GB</th></tr>';
+      sp.templateBreakdown.forEach(function(t) {
+        spDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:monospace">'+esc(t.template)+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(kindLabels[t.kind]||esc(t.kind))+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.count+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.gb+'</td></tr>';
+      });
+      spDetail += '</table>';
+    }
 
     document.getElementById('sp-detail').innerHTML = spDetail;
   }
@@ -1241,30 +1253,35 @@ function buildReport() {
       // SharePoint overview - 2-column card grid (modelled on Entra Groups Overview)
       var spN = 'font-size:26px;font-weight:800;line-height:1;margin-bottom:3px;';
       var spL = 'font-size:12px;color:#6b7280;';
-      var spCb = 'padding:14px 18px;border-bottom:1px solid #e5e7eb;';
-      var spCr = 'padding:14px 18px;border-bottom:1px solid #e5e7eb;border-left:1px solid #e5e7eb;';
-      var spCbl = 'padding:14px 18px;';
-      var spCrl = 'padding:14px 18px;border-left:1px solid #e5e7eb;';
       var spStorageNum = sp.totalUsedGB ? sp.totalUsedGB+' GB' : 'Unknown';
       var spStorageColor = (sp.totalUsedGB||0) > 500 ? '#C0152A' : '#0D7CC4';
       var spInactiveColor = (sp.inactiveSiteCount||0) > 0 ? '#D97706' : '#1A8070';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb;margin-bottom:1.25rem;">';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:#0D7CC4">'+((sp.siteCount)||0)+'</div><div style="'+spL+'">Total sites</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.groupCount)||0)+'</div><div style="'+spL+'">M365 Group sites</div></div>';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:#1A8070">'+((sp.commCount)||0)+'</div><div style="'+spL+'">Communication sites</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+((sp.teamsCount)||0)+'</div><div style="'+spL+'">Teams sites</div></div>';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:#0D7CC4">'+((sp.channelCount)||0)+'</div><div style="'+spL+'">Teams channels</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#6b7280">'+((sp.classicCount)||0)+'</div><div style="'+spL+'">Classic sites</div></div>';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:#6b7280">'+((sp.otherCount)||0)+'</div><div style="'+spL+'">Other</div></div>';
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:'+spStorageColor+'">'+spStorageNum+'</div><div style="'+spL+'">Storage used</div></div>';
-      html += '<div style="'+spCb+'"><div style="'+spN+'color:'+spInactiveColor+'">'+((sp.inactiveSiteCount)||0)+'</div><div style="'+spL+'">Inactive 180d+</div></div>';
       var spM365Groups = sp.m365GroupCount !== null && sp.m365GroupCount !== undefined ? sp.m365GroupCount : 'N/A';
       var spSecGroups  = sp.securityGroupCount !== null && sp.securityGroupCount !== undefined ? sp.securityGroupCount : 'N/A';
-      // 11 cells total: the final row holds only Security groups, so it alone
-      // takes the "last row, no bottom border" style; M365 Groups sits in the
-      // second-last row and keeps its bottom border.
-      html += '<div style="'+spCr+'"><div style="'+spN+'color:#0D7CC4">'+spM365Groups+'</div><div style="'+spL+'">M365 Groups</div></div>';
-      html += '<div style="'+spCbl+'"><div style="'+spN+'color:#0D7CC4">'+spSecGroups+'</div><div style="'+spL+'">Security groups</div></div>';
+      // Cells are built as a list so a card can be left out (Classic / Other
+      // are omitted when 0) without hand-realigning borders: each cell's
+      // border is worked out from its position in the 2-column grid.
+      var spCells = [
+        {v:(sp.siteCount||0),    c:'#0D7CC4', l:'Total sites'},
+        {v:(sp.groupCount||0),   c:'#0D7CC4', l:'M365 Group sites'},
+        {v:(sp.commCount||0),    c:'#1A8070', l:'Communication sites'},
+        {v:(sp.teamsCount||0),   c:'#0D7CC4', l:'Teams sites'},
+        {v:(sp.channelCount||0), c:'#0D7CC4', l:'Teams channels'}
+      ];
+      if ((sp.classicCount||0) > 0) spCells.push({v:sp.classicCount, c:'#6b7280', l:'Classic sites'});
+      if ((sp.otherCount||0) > 0)   spCells.push({v:sp.otherCount,   c:'#6b7280', l:'Other'});
+      spCells.push({v:spStorageNum, c:spStorageColor, l:'Storage used'});
+      spCells.push({v:(sp.inactiveSiteCount||0), c:spInactiveColor, l:'Inactive 180d+'});
+      spCells.push({v:spM365Groups, c:'#0D7CC4', l:'M365 Groups'});
+      spCells.push({v:spSecGroups,  c:'#0D7CC4', l:'Security groups'});
+      var spLastRow = Math.floor((spCells.length - 1) / 2);
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb;margin-bottom:1.25rem;">';
+      spCells.forEach(function(cell, idx) {
+        var cellStyle = 'padding:14px 18px;'
+          + (Math.floor(idx / 2) < spLastRow ? 'border-bottom:1px solid #e5e7eb;' : '')
+          + (idx % 2 === 1 ? 'border-left:1px solid #e5e7eb;' : '');
+        html += '<div style="'+cellStyle+'"><div style="'+spN+'color:'+cell.c+'">'+cell.v+'</div><div style="'+spL+'">'+cell.l+'</div></div>';
+      });
       html += '</div>';
       if ((sp.inactiveSiteCount||0) > 0) {
         html += callout('<strong>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</strong> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');

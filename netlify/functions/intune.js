@@ -1,5 +1,7 @@
 "use strict";
 
+const { classifySiteTemplate } = require("./lib/site-templates");
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -689,6 +691,7 @@ exports.handler = async (event) => {
     const cutoff180 = now_ms - 180 * MS_DAY;
     let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spTeamsCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
+    const spTemplates = new Map(); // raw Root Web Template value -> { template, kind, count, gb }
 
     // Additional column keys confirmed from live API
     const ownerNameKey      = spKeys.find(k => k.toLowerCase().includes("owner display"))       || "";
@@ -713,41 +716,40 @@ exports.handler = async (event) => {
       const template   = (rootTemplateKey   && row[rootTemplateKey])   || "";
 
       // Skip personal OneDrive sites
-      const tl = template.toLowerCase();
       if (siteUrl.toLowerCase().includes("/personal/")) continue;
       if (siteTypeKey && (row[siteTypeKey] || "").toLowerCase().includes("onedrive")) continue;
-      if (tl.startsWith("msf") || tl.startsWith("personal")) continue;
+      const kind = classifySiteTemplate(template);
+      if (kind === "personal") continue;
 
-      // Root Web Template values from Microsoft's own usage report are
-      // suffixed with a template-version number -- e.g. "GROUP#0",
-      // "SITEPAGEPUBLISHING#0", "STS#3" -- never the bare word. The exact-
-      // match check this replaced (tl === "group") could never match real
-      // data, so every site -- including genuine Group and Communication
-      // sites -- was silently falling into one catch-all bucket. Fixed by
-      // matching on a prefix instead (see 2026-10 investigation).
-      //
-      // "Teams Sites" = STS#3 (a modern team site deliberately not
-      // connected to an M365 Group) and TEAMCHANNEL#0/#1 (a private or
-      // shared Teams channel's own hidden site) -- grouped together because
-      // both are current, Teams-related working sites, just not the
-      // Group-connected flavour counted above.
-      // "Classic Sites" = STS#0 specifically -- the genuinely old-style
-      // classic team site template, nothing else.
-      // "Other" = anything left over: tenant system/infrastructure sites
-      // (App Catalog, Search Center, My Site host, etc.), STS#1/STS#2, or
-      // any unrecognized template value.
+      // Bucketing is done by lib/site-templates.js, which matches both raw
+      // template codes ("GROUP#0", "STS#3", "TEAMCHANNEL#1" - an exact-match
+      // check on the bare word used to miss these, dumping every site into one
+      // catch-all) and friendlier names. Buckets: Group, Communication,
+      // Teams sites (STS#3 - modern team site not connected to an M365 Group),
+      // Teams channels (the hidden site behind a private/shared channel),
+      // Classic (STS#0) and Other (system sites such as App Catalog / Search
+      // Center / My Site host, or any unrecognised value).
       //
       // "Total sites" and "Storage used" include every site regardless of
-      // template type -- each bucket is shown as its own breakdown figure
-      // but all of them count toward both headline totals.
+      // type - each bucket is its own breakdown figure and all of them count
+      // toward both headline totals, so the buckets always sum to the total.
+      const siteGB = parseInt(row[storageUsedKey] || "0") / 1e9;
       spSiteCount++;
-      if      (tl.startsWith("group"))       spGroupCount++;
-      else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) spCommCount++;
-      else if (tl.startsWith("sts#3")) spTeamsCount++;
-      else if (tl.startsWith("teamchannel")) spChannelCount++;
-      else if (tl.startsWith("sts#0")) spClassicCount++;
-      else                           spOtherCount++;
-      spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
+      if      (kind === "group")         spGroupCount++;
+      else if (kind === "communication") spCommCount++;
+      else if (kind === "teams")         spTeamsCount++;
+      else if (kind === "channel")       spChannelCount++;
+      else if (kind === "classic")       spClassicCount++;
+      else                               spOtherCount++;
+      spTotalUsedGB += siteGB;
+
+      // Raw template values actually seen, so the review step can show what
+      // Microsoft returned instead of us guessing at it.
+      const tplKey = template.trim() || "(blank)";
+      if (!spTemplates.has(tplKey)) spTemplates.set(tplKey, { template: tplKey, kind, count: 0, gb: 0 });
+      const tplEntry = spTemplates.get(tplKey);
+      tplEntry.count++;
+      tplEntry.gb += siteGB;
 
       const lastActivity = row[lastActivityKey] || null;
       // Only flag sites with a known last activity date older than 180 days.
@@ -852,6 +854,12 @@ exports.handler = async (event) => {
         channelCount: spChannelCount,
         classicCount: spClassicCount,
         otherCount: spOtherCount,
+        // Raw Root Web Template values seen, most common first (top 30) - shown
+        // on the review step only, to make the bucketing above verifiable.
+        templateBreakdown: [...spTemplates.values()]
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 30)
+          .map(t => ({ template: t.template, kind: t.kind, count: t.count, gb: Math.round(t.gb * 10) / 10 })),
         m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
         securityGroupCount: secGroupsR.data?.["@odata.count"] ?? null,
         totalUsedGB: spTotalUsedGB,
@@ -868,6 +876,10 @@ exports.handler = async (event) => {
     // lib/report-archive.js -- so the report can note what changed since last
     // month. Soft-fail throughout: any problem here (an outage, a bad key)
     // leaves report.commentary as null rather than breaking report generation.
+    // report.metricsRetained records whether THIS run's snapshot was actually
+    // saved, so the report cover can disclose retention truthfully per run
+    // (true only if the save succeeded -- never merely "we tried").
+    report.metricsRetained = false;
     try {
       const { snapshot, buildCommentary } = require("./lib/metrics-commentary");
       const { getLastMetrics, saveMetrics, deleteAllMetrics, prevPeriod } = require("./lib/report-archive");
@@ -882,7 +894,7 @@ exports.handler = async (event) => {
         const currentMetrics = snapshot(report);
         const prevMetrics = await getLastMetrics(tenantId, prevPeriod(reportPeriod));
         report.commentary = buildCommentary(currentMetrics, prevMetrics);
-        await saveMetrics(tenantId, reportPeriod, currentMetrics);
+        report.metricsRetained = (await saveMetrics(tenantId, reportPeriod, currentMetrics)) === true;
       }
     } catch (e) {
       report.commentary = null;
