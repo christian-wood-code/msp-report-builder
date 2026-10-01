@@ -687,7 +687,7 @@ exports.handler = async (event) => {
     const isDeletedKey   = spKeys.find(k => k.toLowerCase().includes("is deleted"))     || "";
 
     const cutoff180 = now_ms - 180 * MS_DAY;
-    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spTeamsCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
+    let spSiteCount = 0, spGroupCount = 0, spCommCount = 0, spTeamsCount = 0, spChannelCount = 0, spClassicCount = 0, spOtherCount = 0, spTotalUsedGB = 0;
     const inactiveSites = [];
 
     // Additional column keys confirmed from live API
@@ -743,7 +743,8 @@ exports.handler = async (event) => {
       spSiteCount++;
       if      (tl.startsWith("group"))       spGroupCount++;
       else if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) spCommCount++;
-      else if (tl.startsWith("sts#3") || tl.startsWith("teamchannel")) spTeamsCount++;
+      else if (tl.startsWith("sts#3")) spTeamsCount++;
+      else if (tl.startsWith("teamchannel")) spChannelCount++;
       else if (tl.startsWith("sts#0")) spClassicCount++;
       else                           spOtherCount++;
       spTotalUsedGB += parseInt(row[storageUsedKey] || "0") / 1e9;
@@ -848,6 +849,7 @@ exports.handler = async (event) => {
         groupCount: spGroupCount,
         commCount: spCommCount,
         teamsCount: spTeamsCount,
+        channelCount: spChannelCount,
         classicCount: spClassicCount,
         otherCount: spOtherCount,
         m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
