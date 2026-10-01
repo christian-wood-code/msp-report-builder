@@ -1246,7 +1246,7 @@ function buildReport() {
   if ((sp.siteCount||0) > 0 || sp.error) {
     html += '<div class="rpt-section">';
     html += secHeader('SharePoint / MS Teams', '#1A8070');
-    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.</p>';
+    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites. Storage is shown in binary gigabytes (1 GB = 2^30 bytes), the same basis as the SharePoint admin center.</p>';
     if (sp.error) {
       html += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
     } else {

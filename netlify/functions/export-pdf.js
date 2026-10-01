@@ -458,7 +458,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   const sp = d.sharepoint || {};
   if ((sp.siteCount ?? 0) > 0 || sp.error) {
     sectionHeader('SharePoint / MS Teams', C.teal,
-      'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.');
+      'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites. Storage is shown in binary gigabytes (1 GB = 2^30 bytes), the same basis as the SharePoint admin center.');
     if (sp.error) {
       callout('SharePoint data unavailable - check that Reports.Read.All permission is granted.', 'warn');
     } else {

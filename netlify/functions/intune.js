@@ -13,6 +13,13 @@ const CORS = {
 const respond = (status, body) => ({ statusCode: status, headers: CORS, body: JSON.stringify(body) });
 const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Bytes per "GB" in every storage figure this report shows. Binary (2^30), NOT
+// 1e9: the SharePoint admin center and Windows both report gigabytes as 2^30
+// bytes ("calculated in binary Gigabytes"), so dividing by 1e9 overstated
+// every total by ~7.4% against what the client sees there (e.g. 1,757 vs the
+// 1.6 TB shown in SharePoint admin).
+const BYTES_PER_GB = 1024 * 1024 * 1024;
+
 const LAPTOP_KW = ["laptop","notebook","thinkpad","latitude","elitebook","probook","inspiron",
   "xps","surface pro","surface laptop","macbook","yoga","ideapad","spectre","envy","pavilion",
   "omen","zbook","precision","vostro","gram","swift","spin","chromebook","portege","tecra",
@@ -443,7 +450,7 @@ exports.handler = async (event) => {
       // Disk
       if (d.freeStorageSpaceInBytes > 0 && d.totalStorageSpaceInBytes > 0) {
         const pct = Math.round((d.freeStorageSpaceInBytes / d.totalStorageSpaceInBytes) * 100);
-        if (pct < 15) lowDisk.push({ name: d.deviceName, user: d.userPrincipalName || d.emailAddress || "Unassigned", pct, gb: Math.round(d.freeStorageSpaceInBytes / 1e9) });
+        if (pct < 15) lowDisk.push({ name: d.deviceName, user: d.userPrincipalName || d.emailAddress || "Unassigned", pct, gb: Math.round(d.freeStorageSpaceInBytes / BYTES_PER_GB) });
       }
 
       // OS version
@@ -733,7 +740,7 @@ exports.handler = async (event) => {
       // "Total sites" and "Storage used" include every site regardless of
       // type - each bucket is its own breakdown figure and all of them count
       // toward both headline totals, so the buckets always sum to the total.
-      const siteGB = parseInt(row[storageUsedKey] || "0") / 1e9;
+      const siteGB = parseInt(row[storageUsedKey] || "0") / BYTES_PER_GB;
       spSiteCount++;
       if      (kind === "group")         spGroupCount++;
       else if (kind === "communication") spCommCount++;
