@@ -11,6 +11,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 - Runs as a static front end plus six Netlify serverless functions. There is no database; the only stored data is a small Netlify Blobs store of per-tenant summary figures (device counts, Secure Score and similar — no raw tenant data, no credentials) kept for up to 13 months
 - Credentials (Tenant ID, Client ID, Client Secret) are entered in the browser and sent to the server per request only — never logged or stored server-side. If you save a client in the wizard, it is kept in that browser's local storage (secret in plain text) until you delete it; edit and delete buttons are on each saved client
 - A **One-off report** tick box skips the month-on-month store and deletes any history already held for that tenant (use it for prospects)
+- The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The SharePoint section shows a **Teams** count (Teams-enabled M365 Groups, one Graph call) alongside site-type counts
 - Exports a fully formatted Word document, a PDF, or use your browser's print-to-PDF
 
 ## Stack
@@ -138,6 +139,7 @@ node server.js          # or: netlify dev
 - macOS devices are excluded from the encryption count — Intune does not reliably report FileVault state
 - SharePoint figures come from Microsoft's usage report, which runs 24–48 hours behind and includes hidden Teams-channel and system sites, so totals differ from the SharePoint admin center's Active sites list. Storage is in binary gigabytes, matching the admin center
 - Licence renewal Monthly vs Annual/Multi-year labels are inferred from days to renewal (Graph does not expose billing frequency)
+- The manual-entry sections (Executive Summary, Ticketing & Support, Recommendations & Opportunities) are not currently collected, because the wizard's Review step was removed; they are omitted from the report
 - Saved clients' secrets sit in browser local storage in plain text on that device
 - `npm audit` reports advisories in `jspdf`'s `dompurify` dependency; the fix is a breaking `jspdf` major upgrade (not yet done)
 - Netlify's built-in site password protection blocks serverless function calls — use an in-app password gate or Netlify Identity instead if access control is needed
