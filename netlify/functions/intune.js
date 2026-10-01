@@ -755,7 +755,7 @@ exports.handler = async (event) => {
       // They don't appear as sites in the SharePoint admin center,
       // so they are left out of every count; the number is kept for the
       // diagnostics panel only.
-      if (!template.trim() && !row[lastActivityKey] && siteGB === 0) { spExcludedBlank++; continue; }
+      if (!template.trim() && !row[lastActivityKey] && siteGB < 0.05) { spExcludedBlank++; continue; } // < 0.05 GB shows as 0.0 GB
       spSiteCount++;
       if      (kind === "group")         spGroupCount++;
       else if (kind === "communication") spCommCount++;
