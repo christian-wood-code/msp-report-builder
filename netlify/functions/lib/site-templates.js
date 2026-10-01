@@ -27,7 +27,9 @@ function classifySiteTemplate(template) {
 
   if (tl.startsWith("msf") || tl.startsWith("personal") || tl.startsWith("spspers") || tl.includes("onedrive")) return "personal";
   if (tl.startsWith("group")) return "group";
-  if (tl.startsWith("sitepagepublishing") || tl.startsWith("communication")) return "communication";
+  // Spaces vary ("Site Page Publishing" vs "SITEPAGEPUBLISHING#0"), so compare with them removed.
+  const compact = tl.replace(/[^a-z0-9#]/g, "");
+  if (compact.startsWith("sitepagepublishing") || compact.startsWith("communication")) return "communication";
   // Checked before the team-site rules: a channel site's name also contains "team".
   if (tl.includes("teamchannel") || tl.includes("team channel") || tl.includes("channel site")) return "channel";
   if (tl.startsWith("sts#3") || tl.includes("sharepoint online configuration") || tl.includes("no microsoft 365 group")) return "teams";
