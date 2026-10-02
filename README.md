@@ -11,7 +11,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 - Runs as a static front end plus six Netlify serverless functions. There is no database; the only stored data is a small Netlify Blobs store of per-tenant summary figures (device counts, Secure Score and similar — no raw tenant data, no credentials) kept for up to 13 months
 - Credentials (Tenant ID, Client ID, Client Secret) are entered in the browser and sent to the server per request only — never logged or stored server-side. If you save a client in the wizard, it is kept in that browser's local storage (secret in plain text) until you delete it; edit and delete buttons are on each saved client
 - A **One-off report** tick box skips the month-on-month store and deletes any history already held for that tenant (use it for prospects)
-- The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The SharePoint section shows a **Teams** count (Teams-enabled M365 Groups, one Graph call) alongside site-type counts
+- The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The panel also lists the individual sites counted as Other, with a CSV download
 - Exports a fully formatted Word document, a PDF, or use your browser's print-to-PDF
 
 ## Stack

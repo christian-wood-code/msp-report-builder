@@ -457,6 +457,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   // ══════════════════════════ SharePoint / MS Teams ════════════════════════
   const sp = d.sharepoint || {};
   if ((sp.siteCount ?? 0) > 0 || sp.error) {
+    ensure(330); // keep the header, intro and KPI grid on one page
     sectionHeader('SharePoint / MS Teams', C.teal,
       'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.');
     if (sp.error) {
@@ -469,12 +470,15 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
         k(sp.channelCount ?? 0, 'Teams channels', 'neu'),
         ...((sp.classicCount ?? 0) > 0 ? [k(sp.classicCount, 'Classic sites', 'neu')] : []),
         ...((sp.otherCount ?? 0) > 0 ? [k(sp.otherCount, 'Other', 'neu')] : []),
-        ...((sp.securityGroupCount ?? 0) > 0 ? [k(sp.securityGroupCount, 'Security groups', 'neu')] : []),
         ...(sp.allocatedGB ? [k(`${sp.allocatedGB} GB`, 'Storage allocated', 'neu')] : []),
         k(`${sp.totalUsedGB ?? 0} GB`, 'Storage used', 'neu'),
         k(sp.inactiveSiteCount ?? 0, 'Inactive Sites and Channels 180 days +', (sp.inactiveSiteCount ?? 0) > 0 ? 'warn' : 'good'),
+        k(sp.securityGroupCount ?? 'N/A', 'Security groups', 'neu'),
       ];
       kpiGrid(spKpis);
+      if ((sp.inactiveSiteCount ?? 0) > 0) {
+        callout(`${sp.inactiveSiteCount} site${sp.inactiveSiteCount > 1 ? 's have' : ' has'} had no recorded file activity in 180+ days. Review for archiving or deletion. Note: archived sites may appear in this count.`, 'warn');
+      }
       if (sp.allocatedGB && sp.totalUsedGB) {
         const usedPct = Math.round((sp.totalUsedGB / sp.allocatedGB) * 100);
         callout(`Storage: ${sp.totalUsedGB} GB used of ${sp.allocatedGB} GB allocated (${usedPct}% used).`, usedPct > 80 ? 'bad' : usedPct > 60 ? 'warn' : 'good');

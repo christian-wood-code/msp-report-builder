@@ -326,7 +326,7 @@ exports.handler = async (event) => {
 
     const [
       devR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
-      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, m365GroupsR, secGroupsR, subsR, teamsR,
+      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, secGroupsR, subsR,
     ] = await Promise.all([
       withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
@@ -343,15 +343,11 @@ exports.handler = async (event) => {
       withTimeout(graphReportCSV(token, "/reports/getSharePointSiteUsageStorage(period='D30')"), SLOW, emptyCSV),
       withTimeout(graphAll(token, "/subscribedSkus"), FAST, emptyAll),
       withTimeout(graphAll(token, "/roleManagement/directory/roleDefinitions?$select=id,displayName&$top=200"), FAST, emptyAll),
-      withTimeout(graphOne(token, "/groups?$filter=groupTypes/any(c:c+eq+'Unified')&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
       withTimeout(graphOne(token, "/groups?$filter=securityEnabled+eq+true+and+mailEnabled+eq+false&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
       // Commercial subscriptions (not the same as /subscribedSkus) -- used only
       // for upcoming renewal dates via nextLifecycleDateTime. Same
       // Organization.Read.All permission as the licence-count call above.
       withTimeout(graphAll(token, "/directory/subscriptions"), FAST, emptyAll),
-      // Count of Microsoft Teams (M365 Groups that are Teams-enabled). One call,
-      // same group-read permission as the group counts above.
-      withTimeout(graphOne(token, "/groups?$filter=resourceProvisioningOptions/Any(x:x+eq+'Team')&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
     ]);
 
     // ── Sign-in query — maximally optimised ──────────────────────────────────
@@ -750,7 +746,7 @@ exports.handler = async (event) => {
       // "Total sites" and "Storage used" include every site regardless of
       // type - each bucket is its own breakdown figure and all of them count
       // toward both headline totals, so the buckets always sum to the total.
-      const siteGB = parseInt(row[storageUsedKey] || "0") / BYTES_PER_GB;
+      const siteGB = (parseInt(row[storageUsedKey] || "0", 10) || 0) / BYTES_PER_GB;
       // Placeholder entries: no template, no recorded activity and no storage.
       // They don't appear as sites in the SharePoint admin center,
       // so they are left out of every count; the number is kept for the
@@ -881,8 +877,6 @@ exports.handler = async (event) => {
         siteCount: spSiteCount,
         groupCount: spGroupCount,
         commCount: spCommCount,
-        // Number of Teams (Teams-enabled M365 Groups) from Graph; null if unavailable
-        teamsCount: teamsR.data?.["@odata.count"] ?? null,
         channelCount: spChannelCount,
         classicCount: spClassicCount,
         otherCount: spOtherCount,
@@ -894,7 +888,6 @@ exports.handler = async (event) => {
           .map(t => ({ template: t.template, kind: t.kind, count: t.count, gb: Math.round(t.gb * 10) / 10 })),
         excludedBlankCount: spExcludedBlank,
         otherSites: otherSitesList, // diagnostics panel only (capped at 500)
-        m365GroupCount: m365GroupsR.data?.["@odata.count"] ?? null,
         securityGroupCount: secGroupsR.data?.["@odata.count"] ?? null,
         totalUsedGB: spTotalUsedGB,
         allocatedGB: null,

@@ -764,13 +764,17 @@ exports.handler = async (event) => {
           k(sp.channelCount||0, "Teams channels",   "neu"),
           ...((sp.classicCount||0) > 0 ? [k(sp.classicCount, "Classic sites", "neu")] : []),
           ...((sp.otherCount||0) > 0 ? [k(sp.otherCount, "Other", "neu")] : []),
-          ...((sp.securityGroupCount||0) > 0 ? [k(sp.securityGroupCount, "Security groups", "neu")] : []),
           k(`${sp.totalUsedGB||0} GB`, "Storage used",   "neu"),
           k(sp.inactiveSiteCount||0,"Inactive Sites and Channels 180 days +",    (sp.inactiveSiteCount||0)>0?"warn":"good"),
+          k(sp.securityGroupCount ?? "N/A", "Security groups", "neu"),
         ];
         if (sp.allocatedGB) spKpis.splice(2,0,k(`${sp.allocatedGB} GB`,"Storage allocated","neu"));
         children.push(kpiGrid(spKpis));
         children.push(spacer(140));
+        if ((sp.inactiveSiteCount||0) > 0) {
+          children.push(callout(`${sp.inactiveSiteCount} site${sp.inactiveSiteCount>1 ? 's have' : ' has'} had no recorded file activity in 180+ days. Review for archiving or deletion. Note: archived sites may appear in this count.`, "warn"));
+          children.push(spacer(140));
+        }
         if (sp.allocatedGB && sp.totalUsedGB) {
           const usedPct = Math.round((sp.totalUsedGB/sp.allocatedGB)*100);
           children.push(callout(`Storage: ${sp.totalUsedGB} GB used of ${sp.allocatedGB} GB allocated (${usedPct}% used).`, usedPct>80?"bad":usedPct>60?"warn":"good"));
