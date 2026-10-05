@@ -260,9 +260,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
   <div class="step-bar">
     <div class="step-dot active" id="dot-1">1</div><div class="step-line"></div>
     <div class="step-dot idle" id="dot-2">2</div><div class="step-line"></div>
-    <div class="step-dot idle" id="dot-3">3</div><div class="step-line"></div>
-    <div class="step-dot idle" id="dot-4">4</div><div class="step-line"></div>
-    <div class="step-dot idle" id="dot-5">5</div>
+    <div class="step-dot idle" id="dot-3">3</div>
   </div>
   <div id="err-box" style="display:none"></div>
 
@@ -481,11 +479,12 @@ window.addEventListener('afterprint', function() { document.title = _origTitle; 
 function showPage(n) {
   document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('page-' + n).classList.add('active');
-  for (var i = 1; i <= 5; i++) {
+  var stepNo = (n === 4) ? 3 : n; // the report page is the third (last) step
+  for (var i = 1; i <= 3; i++) {
     var d = document.getElementById('dot-' + i);
     d.classList.remove('active','done','idle');
-    if (i < n) { d.classList.add('done'); d.innerHTML = '✓'; }
-    else if (i === n) { d.classList.add('active'); d.textContent = i; }
+    if (i < stepNo) { d.classList.add('done'); d.innerHTML = '✓'; }
+    else if (i === stepNo) { d.classList.add('active'); d.textContent = i; }
     else { d.classList.add('idle'); d.textContent = i; }
   }
   err('');
