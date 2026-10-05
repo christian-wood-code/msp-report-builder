@@ -1,5 +1,6 @@
 "use strict";
 
+const { sortLicences } = require("./lib/licence-prices");
 const { classifySiteTemplate } = require("./lib/site-templates");
 
 const CORS = {
@@ -592,8 +593,8 @@ exports.handler = async (event) => {
         // Free/viral SKUs (Power Automate/Power Apps/Power BI Free, etc.) are listed after the paid ones
         const free = /(^|_)(FREE|VIRAL)(_|$)|^POWER_BI_STANDARD$/i.test(s.skuPartNumber) || /\(free\)/i.test(name);
         return { name, count: s.consumedUnits || 0, available: s.prepaidUnits?.enabled || 0, free };
-      })
-      .sort((a, b) => (a.free - b.free) || (b.count - a.count));
+      });
+    licenceSummary = sortLicences(licenceSummary);
 
     // Fallback: if subscribedSkus returned nothing, count from user assignedLicenses
     if (licenceSummary.length === 0 && usersR.results.length > 0) {

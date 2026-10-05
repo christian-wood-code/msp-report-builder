@@ -23,7 +23,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 | Data source | Microsoft Graph API v1.0 (app-only, read-only) |
 | Month-on-month store | [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/) (`@netlify/blobs`, pinned to an exact version) |
 | Word export | [`docx`](https://www.npmjs.com/package/docx) npm package |
-| PDF export | `jspdf` + `jspdf-autotable` |
+| PDF export | `jspdf` (tables and cards drawn directly) |
 | Hosting | Netlify (free tier) |
 
 ## Project structure

@@ -117,67 +117,126 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .policy-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius);font-size:13px;}
 .policy-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Report */
-/* ── Report output - WCAG AA, corporate readability ── */
-.report-wrap{background:#fff;border:none;padding:0;font-size:16px;line-height:1.6;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
-.rpt-cover{background:#0f172a;background:linear-gradient(135deg,#0f172a 0%,#1a2744 100%);padding:2.5rem 2.5rem 2rem;margin-bottom:2.5rem;position:relative;overflow:hidden;}
-.rpt-cover::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,.15) 0%,transparent 70%);pointer-events:none;}
-.rpt-cover-top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;position:relative;}
-.rpt-cover-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.2);color:#60a5fa;border:1px solid rgba(59,130,246,.3);padding:5px 14px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-radius:99px;}
-.rpt-cover-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#60a5fa;display:inline-block;}
-.rpt-client{font-size:32px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px;line-height:1.2;color:#fff;position:relative;}
-.rpt-period{font-size:16px;color:#94a3b8;margin-bottom:1.5rem;position:relative;}
-.rpt-meta-row{display:flex;gap:12px;flex-wrap:wrap;position:relative;}
-.rpt-meta-item{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:5px 14px;font-size:13px;color:#94a3b8;} .rpt-meta-item strong{color:#fff;font-weight:600;}
-.rpt-section{margin-bottom:2.5rem;}
-.rpt-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;padding-bottom:8px;border-bottom:0.5px solid #e5e7eb;}
-.rpt-section-header-left{display:flex;align-items:center;gap:10px;}
-.rpt-sec-sq{width:13px;height:13px;border-radius:2px;flex-shrink:0;}
-.rpt-section-title{font-size:20px;font-weight:700;color:#1f2937;letter-spacing:-0.1px;}
-.rpt-sec-badge{font-size:10px;font-weight:700;letter-spacing:.07em;color:#9ca3af;}
-.rpt-sub{font-size:13px;font-weight:600;color:#6b7280;margin:1.25rem 0 8px;padding-left:10px;border-left:3px solid #e5e7eb;text-transform:uppercase;letter-spacing:0.04em;}
-.rpt-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:10px;margin-bottom:0.75rem;page-break-inside:avoid;break-inside:avoid;}
-.rpt-kpi-block{page-break-inside:avoid;break-inside:avoid;}
-.rpt-kpi{background:#f9fafb;border:1px solid #e5e7eb;padding:14px 12px;text-align:center;position:relative;overflow:hidden;}
-.rpt-kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--kpi-accent,#e5e7eb);}
-.rpt-kpi-val{font-size:26px;font-weight:700;line-height:1.1;margin-bottom:6px;}
-.rpt-kpi-lbl{font-size:12px;color:#4b5563;line-height:1.4;font-weight:500;}
-.rpt-kpi.good .rpt-kpi-val{color:#166534;} .rpt-kpi.good{--kpi-accent:#16a34a;}
-.rpt-kpi.warn .rpt-kpi-val{color:#92400e;} .rpt-kpi.warn{--kpi-accent:#d97706;}
-.rpt-kpi.bad  .rpt-kpi-val{color:#991b1b;} .rpt-kpi.bad{--kpi-accent:#dc2626;}
-.rpt-kpi.neu  .rpt-kpi-val{color:#111827;} .rpt-kpi.neu{--kpi-accent:#9ca3af;}
-.rpt-kpi.info .rpt-kpi-val{color:#1e40af;} .rpt-kpi.info{--kpi-accent:#2563eb;}
-.rpt-callout{display:flex;align-items:flex-start;gap:0;padding:14px 18px;margin:12px 0;font-size:14px;line-height:1.7;border-left:4px solid;}
-.rpt-callout.warn{background:#fffbeb;border-color:#d97706;color:#78350f;}
-.rpt-callout.bad{background:#fef2f2;border-color:#dc2626;color:#7f1d1d;}
-.rpt-callout.good{background:#f0fdf4;border-color:#16a34a;color:#14532d;}
-.rpt-callout.info{background:#eff6ff;border-color:#2563eb;color:#1e3a8a;}
-.rpt-policy-table{width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;}
-.rpt-policy-table thead tr{background:#f3f4f6;}
-.rpt-policy-table th{text-align:left;padding:11px 16px;font-size:13px;font-weight:700;color:#1f2937;border-bottom:2px solid #d1d5db;letter-spacing:0.02em;}
-.rpt-policy-table td{padding:12px 16px;border-bottom:1px solid #f3f4f6;vertical-align:middle;font-size:14px;color:#111827;line-height:1.5;}
-.rpt-policy-table tr:last-child td{border-bottom:none;}
-.rpt-status{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;padding:4px 10px;border:1px solid transparent;}
-.rpt-status.enforced{background:#dcfce7;color:#166534;border-color:#bbf7d0;}
-.rpt-status.report-only{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
-.rpt-status.not-found{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
-.rpt-status.disabled{background:#f3f4f6;color:#6b7280;border-color:#e5e7eb;}
-.rpt-risk-table{width:100%;border-collapse:collapse;margin:12px 0;border:1px solid #e5e7eb;}
-.rpt-risk-table th{text-align:left;padding:12px 16px;font-size:13px;font-weight:700;color:#fff;background:#1f2937;border-right:1px solid #374151;letter-spacing:0.02em;}
-.rpt-risk-table th:last-child{border-right:none;}
-.rpt-risk-table td{padding:13px 16px;border-bottom:1px solid #e5e7eb;vertical-align:top;font-size:14px;line-height:1.6;}
-.rpt-risk-table tr:last-child td{border-bottom:none;}
-.rpt-risk-table tr:nth-child(even) td{background:#f9fafb;}
-.rpt-sev{display:inline-flex;align-items:center;font-size:13px;font-weight:700;padding:4px 10px;border:1px solid transparent;white-space:nowrap;}
-.rpt-sev.high{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
-.rpt-sev.medium{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
-.rpt-sev.low{background:#f0fdf4;color:#166534;border-color:#bbf7d0;}
-.rpt-personal{background:#f0f4ff;border-left:4px solid #4f46e5;padding:1.25rem 1.5rem;margin:1.25rem 0;font-style:italic;color:#1e1b4b;font-size:16px;line-height:1.75;}
-.rpt-rec-card{background:#f9fafb;border:1px solid #e5e7eb;border-left:4px solid;padding:1.25rem;margin:10px 0;}
-.rpt-rec-card-title{font-size:14px;font-weight:700;margin-bottom:8px;}
-.rpt-body{font-size:16px;line-height:1.7;color:#374151;margin-bottom:1rem;}
-.rpt-body strong{color:#111827;font-weight:600;}
-.rpt-footer{border-top:2px solid #e5e7eb;padding-top:1.5rem;margin-top:3rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
-.rpt-footer-text{font-size:13px;color:#6b7280;letter-spacing:0.01em;}
+/* ── Report output: always light theme, everything scoped under .rpt2 / r2-* ── */
+.report-wrap.rpt2{
+  --r2-bg:#f4f6fb;--r2-surface:#ffffff;--r2-surface-2:#f8fafc;--r2-text:#0f172a;--r2-muted:#64748b;--r2-line:#e5e9f2;
+  --r2-good:#0f9d6b;--r2-good-bg:#e7f6ef;--r2-warn:#c77700;--r2-warn-bg:#fff4e0;--r2-bad:#d6293e;--r2-bad-bg:#fdebee;
+  --r2-info:#0d7cc4;--r2-info-bg:#e6f2fb;--r2-neutral:#475569;--r2-neutral-bg:#eef1f6;
+  --r2-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+  --r2-hero:linear-gradient(135deg,#0b1430 0%,#13224d 55%,#2a1450 100%);
+  container:rpt/inline-size;color-scheme:light;background:var(--r2-bg);color:var(--r2-text);border-radius:16px;padding:20px;
+  font:15px/1.55 "Inter","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;
+}
+.rpt2 *,.rpt2 *::before,.rpt2 *::after{box-sizing:border-box}
+.rpt2 .r2-hero{background:var(--r2-hero);color:#fff;padding:28px 28px 32px;border-radius:18px;position:relative;overflow:hidden}
+.rpt2 .r2-hero::after{content:"";position:absolute;right:-120px;top:-140px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,rgba(13,124,196,.45),transparent 65%)}
+.rpt2 .r2-hero>*{position:relative;z-index:1}
+.rpt2 .r2-hero-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.rpt2 .r2-hero img{height:40px;display:block}
+.rpt2 .r2-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#e8f0ff}
+.rpt2 .r2-hero h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:34px 0 8px;letter-spacing:-.02em;font-weight:800;color:#fff}
+.rpt2 .r2-hero p{margin:0;color:#b9c6e6}
+.rpt2 .r2-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+/* headline strip: sits on the page background, below the hero */
+.rpt2 .r2-strip{margin-top:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.rpt2 .r2-tile{background:var(--r2-surface);border:1px solid var(--r2-line);border-radius:16px;padding:18px;box-shadow:var(--r2-shadow);break-inside:avoid;page-break-inside:avoid}
+.rpt2 .r2-lbl{font-size:12px;font-weight:600;color:var(--r2-muted);text-transform:uppercase;letter-spacing:.06em}
+.rpt2 .r2-val{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;margin:6px 0 4px}
+.rpt2 .r2-sub{font-size:13px;color:var(--r2-muted)}
+.rpt2 .r2-val.r2-good{color:var(--r2-good)} .rpt2 .r2-val.r2-warn{color:var(--r2-warn)} .rpt2 .r2-val.r2-bad{color:var(--r2-bad)} .rpt2 .r2-val.r2-info{color:var(--r2-info)} .rpt2 .r2-val.r2-neu{color:var(--r2-muted)}
+/* sections */
+.rpt2 .r2-sec{margin:30px 0 0}
+.rpt2 .r2-sec-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;break-after:avoid;page-break-after:avoid}
+.rpt2 .r2-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:18px;background:var(--r2-info-bg);flex:none}
+.rpt2 .r2-sec-head h2{margin:0;font-size:21px;letter-spacing:-.01em;color:var(--r2-text);font-weight:700}
+.rpt2 .r2-tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--r2-muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.rpt2 .r2-lead{color:var(--r2-muted);margin:-4px 0 16px;max-width:70ch;orphans:3;widows:3}
+.rpt2 .r2-body{color:var(--r2-text);line-height:1.6}
+.rpt2 .r2-card{background:var(--r2-surface);border:1px solid var(--r2-line);border-radius:16px;padding:18px;box-shadow:var(--r2-shadow)}
+.rpt2 .r2-grid{display:grid;gap:14px}
+.rpt2 .r2-grid>*{min-width:0}
+.rpt2 .r2-g2{grid-template-columns:repeat(2,minmax(0,1fr))} .rpt2 .r2-g3{grid-template-columns:repeat(3,minmax(0,1fr))} .rpt2 .r2-g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rpt2 .r2-secgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.rpt2 .r2-kpi{background:var(--r2-surface);border:1px solid var(--r2-line);border-radius:14px;padding:14px 16px;box-shadow:var(--r2-shadow);border-top:3px solid var(--r2-line);break-inside:avoid;page-break-inside:avoid}
+.rpt2 .r2-card .r2-kpi{box-shadow:none}
+.rpt2 .r2-v{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.rpt2 .r2-l{font-size:12.5px;color:var(--r2-muted);margin-top:2px}
+.rpt2 .r2-kpi.r2-good{border-top-color:var(--r2-good)} .rpt2 .r2-kpi.r2-good .r2-v{color:var(--r2-good)}
+.rpt2 .r2-kpi.r2-warn{border-top-color:var(--r2-warn)} .rpt2 .r2-kpi.r2-warn .r2-v{color:var(--r2-warn)}
+.rpt2 .r2-kpi.r2-bad{border-top-color:var(--r2-bad)} .rpt2 .r2-kpi.r2-bad .r2-v{color:var(--r2-bad)}
+.rpt2 .r2-kpi.r2-info{border-top-color:var(--r2-info)} .rpt2 .r2-kpi.r2-info .r2-v{color:var(--r2-info)}
+.rpt2 .r2-kpi.r2-neu .r2-v{color:var(--r2-text)}
+.rpt2 .r2-h3{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--r2-muted);margin:20px 0 8px;break-after:avoid;page-break-after:avoid}
+/* callouts */
+.rpt2 .r2-callout{display:flex;gap:12px;align-items:flex-start;border-radius:12px;padding:12px 16px;margin:14px 0 0;border:1px solid transparent;font-size:14px;break-inside:avoid;page-break-inside:avoid}
+.rpt2 .r2-callout>div{min-width:0;flex:1}
+.rpt2 .r2-callout b{font-weight:700}
+.rpt2 .r2-callout.r2-warn{background:var(--r2-warn-bg);border-color:rgba(199,119,0,.3)}
+.rpt2 .r2-callout.r2-bad{background:var(--r2-bad-bg);border-color:rgba(214,41,62,.3)}
+.rpt2 .r2-callout.r2-info{background:var(--r2-info-bg);border-color:rgba(13,124,196,.3)}
+.rpt2 .r2-callout.r2-good{background:var(--r2-good-bg);border-color:rgba(15,157,107,.3)}
+.rpt2 .r2-split{display:grid;grid-template-columns:minmax(220px,36%) 1fr;gap:6px 36px;align-items:start}
+/* pills */
+.rpt2 .r2-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;line-height:1.4}
+.rpt2 .r2-pill.r2-good{background:var(--r2-good-bg);color:var(--r2-good)} .rpt2 .r2-pill.r2-warn{background:var(--r2-warn-bg);color:var(--r2-warn)}
+.rpt2 .r2-pill.r2-bad{background:var(--r2-bad-bg);color:var(--r2-bad)} .rpt2 .r2-pill.r2-info{background:var(--r2-info-bg);color:var(--r2-info)} .rpt2 .r2-pill.r2-neu{background:var(--r2-neutral-bg);color:var(--r2-neutral)}
+.rpt2 td .r2-pill+.r2-pill{margin-left:2px}
+/* bars, legend, donut */
+.rpt2 .r2-bar{height:10px;border-radius:999px;background:var(--r2-neutral-bg);overflow:hidden;display:flex}
+.rpt2 .r2-bar i{display:block;height:100%}
+.rpt2 .r2-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--r2-muted)}
+.rpt2 .r2-legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+.rpt2 .r2-legend-col{flex-direction:column;gap:8px;margin:0}
+.rpt2 .r2-donut{--p:90;width:132px;height:132px;border-radius:50%;background:conic-gradient(var(--c,var(--r2-good)) calc(var(--p)*1%),var(--r2-neutral-bg) 0);display:grid;place-items:center;flex:none}
+.rpt2 .r2-donut>div{width:98px;height:98px;border-radius:50%;background:var(--r2-surface);display:grid;place-items:center;text-align:center}
+.rpt2 .r2-donut b{font-size:26px;letter-spacing:-.02em;line-height:1;display:block}
+.rpt2 .r2-donut small{display:block;color:var(--r2-muted);font-size:11px;font-weight:600;margin-top:2px}
+.rpt2 .r2-row{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.rpt2 .r2-note{font-size:12px;color:var(--r2-muted);margin:10px 0 0}
+/* tables */
+.rpt2 table{width:100%;border-collapse:collapse;font-size:14px;margin:0}
+.rpt2 th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--r2-muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--r2-line);font-weight:700;white-space:nowrap;background:transparent}
+.rpt2 td{padding:8px 12px;border-bottom:1px solid var(--r2-line);color:var(--r2-text);vertical-align:middle;background:transparent}
+.rpt2 tr:last-child td{border-bottom:0}
+.rpt2 td.r2-num,.rpt2 th.r2-num{text-align:right;font-variant-numeric:tabular-nums}
+.rpt2 table.r2-nowrap td{white-space:nowrap}
+.rpt2 .r2-tw{overflow-x:auto}
+.rpt2 .r2-risktbl th:nth-child(1){width:32%} .rpt2 .r2-risktbl th:nth-child(2){width:22%} .rpt2 .r2-risktbl th:nth-child(3){width:9%}
+.rpt2 .r2-risktbl td{vertical-align:top} .rpt2 .r2-risktbl td:nth-child(3){white-space:nowrap}
+.rpt2 .r2-roles{display:flex;flex-wrap:wrap;gap:4px}
+.rpt2 .r2-roles .r2-pill{font-size:11px;padding:2px 8px}
+/* month on month */
+.rpt2 .r2-mom{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.rpt2 .r2-mom li{display:flex;gap:12px;align-items:center;background:var(--r2-surface-2);border:1px solid var(--r2-line);border-radius:12px;padding:10px 14px;break-inside:avoid;page-break-inside:avoid}
+/* licences: fixed-width count column keeps every bar aligned; names wrap, never truncate */
+.rpt2 .r2-lic{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,2fr) 200px;gap:14px;align-items:center;padding:6px 0;border-bottom:1px solid var(--r2-line);break-inside:avoid;page-break-inside:avoid}
+.rpt2 .r2-lic:last-child{border-bottom:0}
+.rpt2 .r2-lic .r2-n{font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.rpt2 .r2-lic .r2-c{font-variant-numeric:tabular-nums;color:var(--r2-muted);font-size:13px;text-align:right;white-space:nowrap}
+.rpt2 .r2-lic .r2-c b{color:var(--r2-text)}
+.rpt2 .r2-divlabel{margin:14px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--r2-muted)}
+/* manual-content blocks */
+.rpt2 .r2-personal{background:var(--r2-info-bg);border-left:4px solid var(--r2-info);border-radius:12px;padding:16px 20px;margin:0 0 14px;font-style:italic;line-height:1.7}
+.rpt2 .r2-rec{border-left:4px solid var(--rc,var(--r2-info));margin-bottom:12px;break-inside:avoid;page-break-inside:avoid}
+.rpt2 .r2-rec-title{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--rc,var(--r2-info))}
+.rpt2 .r2-footer{margin:40px 0 8px;color:var(--r2-muted);font-size:12.5px;text-align:center}
+/* Container queries (not viewport media queries): the report lives in a ~700px card and
+   also prints at ~690px, so breakpoints key off the report's own width. */
+@container rpt (max-width:620px){
+  .rpt2 .r2-strip,.rpt2 .r2-g4,.rpt2 .r2-g3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rpt2 .r2-secgrid{grid-template-columns:minmax(0,1fr)}
+  .rpt2 .r2-split{grid-template-columns:1fr}
+  .rpt2 .r2-lic{grid-template-columns:minmax(0,1fr) auto}
+  .rpt2 .r2-lic .r2-bar{grid-column:1/-1;order:3}
+}
+@container rpt (max-width:440px){
+  .rpt2 .r2-strip,.rpt2 .r2-g2,.rpt2 .r2-g3,.rpt2 .r2-g4{grid-template-columns:minmax(0,1fr)}
+  .rpt2 .r2-hero{padding:22px 18px 26px}
+  .rpt2 table.r2-nowrap td{white-space:normal}
+}
+@media screen and (max-width:620px){
+  .report-wrap.rpt2{padding:12px}
+}
 @media print{
   /* ── Hide UI chrome ───────────────────────────────────────────── */
   header,.step-bar,#err-box,.card-title,.card-sub,.action-row,button,
@@ -187,66 +246,49 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
   @page{margin:12mm 14mm 14mm 14mm;size:A4;}
   html,body{background:white;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .container{padding:0;max-width:100%;margin:0;}
-
-  /* ── Remove card chrome ───────────────────────────────────────── */
   .card{border:none;padding:0;box-shadow:none;}
-  .report-wrap{border:none;padding:0;background:white;}
-  .rpt-cover{border-radius:0;}
 
-  /* ── Preserve colours ─────────────────────────────────────────── */
-  .rpt-cover,.rpt-kpi,.rpt-callout,.rpt-personal,.rpt-rec-card,
-  .rpt-risk-table th,.rpt-kpi-grid,.rpt-policy-table thead tr,
-  .rpt-sub,*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* ── Report: colours must print (hero gradient, pills, bars, donuts) ── */
+  .report-wrap.rpt2{background:#fff;border-radius:0;padding:0;font-size:12px;line-height:1.45;}
+  .rpt2,.rpt2 *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .rpt2 .r2-hero{border-radius:12px;padding:18px 20px 20px;}
+  .rpt2 .r2-hero img{height:30px;}
+  .rpt2 .r2-hero h1{font-size:28px;margin:20px 0 6px;}
+  .rpt2 .r2-meta{margin-top:12px;}
+  .rpt2 .r2-strip{margin-top:12px;gap:10px;}
+  .rpt2 .r2-tile{padding:12px;box-shadow:none;}
+  .rpt2 .r2-val{font-size:26px;}
+  .rpt2 .r2-sec{margin-top:18px;}
+  .rpt2 .r2-sec-head{margin-bottom:10px;}
+  .rpt2 .r2-sec-head h2{font-size:17px;}
+  .rpt2 .r2-icon{width:30px;height:30px;font-size:15px;}
+  .rpt2 .r2-card,.rpt2 .r2-kpi{box-shadow:none;}
+  .rpt2 .r2-card{padding:12px;}
+  .rpt2 .r2-grid,.rpt2 .r2-strip{gap:10px;}
+  .rpt2 .r2-kpi{padding:10px 12px;}
+  .rpt2 .r2-v{font-size:21px;}
+  .rpt2 .r2-l{font-size:11px;}
+  .rpt2 .r2-h3{margin-top:14px;}
+  .rpt2 .r2-donut{width:110px;height:110px;}
+  .rpt2 .r2-donut>div{width:80px;height:80px;}
+  .rpt2 .r2-donut b{font-size:21px;}
+  .rpt2 table{font-size:11px;}
+  .rpt2 th{font-size:9.5px;padding:7px 8px;}
+  .rpt2 td{padding:6px 8px;}
+  .rpt2 .r2-callout{padding:9px 12px;font-size:12px;}
+  .rpt2 .r2-lic .r2-c{font-size:11.5px;}
+  .rpt2 .r2-lic{grid-template-columns:minmax(0,2.4fr) minmax(0,2fr) 180px;}
+  .rpt2 .r2-pill{font-size:10.5px;padding:2px 8px;}
+  .rpt2 .r2-footer{margin-top:24px;}
 
-  /* ── Page break controls ──────────────────────────────────────── */
-  /* Never break inside these elements (small/bounded -- safe to force
-     onto one page). Tables are deliberately excluded here: a long
-     .rpt-policy-table/.rpt-risk-table forced to avoid breaking as a
-     whole gets pushed entirely onto the next page when it doesn't fit
-     in the remaining space, leaving a large blank gap. The per-row
-     rule further down (keeping individual <tr>s intact) is the correct
-     way to avoid orphaned rows without also avoiding the whole table. */
-  .rpt-kpi-block,.rpt-kpi-grid,.rpt-kpi,
-  .rpt-callout,.rpt-section-header{
-    page-break-inside:avoid;
-    break-inside:avoid;
-  }
-
-  /* Section headers always start on a new block — keep with next element */
-  .rpt-section-header{
-    page-break-after:avoid;
-    break-after:avoid;
-  }
-
-  /* Sub-labels keep with what follows */
-  .rpt-sub{
-    page-break-after:avoid;
-    break-after:avoid;
-  }
-
-  /* Don't orphan the first row of a table */
-  .rpt-policy-table tr,.rpt-risk-table tr{
-    page-break-inside:avoid;
-    break-inside:avoid;
-  }
-
-  /* Sections get a little breathing room between them */
-  .rpt-section{
-    page-break-inside:auto;
-    margin-bottom:6mm;
-  }
-
-  /* ── Tighten spacing for print ────────────────────────────────── */
-  .rpt-kpi-grid{gap:6px;margin-bottom:6px;}
-  .rpt-kpi{padding:8px 6px;}
-  .rpt-kpi-val{font-size:20px;}
-  .rpt-kpi-lbl{font-size:9px;}
-  .rpt-sub{font-size:7px;margin-top:8px;margin-bottom:4px;}
-  .rpt-body{font-size:9px;line-height:1.4;}
-  .rpt-callout{padding:7px 10px;margin-bottom:6px;}
-  .rpt-policy-table td,.rpt-policy-table th{padding:5px 8px;font-size:9px;}
-  .rpt-risk-table td,.rpt-risk-table th{padding:5px 7px;font-size:9px;}
-  .rpt-section{margin-bottom:8px;}
+  /* ── Page breaks ──────────────────────────────────────────────── */
+  /* Table cards may break across pages (no big blank gaps); rows, KPI
+     cards, callouts, licence rows and donut/summary cards stay intact. */
+  .rpt2 .r2-tw{overflow:visible;break-inside:auto;page-break-inside:auto;}
+  .rpt2 tr{break-inside:avoid;page-break-inside:avoid;}
+  .rpt2 thead{display:table-header-group;}
+  .rpt2 .r2-grid>.r2-card,.rpt2 .r2-grid>div{break-inside:avoid;page-break-inside:avoid;}
+  .rpt2 .r2-sec-head,.rpt2 .r2-h3{break-after:avoid;page-break-after:avoid;}
 }
 @media print{#sp-diag{display:none !important;}}
 </style>
@@ -441,7 +483,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
         <button onclick="startOver()">+ New report</button>
       </div>
       <details id="sp-diag" style="display:none;margin-bottom:1rem;font-size:13px;"><summary style="cursor:pointer;color:var(--text-secondary);">SharePoint template diagnostics (not part of the report)</summary><div id="sp-diag-body" style="margin-top:8px;"></div></details>
-      <div id="report-out" class="report-wrap"></div>
+      <div id="report-out" class="report-wrap rpt2"></div>
     </div>
   </div>
 </div>
@@ -817,7 +859,7 @@ function renderPreview() {
       });
       uDetail += '</table>';
     } else {
-      uDetail += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">No annual licence renewals due in the next 90 days.</div>';
+      uDetail += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">No licence renewals due in the next 90 days.</div>';
     }
     if ((u.adminRoles||[]).length > 0) {
       uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Admin role holders</div>';
@@ -921,469 +963,370 @@ function buildReport() {
   var preparer = v('r-preparer');
   var fmt = function(dt){ return new Date(dt).toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'}); };
   var today = fmt(new Date().toISOString().split('T')[0]);
+  var shortDate = function(s){ return s ? new Date(s).toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'}) : 'Never'; };
+  var num = function(n){ return (Number(n)||0).toLocaleString('en-NZ'); };
   var html = '';
 
-  // Logo inlined above
+  // ── Report design (".rpt2" scope, all classes prefixed r2-) ────────────────
+  function pill(text, cls, style) {
+    return '<span class="r2-pill r2-'+(cls||'neu')+'"'+(style?' style="'+style+'"':'')+'>'+text+'</span>';
+  }
+  function kpi(val, lbl, cls) {
+    return '<div class="r2-kpi r2-'+(cls||'neu')+'"><div class="r2-v">'+val+'</div><div class="r2-l">'+lbl+'</div></div>';
+  }
+  function callout(text, type, icon) {
+    var ic = icon || (type==='warn'||type==='bad' ? '⚠️' : type==='good' ? '✅' : 'ℹ️');
+    return '<div class="r2-callout r2-'+type+'"><span class="r2-ci">'+ic+'</span><div>'+text+'</div></div>';
+  }
+  function h3(t, first) { return '<h3 class="r2-h3"'+(first?' style="margin-top:0"':'')+'>'+t+'</h3>'; }
+  function table(headers, rows, numCols, cls) {
+    numCols = numCols || [];
+    var th = headers.map(function(h,i){ return '<th'+(numCols.indexOf(i)>=0?' class="r2-num"':'')+'>'+h+'</th>'; }).join('');
+    var tr = rows.map(function(r){
+      return '<tr>'+r.map(function(c,i){ return '<td'+(numCols.indexOf(i)>=0?' class="r2-num"':'')+'>'+c+'</td>'; }).join('')+'</tr>';
+    }).join('');
+    return '<div class="r2-card r2-tw" style="padding:6px 8px"><table'+(cls?' class="'+cls+'"':'')+'><thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table></div>';
+  }
+  function section(icon, title, body, lead, tag) {
+    return '<section class="r2-sec"><div class="r2-sec-head"><div class="r2-icon">'+icon+'</div><h2>'+title+'</h2><span class="r2-tag">'+(tag||'This month')+'</span></div>'
+      + (lead ? '<p class="r2-lead">'+lead+'</p>' : '') + body + '</section>';
+  }
+  function donut(pct, color, big, small) {
+    return '<div class="r2-donut" style="--p:'+pct+';--c:'+color+'"><div><span><b>'+big+'</b><small>'+small+'</small></span></div></div>';
+  }
+  function stackBar(parts, total) {
+    if (!(total > 0)) return '';
+    return '<div class="r2-bar" style="height:14px">' + parts.map(function(p){
+      return '<i style="width:'+(p.n/total*100).toFixed(1)+'%;background:'+p.c+'"></i>';
+    }).join('') + '</div>';
+  }
+  function legend(parts) {
+    return '<div class="r2-legend">' + parts.map(function(p){ return '<span style="--c:'+p.c+'">'+p.l+' · '+p.n+'</span>'; }).join('') + '</div>';
+  }
 
-  // Cover
-  html += '<div class="rpt-cover">';
-  html += '<div class="rpt-cover-top">';
-  var FULL_LOGO = 'data:image/png;base64,' + (window._fullLogoTransparent || window._iconB64 || '');
-  html += '<img src="'+FULL_LOGO+'" style="height:56px;display:block;" alt="Integricity Technology" />';
-  html += '<span class="rpt-cover-badge">Monthly IT Report  ·  ' + new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'}) + '</span>';
+  var u  = d.users || {};
+  var sp = d.sharepoint || {};
+  var comp = d.comp || {compliant:0, noncompliant:0, unknown:0};
+  var total = d.total || 0;
+  var pctComp = total > 0 ? Math.round(comp.compliant / total * 100) : 0;
+  var renewals = (u.licenceRenewals || []).slice().sort(function(a,b){ return String(a.renewalDate).localeCompare(String(b.renewalDate)); });
+
+  // ── Hero ───────────────────────────────────────────────────────────────────
+  var HERO_LOGO = window._fullLogoTransparent || window._fullLogoWhite || window._iconB64 || '';
+  var monthLbl = new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'});
+  html += '<div class="r2-hero"><div class="r2-hero-top">';
+  html += '<img alt="Integricity Technology" src="data:image/png;base64,'+HERO_LOGO+'">';
+  html += '<span class="r2-chip">● Monthly IT report · '+esc(monthLbl)+'</span></div>';
+  html += '<h1>'+esc(client)+'</h1>';
+  html += '<p>Report period: '+esc(fmt(from))+' - '+esc(fmt(to))+'</p>';
+  html += '<div class="r2-meta"><span class="r2-chip">Prepared <b>&nbsp;'+esc(today)+'</b></span>';
+  if (preparer) html += '<span class="r2-chip">By <b>&nbsp;'+esc(preparer)+'</b></span>';
+  html += '<span class="r2-chip">Source <b>&nbsp;Microsoft Intune &amp; Graph API</b></span></div></div>';
+
+  // ── Headline strip (sits below the hero on the page background) ───────────
+  var sc = d.score;
+  var nextRen = renewals.length ? shortDate(renewals[0].renewalDate) : 'none';
+  html += '<div class="r2-strip">';
+  html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=95?'r2-good':pctComp>=80?'r2-warn':'r2-bad')+'">'+pctComp+'%</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(total)+' devices</div></div>';
+  if (sc) html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val '+(sc.pct>=70?'r2-good':sc.pct>=50?'r2-warn':'r2-bad')+'">'+sc.pct+'%</div><div class="r2-sub">'+num(sc.cur)+' of '+num(sc.max)+' points</div></div>';
+  else html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Not available</div></div>';
+  html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val '+((d.risky||0)>0?'r2-bad':'r2-good')+'">'+num(d.risky)+'</div><div class="r2-sub">'+((d.risky||0)>0?'Accounts flagged at risk':'No accounts at risk')+'</div></div>';
+  if (u.licenceRenewalsError) html += '<div class="r2-tile"><div class="r2-lbl">Renewals due (90 days)</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Data unavailable</div></div>';
+  else html += '<div class="r2-tile"><div class="r2-lbl">Renewals due (90 days)</div><div class="r2-val r2-info">'+renewals.length+'</div><div class="r2-sub">Next: '+esc(nextRen)+'</div></div>';
   html += '</div>';
-  html += '<div class="rpt-client">' + esc(client) + '</div>';
-  html += '<div class="rpt-period">Report period: ' + fmt(from) + ' - ' + fmt(to) + '</div>';
-  html += '<div class="rpt-meta-row">';
-  html += '<div class="rpt-meta-item"><strong>Prepared:</strong> ' + today + '</div>';
-  if (preparer) html += '<div class="rpt-meta-item"><strong>By:</strong> ' + esc(preparer) + '</div>';
-  html += '<div class="rpt-meta-item"><strong>Data source:</strong> Microsoft Intune &amp; Graph API</div>';
-  html += '</div></div>';
 
-  function secHeader(title, color, badge) {
-    badge = badge || 'This Month';
-    return '<div class="rpt-section-header">'
-      + '<div class="rpt-section-header-left">'
-      + '<div class="rpt-sec-sq" style="background:'+color+'"></div>'
-      + '<div class="rpt-section-title">'+title+'</div>'
-      + '</div>'
-      + '<div class="rpt-sec-badge">'+badge.toUpperCase()+'</div>'
-      + '</div>';
-  }
-  function rptKpi(val, lbl, cls) {
-    return '<div class="rpt-kpi '+cls+'"><div class="rpt-kpi-val">'+val+'</div><div class="rpt-kpi-lbl">'+lbl+'</div></div>';
-  }
-  function callout(text, type) {
-    return '<div class="rpt-callout '+type+'">'+text+'</div>';
-  }
-  function statusPill(status) {
-    var cls = status === 'enforced' ? 'enforced' : status === 'report-only' ? 'report-only' : status === 'not found' ? 'not-found' : 'disabled';
-    var icons = { enforced:'✅', 'report-only':'⚠️', 'not found':'❌', disabled:'Disabled' };
-    var labels = { enforced:'Enforced', 'report-only':'Report-only', 'not found':'Not found', disabled:'Disabled' };
-    return '<span class="rpt-status '+cls+'">'+(icons[status]||'')+'&nbsp;'+(labels[status]||status)+'</span>';
-  }
-
-  // Executive Summary
-  if (has('m-overview')||has('m-highlights')||has('m-concerns')||has('m-projects')) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Executive Summary', '#0D7CC4');
-    if (has('m-overview')) html += '<p class="rpt-body">' + esc(v('m-overview')) + '</p>';
-    if (has('m-highlights')) html += callout('<strong>Highlights:</strong> ' + esc(v('m-highlights')), 'good');
-    if (has('m-concerns'))   html += callout('<strong>Concerns:</strong> '  + esc(v('m-concerns')),   'warn');
-    if (has('m-projects'))   html += callout('<strong>Projects:</strong> '   + esc(v('m-projects')),   'info');
-    html += '</div>';
-  }
-
-  // Month-on-Month Changes -- deterministic, template-based commentary (see
-  // lib/metrics-commentary.js), omitted entirely when null (no prior period
-  // on file for this tenant, or the archive lookup failed/timed out).
+  // ── Month-on-Month Changes (omitted when commentary is null/empty) ────────
   if ((d.commentary||[]).length > 0) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Month-on-Month Changes', '#E06400');
-    html += '<p class="rpt-body">Notable changes since last month\'s report, based on the summary metrics from each run.</p>';
-    d.commentary.forEach(function(line) { html += callout(esc(line), 'info'); });
-    html += '</div>';
+    var mom = '<div class="r2-card"><ul class="r2-mom">';
+    d.commentary.forEach(function(line) { mom += '<li><span class="r2-ci">🔄</span><span>'+esc(line)+'</span></li>'; });
+    mom += '</ul></div>';
+    html += section('🔄', 'Month-on-Month Changes', mom, 'Notable changes since last month\'s report, based on the summary metrics from each run.');
   }
 
-  // Devices
-  html += '<div class="rpt-section">';
-  html += secHeader('Device & Asset Management', '#0D7CC4');
-  html += '<p class="rpt-body">Summary of managed devices enrolled in Microsoft Intune, including compliance status, operating system breakdown, and device health indicators.</p>';
-  // ── OS breakdown with icons - only show non-zero counts ──────────────────
-  var WIN_ICON = '<svg width="16" height="16" viewBox="0 0 88 88" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#00adef" d="M0 12.5L35.7 7.6l0.1 34.4-35.6 0.2z"/><path fill="#00adef" d="M40.1 6.9L88 0v41.8l-47.9 0.4z"/><path fill="#00adef" d="M35.8 45.5l0.1 34.5L0 75.4V45.3z"/><path fill="#00adef" d="M88 45.6V88l-47.9-6.8-0.1-35.8z"/></svg>';
-  var APPLE_ICON = '<svg width="16" height="16" viewBox="0 0 814 1000" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#555" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.2-150.9-103.2C27.5 761.1 0 636 0 517.4c0-190.5 124.4-291.5 246.8-291.5 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/></svg>';
-  var LINUX_ICON = '<svg width="16" height="16" viewBox="0 0 64 64" style="display:inline-block;vertical-align:-3px;margin-right:5px"><ellipse cx="32" cy="18" rx="13" ry="16" fill="#f5c518"/><circle cx="26" cy="15" r="3" fill="#333"/><circle cx="38" cy="15" r="3" fill="#333"/><circle cx="27" cy="15" r="1.2" fill="#fff"/><circle cx="39" cy="15" r="1.2" fill="#fff"/><path d="M26 22 Q32 26 38 22" stroke="#333" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M19 34 Q22 50 28 56 Q32 60 36 56 Q42 50 45 34 Q44 26 32 24 Q20 26 19 34Z" fill="#f5c518"/><path d="M16 40 Q10 50 16 54 Q22 56 24 50 Q20 46 19 38Z" fill="#f5c518"/><path d="M48 40 Q54 50 48 54 Q42 56 40 50 Q44 46 45 38Z" fill="#f5c518"/></svg>';
-  var ANDROID_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-3px;margin-right:5px"><path fill="#3ddc84" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C7.08 3.04 6 4.64 6 6.5h12c0-1.86-1.08-3.46-2.47-4.34zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>';
+  // ── Executive Summary (manual fields; omitted when all empty) ─────────────
+  if (has('m-overview')||has('m-highlights')||has('m-concerns')||has('m-projects')) {
+    var ex = '';
+    if (has('m-overview')) ex += '<div class="r2-card"><p class="r2-body" style="margin:0">'+esc(v('m-overview'))+'</p></div>';
+    if (has('m-highlights')) ex += callout('<b>Highlights:</b> '+esc(v('m-highlights')), 'good');
+    if (has('m-concerns'))   ex += callout('<b>Concerns:</b> '+esc(v('m-concerns')), 'warn');
+    if (has('m-projects'))   ex += callout('<b>Projects:</b> '+esc(v('m-projects')), 'info');
+    html += section('📝', 'Executive Summary', ex);
+  }
+
+  // ── Devices ────────────────────────────────────────────────────────────────
+  var dev = '';
+  var lowDisk = d.lowDisk || [];
+  dev += '<div class="r2-grid r2-g4">' + kpi(num(total), 'Total devices', 'info') + kpi(num(comp.compliant), 'Compliant', 'good')
+    + kpi(num(comp.noncompliant), 'Non-compliant', comp.noncompliant>0?'bad':'good')
+    + kpi(num(lowDisk.length), 'Low disk (&lt;15%)', lowDisk.length>0?'warn':'good') + '</div>';
+  var cLeg = '<span style="--c:var(--r2-good)">'+num(comp.compliant)+' compliant</span><span style="--c:var(--r2-bad)">'+num(comp.noncompliant)+' non-compliant</span>';
+  if ((comp.unknown||0) > 0) cLeg += '<span style="--c:var(--r2-neutral)">'+num(comp.unknown)+' not evaluated</span>';
+  cLeg += '<span style="--c:var(--r2-warn)">'+num(d.staleCount)+' not checked in for 90+ days</span>';
+  dev += '<div class="r2-grid r2-g2" style="margin-top:14px"><div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Compliance</h3><div class="r2-row">'
+    + donut(pctComp, pctComp>=95?'var(--r2-good)':pctComp>=80?'var(--r2-warn)':'var(--r2-bad)', pctComp+'%', 'compliant')
+    + '<div class="r2-legend r2-legend-col">'+cLeg+'</div></div>';
+  if ((comp.unknown||0) > 0) dev += '<p class="r2-note">&ldquo;Not evaluated&rdquo; devices have not completed a compliance check-in, have no compliance policy assigned, or are newly enrolled.</p>';
+  dev += '</div>';
+  var enc = d.encryption || {encrypted:0, notEncrypted:0};
+  var av = d.av;
+  dev += '<div class="r2-card"><h3 class="r2-h3" style="margin-top:0">'+(av?'Encryption &amp; antivirus':'Encryption')+'</h3><div class="r2-grid r2-g2" style="gap:10px">'
+    + kpi(num(enc.encrypted), 'Encrypted', 'good') + kpi(num(enc.notEncrypted), 'Not encrypted', enc.notEncrypted>0?'bad':'good');
+  if (av) {
+    var avBad = (av.notActive||0) + (av.outOfDate||0);
+    dev += kpi(num(av.active), 'AV active', 'good') + kpi(num(avBad), 'AV inactive / out of date', avBad>0?'bad':'good');
+  }
+  dev += '</div></div></div>';
 
   var osList = [
-    { icon: WIN_ICON, label: "Windows 11 25H2", count: d.win25h2||0, cls: "good" },
-    { icon: WIN_ICON, label: "Windows 11 24H2", count: d.win24h2||0, cls: "good" },
-    { icon: WIN_ICON, label: "Windows 11",      count: d.win11||0,   cls: "good" },
-    { icon: WIN_ICON, label: "Windows 10",      count: d.win10||0,   cls: (d.win10||0)>0?"warn":"good" },
-    { icon: APPLE_ICON,   label: "macOS",         count: d.macOS||0,        cls: "neu" },
-    { icon: APPLE_ICON,   label: "iOS / iPadOS",  count: d.iosCount||0,     cls: "neu" },
-    { icon: ANDROID_ICON, label: "Android",        count: d.androidCount||0, cls: "neu" },
-    { icon: LINUX_ICON,   label: "Linux",          count: d.linux||0,        cls: "neu" },
-  ].filter(function(o){ return o.count > 0; });
-
+    { label: 'Windows 11 25H2', n: d.win25h2||0, c: '#0d7cc4' },
+    { label: 'Windows 11 24H2', n: d.win24h2||0, c: '#4aa3df' },
+    { label: 'Windows 11',      n: d.win11||0,   c: '#8fc6ec' },
+    { label: 'Windows 10',      n: d.win10||0,   c: '#c77700' },
+    { label: 'macOS',           n: d.macOS||0,        c: '#8c0c6e' },
+    { label: 'iOS / iPadOS',    n: d.iosCount||0,     c: '#f5a01a' },
+    { label: 'Android',         n: d.androidCount||0, c: '#0f9d6b' },
+    { label: 'Linux',           n: d.linux||0,        c: '#475569' }
+  ].filter(function(o){ return o.n > 0; });
   if (osList.length > 0) {
-    html += '<div class="rpt-kpi-block"><div class="rpt-sub">Operating system</div>';
-    html += '<div class="rpt-kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr))">'; 
-    osList.forEach(function(o) {
-      html += '<div class="rpt-kpi '+o.cls+'"><div class="rpt-kpi-val">'+o.count+'</div><div class="rpt-kpi-lbl">'+o.icon+o.label+'</div></div>';
-    });
-    html += '</div></div>'; // end rpt-kpi-block
+    var osTot = osList.reduce(function(a,o){ return a + o.n; }, 0);
+    dev += '<div class="r2-card" style="margin-top:14px"><h3 class="r2-h3" style="margin-top:0">Operating systems</h3>'+stackBar(osList, osTot)+legend(osList.map(function(o){ return {l:esc(o.label), n:o.n, c:o.c}; }))+'</div>';
   }
-  html += '<div class="rpt-kpi-block"><div class="rpt-sub">Compliance</div>';
-  html += '<div class="rpt-kpi-grid">';
-  html += rptKpi(d.total, 'Total devices', 'info');
-  html += rptKpi(d.comp.compliant, 'Compliant', 'good');
-  html += rptKpi(d.comp.noncompliant, 'Non-Compliant', d.comp.noncompliant > 0 ? 'bad' : 'good');
-  html += rptKpi(d.comp.unknown||0, 'Not evaluated', 'warn');
-  html += rptKpi(d.staleCount||0, 'Last Checked In 90d+', (d.staleCount||0) > 0 ? 'warn' : 'good');
-  html += '</div></div>'; // end rpt-kpi-block
-  if ((d.comp.unknown||0) > 0) {
-    html += '<p style="font-size:13px;color:#6b7280;margin:0.5rem 0 1rem;line-height:1.6;">Devices showing as &ldquo;not evaluated&rdquo; have not yet completed a compliance check-in, have no compliance policy assigned, or are newly enrolled.</p>';
+  if (d.win10 > 0) dev += callout('<b>'+d.win10+' device'+(d.win10>1?'s are':' is')+' still running Windows 10.</b> Microsoft ended support October 2025. Upgrade recommended.', 'warn');
+  if ((d.notCompliantList||[]).length > 0) {
+    dev += h3('Non-compliant devices') + table(['Device','Primary user','OS','Last seen'], d.notCompliantList.map(function(x){
+      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc(x.os||''), x.lastSync ? shortDate(x.lastSync) : 'Never'];
+    }));
   }
-  if (d.comp.noncompliant > 0) {
-    html += callout('<strong>'+d.comp.noncompliant+' device'+(d.comp.noncompliant>1?'s are':' is')+' non-compliant</strong>&nbsp;with your organisation\'s policies.', 'bad');
-    if ((d.notCompliantList||[]).length > 0) {
-      html += '<div class="rpt-sub">Non-compliant devices</div>';
-      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last seen</th></tr></thead><tbody>';
-      d.notCompliantList.forEach(function(dev) {
-        var ls = dev.lastSync ? new Date(dev.lastSync).toLocaleDateString('en-NZ') : 'Never';
-        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280">'+ls+'</td></tr>';
-      });
-      html += '</tbody></table>';
+  if ((d.notEncryptedList||[]).length > 0) {
+    dev += h3('Devices not encrypted') + table(['Device','Primary user','OS'], d.notEncryptedList.map(function(x){
+      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc(x.os||'')];
+    }));
+  }
+  if (av && av.notActive > 0) {
+    dev += callout('<b>'+av.notActive+' device'+(av.notActive>1?'s have':' has')+' antivirus and real-time protection both disabled</b> - no active AV protection detected. Investigate and re-enable immediately.', 'bad');
+    if ((av.notActiveList||[]).length > 0) {
+      dev += h3('Devices with antivirus not active') + table(['Device','Primary user'], av.notActiveList.map(function(x){ return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown')]; }));
     }
   }
-  // ── ENCRYPTION: KPIs then list ─────────────────────────────────────────────
-  html += '<div class="rpt-kpi-block"><div class="rpt-sub">Encryption</div>';
-  html += '<div class="rpt-kpi-grid">';
-  html += rptKpi(d.encryption.encrypted, 'Encrypted', 'good');
-  html += rptKpi(d.encryption.notEncrypted, 'Not encrypted', d.encryption.notEncrypted > 0 ? 'bad' : 'good');
-  html += '</div></div>'; // end rpt-kpi-block
-  if (d.encryption.notEncrypted > 0) {
-    html += callout('<strong>'+d.encryption.notEncrypted+' device'+(d.encryption.notEncrypted>1?'s are':' is')+' not encrypted.</strong> This is a significant data protection risk.', 'bad');
-    if ((d.notEncryptedList||[]).length > 0) {
-      html += '<div class="rpt-sub">Unencrypted devices</div>';
-      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>OS</th></tr></thead><tbody>';
-      d.notEncryptedList.forEach(function(dev) {
-        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280">'+esc(dev.os||'')+'</td></tr>';
-      });
-      html += '</tbody></table>';
+  if (av && av.outOfDate > 0) {
+    dev += callout('<b>'+av.outOfDate+' device'+(av.outOfDate>1?'s have':' has')+' antivirus definitions more than 30 days out of date.</b> Force a definition update via Intune.', 'warn');
+    if ((av.outOfDateList||[]).length > 0) {
+      dev += h3('Devices with outdated antivirus definitions') + table(['Device','Primary user','Last updated','Days old'], av.outOfDateList.map(function(x){
+        return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), x.lastUpdated ? shortDate(x.lastUpdated) : 'Unknown', pill(esc(x.ageDays)+'d','warn')];
+      }), [3]);
     }
   }
-  // ── ANTIVIRUS: KPIs then lists ─────────────────────────────────────────────
-  if (d.av) {
-    html += '<div class="rpt-kpi-block"><div class="rpt-sub">Antivirus</div>';
-    html += '<div class="rpt-kpi-grid">';
-    html += rptKpi(d.av.active||0,    'AV active',      'good');
-    html += rptKpi(d.av.notActive||0, 'AV not active',  (d.av.notActive||0) > 0 ? 'bad'  : 'good');
-    html += rptKpi(d.av.outOfDate||0, 'AV out of date', (d.av.outOfDate||0) > 0 ? 'warn' : 'good');
-    html += '</div></div>'; // end rpt-kpi-block
-    if (d.av.notActive > 0) {
-      html += callout('<strong>'+d.av.notActive+' device'+(d.av.notActive>1?'s have':' has')+' antivirus and real-time protection both disabled - no active AV protection detected.</strong> Investigate and re-enable immediately.', 'bad');
-      if ((d.av.notActiveList||[]).length > 0) {
-        html += '<div class="rpt-sub">Devices with antivirus not active</div>';
-        html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th></tr></thead><tbody>';
-        d.av.notActiveList.forEach(function(dev){ html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td></tr>'; });
-        html += '</tbody></table>';
-      }
-    }
-    if (d.av.outOfDate > 0) {
-      html += callout('<strong>'+d.av.outOfDate+' device'+(d.av.outOfDate>1?'s have':' has')+' antivirus definitions more than 30 days out of date.</strong> Force a definition update via Intune.', 'warn');
-      if ((d.av.outOfDateList||[]).length > 0) {
-        html += '<div class="rpt-sub">Devices with outdated antivirus definitions</div>';
-        html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last updated</th><th>Days old</th></tr></thead><tbody>';
-        d.av.outOfDateList.forEach(function(dev){
-          var lu = dev.lastUpdated ? new Date(dev.lastUpdated).toLocaleDateString('en-NZ') : 'Unknown';
-          html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td>'+lu+'</td><td style="color:#92400e">'+dev.ageDays+'d</td></tr>';
-        });
-        html += '</tbody></table>';
-      }
-    }
+  if (lowDisk.length > 0) {
+    dev += h3('Low disk space (&lt;15% free)') + table(['Device','Primary user','Free','Free %'], lowDisk.map(function(x){
+      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unassigned'), esc(x.gb)+' GB', pill(esc(x.pct)+'%', x.pct<5?'bad':'warn')];
+    }), [2,3]);
   }
-  // ── LOW DISK: KPIs then list ───────────────────────────────────────────────
-  if ((d.lowDisk||[]).length > 0) {
-    html += callout('<strong>'+((d.lowDisk||[]).length)+' device'+((d.lowDisk||[]).length>1?'s have':' has')+' low disk space (&lt;15% free).</strong>', 'warn');
-    html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Free space</th><th>Free (GB)</th></tr></thead><tbody>';
-    (d.lowDisk||[]).forEach(function(x){
-      html += '<tr><td>'+esc(x.name)+'</td><td style="color:#6b7280;font-size:13px">'+esc(x.user||'Unassigned')+'</td><td>'+x.pct+'%</td><td>'+x.gb+' GB</td></tr>';
-    });
-    html += '</tbody></table>';
-  }
-  // ── STALE DEVICES ─────────────────────────────────────────────────────────
-  if (d.win10 > 0) html += callout('<strong>'+d.win10+' device'+(d.win10>1?'s are':' is')+' still running Windows 10.</strong> Microsoft ended support October 2025. Upgrade recommended.', 'warn');
-  if ((d.staleCount||0) > 0) {
-    html += callout('<strong>'+(d.staleCount||0)+' device'+((d.staleCount||0)>1?'s have':' has')+' not checked in for 90+ days.</strong> These may be offline or decommissioned.', 'warn');
-    if ((d.patchOver90||[]).length > 0) {
-      html += '<div class="rpt-sub">Devices not checked in for 90+ days</div>';
-      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Last seen</th></tr></thead><tbody>';
-      (d.patchOver90||[]).forEach(function(dev) {
-        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td>'+(dev.lastSeen?new Date(dev.lastSeen).toLocaleDateString('en-NZ'):'Never')+'</td></tr>';
-      });
-      html += '</tbody></table>';
-    }
-  }
-  html += '</div>';
+  html += section('💻', 'Device &amp; Asset Management', dev, 'Summary of managed devices enrolled in Microsoft Intune, including compliance status, operating system breakdown, and device health indicators.');
 
-  // Security
-  html += '<div class="rpt-section">';
-  html += secHeader('Security Posture', '#8C0C6E');
-  html += '<p class="rpt-body">Overview of the tenant&#39;s security configuration including Microsoft Secure Score, Conditional Access (CA) policy status, authentication methods, and identity protection alerts.</p>';
-  if (d.score) {
-    html += '<div class="rpt-kpi-grid">';
-    html += rptKpi(d.score.pct+'%', 'Secure Score', d.score.pct>=70?'good':d.score.pct>=50?'warn':'bad');
-    if (d.conditionalAccess) {
-      html += rptKpi(d.conditionalAccess.enabled, 'CA Enforced', 'good');
-      html += rptKpi(d.conditionalAccess.reportOnly, 'CA Report-only', d.conditionalAccess.reportOnly>0?'warn':'good');
-    }
-    html += rptKpi(d.risky, 'Risky Users', d.risky>0?'bad':'good');
-    if (d.compliancePolicies) html += rptKpi(d.compliancePolicies.total, 'Compliance policies', 'neu');
-    if (d.appProtection)      html += rptKpi(d.appProtection.total, 'App protection', d.appProtection.total===0?'warn':'good');
-    html += '</div>';
-    var scoreMsg = d.score.pct >= 70
-      ? 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+') - a healthy baseline.'
-      : d.score.pct >= 50
-        ? 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+'). There is meaningful room to improve.'
-        : 'Microsoft Secure Score is <strong>'+d.score.pct+'%</strong> ('+d.score.cur+'/'+d.score.max+'). This requires attention.';
-    html += '<p class="rpt-body">'+scoreMsg+'</p>';
+  // ── Security ───────────────────────────────────────────────────────────────
+  var ca = d.conditionalAccess;
+  var sec = '';
+  var idRows = '<tr><td>Security defaults</td><td class="r2-num">'+pill(d.securityDefaults?'On':'Off','neu')+'</td></tr>';
+  if (ca) idRows += '<tr><td>Conditional Access policies</td><td class="r2-num">'+pill(num(ca.enabled)+' enforced','good')+' '+pill(num(ca.reportOnly)+' report-only', ca.reportOnly>0?'warn':'neu')+'</td></tr>';
+  idRows += '<tr><td>Risky users</td><td class="r2-num">'+pill(num(d.risky),(d.risky||0)>0?'bad':'good')+'</td></tr>';
+  if (d.compliancePolicies) idRows += '<tr><td>Compliance policies</td><td class="r2-num">'+pill(num(d.compliancePolicies.total),'neu')+'</td></tr>';
+  if (d.appProtection) idRows += '<tr><td>App protection policies</td><td class="r2-num">'+pill(num(d.appProtection.total), d.appProtection.total===0?'warn':'neu')+'</td></tr>';
+  var idCard = '<div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Identity &amp; access</h3><table class="r2-nowrap"><tbody>'+idRows+'</tbody></table></div>';
+  if (sc) {
+    var scCol = sc.pct>=70 ? 'var(--r2-good)' : sc.pct>=50 ? 'var(--r2-warn)' : 'var(--r2-bad)';
+    var scHead = sc.pct>=70 ? 'Strong position.' : sc.pct>=50 ? 'Room to improve.' : 'Needs attention.';
+    var scNote = sc.pct>=70 ? 'A healthy baseline. Keep working through the remaining recommendations.' : sc.pct>=50 ? 'There is meaningful room to improve. Above 70% is a good target.' : 'This requires attention. Above 70% is a good target.';
+    sec += '<div class="r2-grid r2-secgrid"><div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Microsoft Secure Score</h3><div class="r2-row">'
+      + donut(sc.pct, scCol, sc.pct+'%', num(sc.cur)+' / '+num(sc.max))
+      + '<div><p style="margin:0 0 6px"><b>'+scHead+'</b></p><p class="r2-note" style="margin:0">'+scNote+'</p></div></div></div>' + idCard + '</div>';
+  } else {
+    sec += idCard;
   }
-  html += '<div class="rpt-sub">Key policy status</div>';
+  if ((d.risky||0) > 0) sec += callout('<b>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</b> by Entra ID Protection. Reset passwords immediately.', 'bad');
   var kp = d.keyPolicies || {};
-  html += '<table class="rpt-policy-table"><thead><tr><th>Policy</th><th>Status</th></tr></thead><tbody>';
-  [['Legacy Authentication Block', kp.legacyAuthBlock],['MFA - All Users', kp.mfaAllUsers],['Admin Phishing-Resistant MFA', kp.adminMfa],['Geographic Restriction', kp.geoBlock]].forEach(function(p) {
-    var info = p[1] || {}; var status = info.status || 'not found';
-    html += '<tr><td>'+p[0]+'</td><td>'+statusPill(status)+'</td></tr>';
-  });
-  html += '</tbody></table>';
-  html += '<div class="rpt-sub">Authentication methods</div>';
-  html += '<table class="rpt-policy-table"><thead><tr><th>Method</th><th>Status</th></tr></thead><tbody>';
+  var kpStatus = { 'enforced':['Enforced','good'], 'report-only':['Report-only','warn'], 'not found':['Not found','warn'], 'disabled':['Disabled','bad'] };
+  var kpRows = [['Legacy Authentication Block', kp.legacyAuthBlock],['MFA - All Users', kp.mfaAllUsers],['Admin Phishing-Resistant MFA', kp.adminMfa],['Geographic Restriction', kp.geoBlock]].map(function(p){
+    var st = (p[1] && p[1].status) || 'not found'; var m = kpStatus[st] || [esc(st),'neu'];
+    return '<tr><td>'+p[0]+'</td><td class="r2-num">'+pill(m[0],m[1])+'</td></tr>';
+  }).join('');
   var am = d.authMethods || {};
-  [['Microsoft Authenticator', am.authAppEnabled, false],['FIDO2 / Passkeys', am.fido2Enabled, false],['SMS sign-in', am.smsEnabled, true],['Temporary Access Pass', am.tapEnabled, am.tapReusable]].forEach(function(a) {
-    var enabled = a[1]; var isWarn = a[2];
-    var label = enabled ? (isWarn ? 'Enabled - review recommended' : 'Enabled') : 'Disabled';
-    var cls = enabled ? (isWarn ? 'report-only' : 'enforced') : 'disabled';
-    html += '<tr><td>'+a[0]+'</td><td><span class="rpt-status '+cls+'">'+label+'</span></td></tr>';
-  });
-  html += '</tbody></table>';
-  if (d.risky > 0) html += callout('<strong>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</strong> by Entra ID Protection. Reset passwords immediately.', 'bad');
-  html += '</div>';
+  var amRows = [['Microsoft Authenticator', am.authAppEnabled, false],['FIDO2 / Passkeys', am.fido2Enabled, false],['SMS sign-in', am.smsEnabled, true],['Temporary Access Pass', am.tapEnabled, am.tapReusable]].map(function(a){
+    var p = a[1] ? (a[2] ? pill('Enabled - review','warn') : pill('Enabled','good')) : pill('Disabled','neu');
+    return '<tr><td>'+a[0]+'</td><td class="r2-num">'+p+'</td></tr>';
+  }).join('');
+  sec += '<div class="r2-grid r2-g2" style="margin-top:14px"><div>'+h3('Key policy status',true)+'<div class="r2-card" style="padding:6px 16px"><table class="r2-nowrap"><tbody>'+kpRows+'</tbody></table></div></div>'
+    + '<div>'+h3('Authentication methods',true)+'<div class="r2-card" style="padding:6px 16px"><table class="r2-nowrap"><tbody>'+amRows+'</tbody></table></div></div></div>';
+  html += section('🛡️', 'Security Posture', sec, 'Overview of the tenant&#39;s security configuration including Microsoft Secure Score, Conditional Access (CA) policy status, authentication methods, and identity protection alerts.');
 
   // ── Patch Status ───────────────────────────────────────────────────────────
   var ps = d.patchStatus || {};
   if (ps.current !== undefined) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Patch Status', '#0D7CC4');
-    html += '<p class="rpt-body">Patch currency is based on the last Intune check-in date. Devices that have not checked in within 30 days may be running unpatched software.</p>';
-    html += '<div class="rpt-kpi-grid">';
-    html += rptKpi(ps.current||0, 'Current (≤30 days)', 'good');
-    html += rptKpi(ps.over30||0, 'Over 30 days', (ps.over30||0)>0?'warn':'good');
-    html += rptKpi(ps.over90||0, 'Over 90 days', (ps.over90||0)>0?'bad':'good');
-    html += '</div>';
-    if ((ps.over30||0) > 0) html += callout('<strong>'+(ps.over30||0)+' device'+((ps.over30||0)>1?'s have':' has')+' not checked in for 30-90 days</strong> - 1 to 2 patch cycles behind.', 'warn');
+    var pt = (ps.current||0) + (ps.over30||0) + (ps.over90||0);
+    var pb = '<div class="r2-card">'+stackBar([{n:ps.current||0,c:'var(--r2-good)'},{n:ps.over30||0,c:'var(--r2-warn)'},{n:ps.over90||0,c:'var(--r2-bad)'}], pt)
+      + legend([{l:'Current (≤30 days)',n:ps.current||0,c:'var(--r2-good)'},{l:'30+ days behind',n:ps.over30||0,c:'var(--r2-warn)'},{l:'90+ days behind',n:ps.over90||0,c:'var(--r2-bad)'}]) + '</div>';
     if ((d.patchOver90||[]).length > 0) {
-      html += callout('<strong>'+((d.patchOver90||[]).length)+' device'+((d.patchOver90||[]).length>1?'s have':' has')+' not checked in for 90+ days</strong> - 3 or more patch cycles behind.', 'bad');
-      html += '<div class="rpt-sub">Devices with patch version older than 90 days</div>';
-      html += '<table class="rpt-policy-table"><thead><tr><th>Device</th><th>Primary user</th><th>Latest patch version</th></tr></thead><tbody>';
-      (d.patchOver90||[]).forEach(function(dev) {
-        html += '<tr><td>'+esc(dev.name)+'</td><td>'+esc(dev.user||'Unknown')+'</td><td style="color:#6b7280;font-size:13px">'+esc(dev.os||'Unknown')+'</td></tr>';
-      });
-      html += '</tbody></table>';
+      pb += h3('Devices with patch version older than 90 days') + table(['Device','Primary user','Last seen','Latest patch version'], d.patchOver90.map(function(x){
+        return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), x.lastSeen ? shortDate(x.lastSeen) : 'Never', esc(x.os||'Unknown')];
+      }));
     }
-
-    html += '</div>';
+    html += section('🩹', 'Patch Status', pb, 'Patch currency is based on the last Intune check-in date. Devices that have not checked in within 30 days may be running unpatched software.');
   }
 
-  // ── User Data ───────────────────────────────────────────────────────────────
-  var u = d.users || {};
+  // ── User Data ──────────────────────────────────────────────────────────────
   if (u.total > 0) {
-    html += '<div class="rpt-section">';
-    html += secHeader('User Data', '#8C0C6E');
-    html += '<p class="rpt-body">Summary of M365 licensed users, guest accounts, shared mailboxes and administrative role holders, and sign-in activity including accounts not used in the last 90 days and logins from outside Australia and New Zealand.</p>';
-    html += '<div class="rpt-kpi-grid">';
-    html += rptKpi(u.total||0, 'Total Licensed users', 'info');
-    html += rptKpi(u.guests||0, 'Guest users', (u.guests||0)>0?'warn':'neu');
-    html += rptKpi(u.sharedMailboxes||0, 'Shared mailboxes', 'neu');
-    html += rptKpi(u.notSignedIn90Licensed||0, 'M365 Users - Not Signed in for 90 days+', (u.notSignedIn90Licensed||0)>0?'warn':'good');
-    html += rptKpi(u.notSignedIn90Guest||0, 'Guests - not signed in 90d+', (u.notSignedIn90Guest||0)>0?'warn':'good');
-    html += rptKpi((u.adminRoles||[]).length, 'Admin role holders', (u.adminRoles||[]).length>0?'warn':'neu');
-    html += rptKpi((u.externalSignIns||{}).total||0, 'Overseas sign-ins (30d)', ((u.externalSignIns||{}).total||0)>0?'warn':'good');
-    html += '</div>';
-    if ((u.notSignedIn90Licensed||0) > 0) {
-      html += callout('<strong>'+(u.notSignedIn90Licensed)+' M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</strong> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn');
-      if ((u.notSignedIn90LicensedList||[]).length > 0) {
-        html += '<div class="rpt-sub">M365 licensed users - not signed in 90+ days</div>';
-        html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Days inactive</th></tr></thead><tbody>';
-        u.notSignedIn90LicensedList.forEach(function(usr) {
-          var ls = (usr.lastSignIn && usr.lastSignIn !== null) ? new Date(usr.lastSignIn).toLocaleDateString('en-NZ') : 'Never';
-          html += '<tr><td>'+esc(usr.name||'')+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn||'')+'</td><td>'+ls+'</td><td>'+(usr.daysSince!==null&&usr.daysSince!==undefined?usr.daysSince:'Never')+'</td></tr>';
-        });
-        html += '</tbody></table>';
-      }
-    }
-    if ((u.notSignedIn90Guest||0) > 0) {
-      html += callout('<strong>'+(u.notSignedIn90Guest)+' guest account'+(u.notSignedIn90Guest>1?'s have':' has')+' not signed in for 90+ days.</strong> Review for stale guest access and remove if no longer needed.', 'warn');
-      if ((u.notSignedIn90GuestList||[]).length > 0) {
-        html += '<div class="rpt-sub">Guest accounts - not signed in 90+ days</div>';
-        html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Last sign-in</th><th>Days inactive</th></tr></thead><tbody>';
-        u.notSignedIn90GuestList.forEach(function(usr) {
-          var ls = (usr.lastSignIn && usr.lastSignIn !== null) ? new Date(usr.lastSignIn).toLocaleDateString('en-NZ') : 'Never';
-          html += '<tr><td>'+esc(usr.name||'')+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn||'')+'</td><td>'+ls+'</td><td>'+(usr.daysSince!==null&&usr.daysSince!==undefined?usr.daysSince:'Never')+'</td></tr>';
-        });
-        html += '</tbody></table>';
-      }
-    }
-    var extSignIns = u.externalSignIns || {};
-    var extUsers   = extSignIns.byUser || [];
-    var extWindow  = extSignIns.windowDays || 30;
-    var extTotal   = extSignIns.total || 0;
-    var windowLabel = extWindow < 30 ? extWindow+'-day window (30-day timed out)' : 'last 30 days';
-    if (extSignIns.timedOut && extWindow === 0) {
-      html += callout('<strong>Overseas sign-in query timed out.</strong> The sign-in log could not be retrieved. Try pulling data again.', 'warn');
+    var ub = '';
+    var ext = u.externalSignIns || {};
+    var extUsers = ext.byUser || [];
+    var extNA = !!ext.timedOut && extUsers.length === 0;
+    var adminCount = (u.adminRoles||[]).length;
+    ub += '<div class="r2-grid r2-g4">' + kpi(num(u.total),'Licensed users','info') + kpi(num(u.guests),'Guest accounts',(u.guests||0)>0?'warn':'neu')
+      + kpi(num(u.sharedMailboxes),'Shared mailboxes','neu') + kpi(num(adminCount),'Admin role holders',adminCount>0?'warn':'neu') + '</div>';
+    ub += '<div class="r2-grid r2-g3" style="margin-top:14px">'
+      + kpi(num(u.notSignedIn90Licensed),'Licensed users not signed in 90+ days',(u.notSignedIn90Licensed||0)>0?'warn':'good')
+      + kpi(num(u.notSignedIn90Guest),'Guests not signed in 90+ days',(u.notSignedIn90Guest||0)>0?'warn':'good')
+      + kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good')) + '</div>';
+    if (extNA) {
+      ub += callout('<b>Overseas sign-in data unavailable this run.</b> The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Pulling the data again usually resolves it.', 'info');
     } else if (extUsers.length > 0) {
-      html += '<div class="rpt-sub">Unexpected overseas sign-ins - '+windowLabel+'</div>';
-      html += callout('<strong>'+extTotal+' successful login'+(extTotal>1?'s':'')+'</strong> from unexpected locations by <strong>'+extSignIns.uniqueUsers+' user'+(extSignIns.uniqueUsers>1?'s':'')+'</strong>. Australia, New Zealand and Malaysia are excluded as expected locations. Review for suspicious access.', 'warn');
-      html += '<table class="rpt-policy-table"><thead><tr><th>Name</th><th>Email</th><th>Country / Territory</th><th>Successful logins</th></tr></thead><tbody>';
-      extUsers.forEach(function(usr) {
-        html += '<tr><td>'+esc(usr.name||usr.upn.split('@')[0])+'</td><td style="color:#6b7280;font-size:13px">'+esc(usr.upn)+'</td><td>'+esc((usr.countries||[]).join(', '))+'</td><td>'+usr.eventCount+'</td></tr>';
-      });
-      html += '</tbody></table>';
+      var extWindow = ext.windowDays || 30;
+      var windowLabel = extWindow < 30 ? extWindow+'-day window (30-day timed out)' : 'last 30 days';
+      ub += h3('Unexpected overseas sign-ins - '+esc(windowLabel));
+      ub += callout('<b>'+ext.total+' successful login'+(ext.total>1?'s':'')+'</b> from unexpected locations by <b>'+ext.uniqueUsers+' user'+(ext.uniqueUsers>1?'s':'')+'</b>. Australia, New Zealand and Malaysia are excluded as expected locations. Review for suspicious access.', 'warn');
+      ub += table(['Name','Email','Country / Territory','Successful logins'], extUsers.map(function(x){
+        return ['<b>'+esc(x.name||String(x.upn||'').split('@')[0])+'</b>', esc(x.upn||''), esc((x.countries||[]).join(', ')), esc(x.eventCount)];
+      }), [3]);
     } else {
-      var windowNote = extWindow < 30 ? ' (checked '+windowLabel+')' : '';
-      html += callout('No unexpected overseas sign-ins detected in the '+windowLabel+'. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
+      ub += callout('No unexpected overseas sign-ins detected in the last 30 days. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
     }
-    if ((u.licenceSummary||[]).length > 0) {
-      html += '<div class="rpt-sub">Licence assignment</div>';
-      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:1rem;">';
-      u.licenceSummary.forEach(function(l) {
-        var pct = l.available > 0 ? Math.round((l.count / l.available) * 100) : null;
-        var overSub = l.available > 0 && l.count > l.available;
-        var barColor = overSub ? '#C0152A' : '#d1d5db';
-        var countColor = overSub ? '#C0152A' : '#111827';
-        var usedLbl = l.available > 0 ? l.count+' / '+l.available : String(l.count);
-        var bar = l.available > 0
-          ? '<div style="height:4px;background:#e5e7eb;border-radius:2px;margin-top:6px;"><div style="height:4px;background:'+barColor+';border-radius:2px;width:'+Math.min(pct,100)+'%"></div></div>'
-          : '';
-        html += '<div style="border:1px solid #e5e7eb;padding:12px 14px;background:#f9fafb;border-left:4px solid '+barColor+';">';
-        html += '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;line-height:1.3;text-transform:uppercase;letter-spacing:0.04em">'+esc(l.name)+'</div>';
-        html += '<div style="font-size:28px;font-weight:800;color:'+countColor+';line-height:1">'+usedLbl+'</div>';
-        if (l.available > 0) html += '<div style="font-size:11px;color:#9ca3af;margin-top:4px">used of '+l.available+' available</div>';
-        else html += '<div style="font-size:11px;color:#9ca3af;margin-top:4px">assigned</div>';
-        html += bar;
-        html += '</div>';
-      });
-      html += '</div>';
+    // Licence assignment: server already orders paid first; keep order, split by flag only.
+    var lics = u.licenceSummary || [];
+    if (lics.length > 0) {
+      var licRow = function(l) {
+        var n = l.count||0, a = l.available||0, bar, cnt;
+        if (a === 0) {
+          bar = '<div class="r2-bar"><i style="width:100%;background:var(--r2-neutral)"></i></div>';
+          cnt = '<span class="r2-c"><b>'+num(n)+'</b> assigned '+pill('none purchased','neu','font-size:10px')+'</span>';
+        } else {
+          var p = Math.min(100, n / a * 100);
+          var col = p >= 100 ? 'var(--r2-bad)' : p >= 90 ? 'var(--r2-warn)' : l.free ? 'var(--r2-info)' : 'var(--r2-good)';
+          bar = '<div class="r2-bar"><i style="width:'+Math.max(p,1.5).toFixed(1)+'%;background:'+col+'"></i></div>';
+          cnt = '<span class="r2-c"><b>'+num(n)+'</b> / '+num(a)+'</span>';
+        }
+        return '<div class="r2-lic"><span class="r2-n">'+esc(l.name)+'</span>'+bar+cnt+'</div>';
+      };
+      var paid = lics.filter(function(l){ return !l.free; });
+      var free = lics.filter(function(l){ return l.free; });
+      var lh = '';
+      if (paid.length) lh += '<div class="r2-divlabel" style="margin-top:0">Paid licences</div>' + paid.map(licRow).join('');
+      if (free.length) lh += '<div class="r2-divlabel"'+(paid.length?'':' style="margin-top:0"')+'>Free licences</div>' + free.map(licRow).join('');
+      ub += h3('Licence assignment') + '<div class="r2-card">'+lh+'</div>';
     }
-    html += '<div class="rpt-sub">Upcoming licence renewals (next 90 days)</div>';
+    // Upcoming renewals: list / none due / data unavailable
+    ub += h3('Upcoming licence renewals · next 90 days');
     if (u.licenceRenewalsError) {
-      html += callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
-    } else if ((u.licenceRenewals||[]).length > 0) {
-      html += callout('<div style="flex:0 0 240px;max-width:45%;padding-right:32px;font-weight:700;">'+u.licenceRenewals.length+' licence subscription'+(u.licenceRenewals.length>1?'s are':' is')+' due for renewal within 90 days.</div><div style="flex:1;">Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.</div>', 'info');
-      html += '<table class="rpt-policy-table"><thead><tr><th>Licence</th><th>Seats</th><th>Billing</th><th>Renewal date</th><th>Days away</th></tr></thead><tbody>';
-      u.licenceRenewals.forEach(function(r) {
-        html += '<tr><td>'+esc(r.name||'')+'</td><td>'+(r.seats||0)+'</td><td>'+esc(r.cycle||'')+'</td><td>'+(r.renewalDate?new Date(r.renewalDate).toLocaleDateString('en-NZ'):'')+'</td><td>'+(r.daysAway!=null?r.daysAway:'')+'</td></tr>';
-      });
-      html += '</tbody></table>';
+      ub += callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
+    } else if (renewals.length > 0) {
+      ub += '<div class="r2-callout r2-info"><span class="r2-ci">🔔</span><div class="r2-split"><b>'+renewals.length+' licence subscription'+(renewals.length>1?'s are':' is')+' due for renewal within 90 days.</b><span>Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.</span></div></div>';
+      ub += table(['Licence','Seats','Billing','Renewal date','Days away'], renewals.map(function(r){
+        var cyc = String(r.cycle||'');
+        var cycLbl = cyc.replace(/Annual\/Multi-year/i, 'Annual / multi-year');
+        return ['<b>'+esc(r.name||'')+'</b>', num(r.seats), pill(esc(cycLbl), /monthly/i.test(cyc)?'neu':'info'), r.renewalDate ? shortDate(r.renewalDate) : '',
+          r.daysAway!=null ? pill(esc(r.daysAway)+' days', r.daysAway<=14?'warn':'neu') : ''];
+      }), [1,4]);
     } else {
-      html += callout('No annual licence renewals due in the next 90 days.', 'good');
+      ub += callout('No licence renewals due in the next 90 days.', 'good');
     }
-    if ((u.adminRoles||[]).length > 0) {
-      html += '<div class="rpt-sub">Users with admin (privileged) roles</div>';
-      html += '<table class="rpt-policy-table"><thead><tr><th>User</th><th>Roles</th></tr></thead><tbody>';
-      u.adminRoles.forEach(function(a) {
-        var roles = (a.roles||[a.role]).map(function(r){ return esc(r); }).join('<br>');
-        html += '<tr><td><strong>'+esc(a.name)+'</strong><br><span style="color:#6b7280;font-size:13px">'+esc(a.upn)+'</span></td><td>'+roles+'</td></tr>';
-      });
-      html += '</tbody></table>';
+    if ((u.notSignedIn90LicensedList||[]).length > 0) {
+      ub += h3('M365 licensed users - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Licensed+' M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</b> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn')
+        + table(['User','Account','Last sign-in','Inactive'], u.notSignedIn90LicensedList.map(function(x){
+          return ['<b>'+esc(x.name||'')+'</b>', esc(x.upn||''), x.lastSignIn ? shortDate(x.lastSignIn) : 'Never', (x.daysSince!=null && x.daysSince) ? esc(x.daysSince)+' days' : 'Never signed in'];
+        }));
     }
-    html += '</div>';
+    if ((u.notSignedIn90GuestList||[]).length > 0) {
+      ub += h3('Guest accounts - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Guest+' guest account'+(u.notSignedIn90Guest>1?'s have':' has')+' not signed in for 90+ days.</b> Review for stale guest access and remove if no longer needed.', 'warn')
+        + table(['Guest','Account','Last sign-in','Inactive'], u.notSignedIn90GuestList.map(function(x){
+          return ['<b>'+esc(x.name||'')+'</b>', esc(String(x.upn||'').split('#EXT#')[0]), x.lastSignIn ? shortDate(x.lastSignIn) : 'Never', (x.daysSince!=null && x.daysSince) ? esc(x.daysSince)+' days' : 'Never signed in'];
+        }));
+    }
+    if (adminCount > 0) {
+      ub += h3('Users with admin (privileged) roles') + table(['Name','Account','Roles'], u.adminRoles.map(function(a){
+        var roles = (a.roles || (a.role ? [a.role] : [])).map(function(r){ return pill(esc(r), /Global Administrator/i.test(r)?'warn':'neu'); }).join('');
+        return ['<b>'+esc(a.name||'')+'</b>', esc(a.upn||'-'), '<div class="r2-roles">'+roles+'</div>'];
+      }));
+    }
+    html += section('👥', 'User Data', ub, 'Summary of M365 licensed users, guest accounts, shared mailboxes and administrative role holders, and sign-in activity including accounts not used in the last 90 days and logins from outside Australia and New Zealand.');
   }
 
-  // ── SharePoint ──────────────────────────────────────────────────────────────
-  var sp = d.sharepoint || {};
+  // ── SharePoint ─────────────────────────────────────────────────────────────
   if ((sp.siteCount||0) > 0 || sp.error) {
-    html += '<div class="rpt-section">';
-    html += secHeader('SharePoint / MS Teams', '#1A8070');
-    html += '<p class="rpt-body">Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.</p>';
+    var spb = '';
     if (sp.error) {
-      html += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
+      spb += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
     } else {
-      // SharePoint overview - 2-column card grid (modelled on Entra Groups Overview)
-      var spN = 'font-size:26px;font-weight:800;line-height:1;margin-bottom:3px;';
-      var spL = 'font-size:12px;color:#6b7280;';
-      var spStorageNum = sp.totalUsedGB ? sp.totalUsedGB+' GB' : 'Unknown';
-      var spStorageColor = (sp.totalUsedGB||0) > 500 ? '#C0152A' : '#0D7CC4';
-      var spInactiveColor = (sp.inactiveSiteCount||0) > 0 ? '#D97706' : '#1A8070';
-      var spSecGroups  = sp.securityGroupCount !== null && sp.securityGroupCount !== undefined ? sp.securityGroupCount : 'N/A';
-      // Cells are built as a list so a card can be left out (Classic / Other
-      // are omitted when 0) without hand-realigning borders: each cell's
-      // border is worked out from its position in the 2-column grid.
       var spCells = [
-        {v:(sp.siteCount||0),    c:'#0D7CC4', l:'Total sites'},
-        {v:(sp.groupCount||0),   c:'#0D7CC4', l:'M365 Group sites'},
-        {v:(sp.commCount||0),    c:'#1A8070', l:'Communication sites'},
-        {v:(sp.channelCount||0), c:'#0D7CC4', l:'Teams channels'}
+        [num(sp.siteCount),    'Total sites', 'info'],
+        [num(sp.groupCount),   'M365 Group sites', 'info'],
+        [num(sp.commCount),    'Communication sites', 'neu'],
+        [num(sp.channelCount), 'Teams channels', 'neu']
       ];
-      if ((sp.classicCount||0) > 0) spCells.push({v:sp.classicCount, c:'#6b7280', l:'Classic sites'});
-      if ((sp.otherCount||0) > 0)   spCells.push({v:sp.otherCount,   c:'#6b7280', l:'Other'});
-      spCells.push({v:spStorageNum, c:spStorageColor, l:'Storage used'});
-      spCells.push({v:(sp.inactiveSiteCount||0), c:spInactiveColor, l:'Inactive Sites and Channels 180 days +'});
-      spCells.push({v:spSecGroups,  c:'#0D7CC4', l:'Security groups'});
-      var spLastRow = Math.floor((spCells.length - 1) / 2);
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb;margin-bottom:1.25rem;">';
-      spCells.forEach(function(cell, idx) {
-        var cellStyle = 'padding:14px 18px;'
-          + (Math.floor(idx / 2) < spLastRow ? 'border-bottom:1px solid #e5e7eb;' : '')
-          + (idx % 2 === 1 ? 'border-left:1px solid #e5e7eb;' : '');
-        html += '<div style="'+cellStyle+'"><div style="'+spN+'color:'+cell.c+'">'+cell.v+'</div><div style="'+spL+'">'+cell.l+'</div></div>';
-      });
-      html += '</div>';
+      if ((sp.classicCount||0) > 0) spCells.push([num(sp.classicCount), 'Classic sites', 'neu']);
+      if ((sp.otherCount||0) > 0)   spCells.push([num(sp.otherCount), 'Other (system sites)', 'neu']);
+      spCells.push([sp.totalUsedGB ? num(sp.totalUsedGB)+' GB' : 'Unknown', 'Storage used', (sp.totalUsedGB||0)>500?'bad':'info']);
+      spCells.push([num(sp.inactiveSiteCount), 'Inactive Sites and Channels 180 days +', (sp.inactiveSiteCount||0)>0?'warn':'good']);
+      spCells.push([(sp.securityGroupCount!==null && sp.securityGroupCount!==undefined) ? num(sp.securityGroupCount) : 'N/A', 'Security groups', 'info']);
+      spb += '<div class="r2-grid r2-g3">' + spCells.map(function(c){ return kpi(c[0], c[1], c[2]); }).join('') + '</div>';
       if ((sp.inactiveSiteCount||0) > 0) {
-        html += callout('<strong>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</strong> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
+        spb += callout('<b>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</b> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
       }
-
     }
-    html += '</div>';
+    html += section('🗂️', 'SharePoint / MS Teams', spb, 'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.');
   }
 
-  // Ticketing
+  // ── Ticketing (manual; omitted when empty) ─────────────────────────────────
   var hasTickets = has('t-opened')||has('t-closed')||has('t-pending')||has('t-response')||has('t-resolution')||has('t-p1');
   if (hasTickets) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Ticketing & Support', '#1A8070');
+    var tb = '';
     if (has('t-opened')||has('t-closed')||has('t-pending')) {
-      html += '<div class="rpt-kpi-grid">';
-      if (has('t-opened'))  html += rptKpi(v('t-opened'),  'Opened',  'neu');
-      if (has('t-closed'))  html += rptKpi(v('t-closed'),  'Closed',  'good');
-      if (has('t-pending')) html += rptKpi(v('t-pending'), 'Pending', parseInt(v('t-pending'))>5?'warn':'neu');
-      html += '</div>';
+      tb += '<div class="r2-grid r2-g3">';
+      if (has('t-opened'))  tb += kpi(esc(v('t-opened')),  'Opened',  'neu');
+      if (has('t-closed'))  tb += kpi(esc(v('t-closed')),  'Closed',  'good');
+      if (has('t-pending')) tb += kpi(esc(v('t-pending')), 'Pending', parseInt(v('t-pending'))>5?'warn':'neu');
+      tb += '</div>';
     }
     if (has('t-response')||has('t-resolution')) {
-      html += '<div class="rpt-kpi-grid">';
-      if (has('t-response'))   html += rptKpi(esc(v('t-response')),   'Avg response time',   'neu');
-      if (has('t-resolution')) html += rptKpi(esc(v('t-resolution')), 'Avg resolution time', 'neu');
-      html += '</div>';
+      tb += '<div class="r2-grid r2-g2" style="margin-top:14px">';
+      if (has('t-response'))   tb += kpi(esc(v('t-response')),   'Avg response time',   'neu');
+      if (has('t-resolution')) tb += kpi(esc(v('t-resolution')), 'Avg resolution time', 'neu');
+      tb += '</div>';
     }
-    if (has('t-p1')) html += callout('<strong>P1 incident:</strong> ' + esc(v('t-p1')), 'bad');
-    else html += callout('No P1 incidents recorded this period.', 'good');
-    html += '</div>';
+    if (has('t-p1')) tb += callout('<b>P1 incident:</b> ' + esc(v('t-p1')), 'bad');
+    else tb += callout('No P1 incidents recorded this period.', 'good');
+    html += section('🎫', 'Ticketing &amp; Support', tb);
   }
 
-  // Recommendations
+  // ── Recommendations (manual; omitted when empty) ───────────────────────────
   var hasRec = has('r-personal')||has('r-improvements')||has('r-cost')||has('r-roadmap');
   if (hasRec) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Recommendations & Opportunities', '#E06400');
-    if (has('r-personal')) html += '<div class="rpt-personal">' + esc(v('r-personal')) + '</div>';
-    if (has('r-improvements')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#0D7CC4">🔧 Suggested improvements</div><p class="rpt-body" style="margin:0">'+esc(v('r-improvements'))+'</p></div>';
-    if (has('r-cost')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#1A8070">💰 Cost-saving opportunities</div><p class="rpt-body" style="margin:0">'+esc(v('r-cost'))+'</p></div>';
-    if (has('r-roadmap')) html += '<div class="rpt-rec-card"><div class="rpt-rec-card-title" style="color:#8C0C6E">🗺️ Tech roadmap</div><p class="rpt-body" style="margin:0">'+esc(v('r-roadmap'))+'</p></div>';
-    html += '</div>';
+    var rb = '';
+    if (has('r-personal')) rb += '<div class="r2-personal">' + esc(v('r-personal')) + '</div>';
+    if (has('r-improvements')) rb += '<div class="r2-card r2-rec" style="--rc:var(--r2-info)"><div class="r2-rec-title">🔧 Suggested improvements</div><p class="r2-body" style="margin:0">'+esc(v('r-improvements'))+'</p></div>';
+    if (has('r-cost')) rb += '<div class="r2-card r2-rec" style="--rc:var(--r2-good)"><div class="r2-rec-title">💰 Cost-saving opportunities</div><p class="r2-body" style="margin:0">'+esc(v('r-cost'))+'</p></div>';
+    if (has('r-roadmap')) rb += '<div class="r2-card r2-rec" style="--rc:#8c0c6e"><div class="r2-rec-title">🗺️ Tech roadmap</div><p class="r2-body" style="margin:0">'+esc(v('r-roadmap'))+'</p></div>';
+    html += section('💡', 'Recommendations &amp; Opportunities', rb);
   }
 
-  // ── Security Risk Register (moved to bottom) ───────────────────────────────
+  // ── Security Risk Register ─────────────────────────────────────────────────
   var risks = d.risks || [];
   if (risks.length > 0) {
-    html += '<div class="rpt-section">';
-    html += secHeader('Security Risk Register', '#E61B1F');
-    html += '<p class="rpt-body">The following risks have been identified based on the data collected from this tenant. Items are ranked by severity. High-severity items require prompt attention.</p>';
-    html += '<table class="rpt-risk-table"><thead><tr><th style="width:90px">Severity</th><th style="width:140px">Area</th><th>Finding</th><th>Recommended action</th></tr></thead><tbody>';
-    risks.forEach(function(r) {
-      html += '<tr><td><span class="rpt-sev '+r.severity+'">'+r.severity.charAt(0).toUpperCase()+r.severity.slice(1)+'</span></td>';
-      html += '<td style="color:#6b7280">'+r.area+'</td>';
-      html += '<td>'+r.finding+'</td><td style="color:#374151">'+r.action+'</td></tr>';
-    });
-    html += '</tbody></table></div>';
+    var sevMap = { high:['High','bad'], medium:['Medium','warn'], low:['Low','info'] };
+    html += section('⚠️', 'Security Risk Register', table(['Risk','Area','Rating','Recommended action'], risks.map(function(r){
+      var s = sevMap[r.severity] || [esc(r.severity),'neu'];
+      return ['<b>'+esc(r.finding||'')+'</b>', esc(r.area||''), pill(s[0], s[1]), esc(r.action||'')];
+    }), [], 'r2-risktbl'), 'The following risks have been identified based on the data collected from this tenant. Items are ranked by severity. High-severity items require prompt attention.');
   }
 
-  // Footer
-  html += '<div class="rpt-footer">';
-  var FOOTER_LOGO = 'data:image/png;base64,' + (window._fullLogoWhite || window._logoB64 || '');
-  html += '<img src="'+FOOTER_LOGO+'" style="height:24px;display:block;opacity:0.5;" alt="Integricity Technology" />';
-  html += '<span class="rpt-footer-text">Prepared by Integricity &middot; '+today+' &middot; Microsoft Intune &amp; Graph API &middot; Confidential</span>';
-  html += '</div>';
+  // ── Footer ─────────────────────────────────────────────────────────────────
+  html += '<footer class="r2-footer">Prepared by Integricity &middot; '+esc(today)+' &middot; Microsoft Intune &amp; Graph API &middot; Confidential</footer>';
 
   document.getElementById('report-out').innerHTML = html;
   showPage(4);
