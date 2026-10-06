@@ -320,6 +320,47 @@ exports.handler = async (event) => {
     // AU and blank country filtered client-side along with failed sign-ins.
 
 
+    // ── Sign-in query — maximally optimised ──────────────────────────────────
+    // Optimisations:
+    // 1. Uses report period dates (not rolling 30d) so early-month logins aren't missed
+    // 2. Includes interactiveUser + nonInteractiveUser — catches PRT/device logins
+    // 3. Single page fetch, no pagination — one HTTP request
+    // 4. Minimal $select — smallest payload
+    // 5. Falls back to 14-day window in parallel
+    const halfPeriodStart = reportFrom
+      ? new Date(new Date(reportFrom).getTime() + Math.floor((new Date(reportTo||now_ms).getTime() - new Date(reportFrom).getTime()) / 2)).toISOString().split(".")[0] + "Z"
+      : new Date(now_ms - 14 * MS_DAY).toISOString().split(".")[0] + "Z";
+
+    // Include both interactive and non-interactive to catch Windows PRT logins
+    const siEndClause = siPeriodEnd ? ` and createdDateTime le ${siPeriodEnd}` : "";
+    const siInteractive = " and signInEventTypes/any(t:t eq 'interactiveUser')";
+    const siF_full = encodeURIComponent(`createdDateTime ge ${siPeriodStart}${siEndClause}${siInteractive}`);
+    const siF_half = encodeURIComponent(`createdDateTime ge ${halfPeriodStart}${siEndClause}${siInteractive}`);
+    const siSel = "$select=userPrincipalName,location,status";
+    const siHdr = { Authorization: `Bearer ${token}` };
+
+    async function fetchSI(filter) {
+      const t0 = Date.now();
+      const tag = r => ({ ...r, ms: Date.now() - t0 });
+      try {
+        const url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
+        const r = await fetch(url, { headers: siHdr });
+        const j = await r.json();
+        if (j.error) return tag({ results: [], error: j.error.message });
+        return tag({ results: j.value || [], error: null });
+      } catch(e) { return tag({ results: [], error: e.message }); }
+    }
+
+    // Start both sign-in queries NOW, in parallel with the main batch of Graph calls
+    // below, instead of after it: the sign-in log is by far the slowest call, so it
+    // gets the whole request budget rather than whatever is left over.
+    const SI_MS = 9000;
+    const siTO = { results: [], error: "timeout", ms: SI_MS };
+    const siPromise = Promise.all([
+      withTimeout(fetchSI(siF_full), SI_MS, siTO),
+      withTimeout(fetchSI(siF_half), SI_MS, siTO),
+    ]);
+
     const FAST = 8500, SLOW = 8000;
     const emptyAll = { results: [], error: "timeout" };
     const emptyOne = { data: null, error: "timeout" };
@@ -351,45 +392,13 @@ exports.handler = async (event) => {
       withTimeout(graphAll(token, "/directory/subscriptions"), FAST, emptyAll),
     ]);
 
-    // ── Sign-in query — maximally optimised ──────────────────────────────────
-    // Optimisations:
-    // 1. Uses report period dates (not rolling 30d) so early-month logins aren't missed
-    // 2. Includes interactiveUser + nonInteractiveUser — catches PRT/device logins
-    // 3. Single page fetch, no pagination — one HTTP request
-    // 4. Minimal $select — smallest payload
-    // 5. Falls back to 14-day window in parallel
-    const halfPeriodStart = reportFrom
-      ? new Date(new Date(reportFrom).getTime() + Math.floor((new Date(reportTo||now_ms).getTime() - new Date(reportFrom).getTime()) / 2)).toISOString().split(".")[0] + "Z"
-      : new Date(now_ms - 14 * MS_DAY).toISOString().split(".")[0] + "Z";
-
-    // Include both interactive and non-interactive to catch Windows PRT logins
-    const siEndClause = siPeriodEnd ? ` and createdDateTime le ${siPeriodEnd}` : "";
-    const siInteractive = " and signInEventTypes/any(t:t eq 'interactiveUser')";
-    const siF_full = encodeURIComponent(`createdDateTime ge ${siPeriodStart}${siEndClause}${siInteractive}`);
-    const siF_half = encodeURIComponent(`createdDateTime ge ${halfPeriodStart}${siEndClause}${siInteractive}`);
-    const siSel = "$select=userPrincipalName,location,status";
-    const siHdr = { Authorization: `Bearer ${token}` };
-
-    async function fetchSI(filter) {
-      try {
-        const url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
-        const r = await fetch(url, { headers: siHdr });
-        const j = await r.json();
-        if (j.error) return { results: [], error: j.error.message };
-        return { results: j.value || [], error: null };
-      } catch(e) { return { results: [], error: e.message }; }
-    }
-
     // Run full period and half period in parallel — use full if it succeeds
     let signInWindow = 30;
     const siWindowDays = reportFrom
       ? Math.round((new Date(reportTo||now_ms) - new Date(reportFrom)) / MS_DAY)
       : 30;
     const TO = { results: [], error: "timeout" };
-    const [siFull, siHalf] = await Promise.all([
-      withTimeout(fetchSI(siF_full), 8500, TO),
-      withTimeout(fetchSI(siF_half), 8500, TO),
-    ]);
+    const [siFull, siHalf] = await siPromise;
     let signInsRFinal;
     if (!siFull.error) {
       signInsRFinal = siFull; signInWindow = siWindowDays;
@@ -398,6 +407,8 @@ exports.handler = async (event) => {
     } else {
       signInsRFinal = TO; signInWindow = 0;
     }
+
+
 
     // ── Devices ───────────────────────────────────────────────────────────────
     const comp  = { compliant: 0, noncompliant: 0, unknown: 0 };
@@ -872,7 +883,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: signInsRFinal.error === "timeout", windowDays: signInWindow },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, debug: { fullMs: siFull.ms ?? null, fullError: siFull.error || null, halfMs: siHalf.ms ?? null, halfError: siHalf.error || null } },
       },
       sharepoint: {
         siteCount: spSiteCount,

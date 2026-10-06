@@ -686,6 +686,11 @@ async function fetchData() {
     iData = data;
     renderPreview();
     var diag = document.getElementById('sp-detail').innerHTML;
+    var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
+    if (sd) {
+      var fmtQ = function(ms, err){ return (err ? 'failed - ' + esc(err) : 'ok') + (ms != null ? ' (' + ms + ' ms)' : ''); };
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log query: full period ' + fmtQ(sd.fullMs, sd.fullError) + '; half period ' + fmtQ(sd.halfMs, sd.halfError) + '.</div>';
+    }
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
     buildReport(); // Review step skipped: build straight away and land on the Report ready step
