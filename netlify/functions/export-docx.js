@@ -392,7 +392,7 @@ exports.handler = async (event) => {
     {
       const nxt = renew.length ? [...renew].filter(r => r.renewalDate).sort((a, b) => String(a.renewalDate).localeCompare(String(b.renewalDate)))[0] : null;
       const tiles = [
-        { label: "Devices compliant", val: evaluated > 0 ? `${pctComp}%` : "N/A", tone: evaluated > 0 ? (pctComp >= 95 ? "good" : pctComp >= 80 ? "warn" : "bad") : "neu", sub: evaluated > 0 ? `${comp.compliant || 0} of ${evaluated} evaluated devices` : "No evaluated devices" },
+        { label: "Devices compliant", val: evaluated > 0 ? `${pctComp}%` : "N/A", tone: evaluated > 0 ? (pctComp >= 80 ? "good" : pctComp >= 60 ? "warn" : "bad") : "neu", sub: evaluated > 0 ? `${comp.compliant || 0} of ${evaluated} evaluated devices` : "No evaluated devices" },
         { label: "Secure Score", val: d.score ? `${d.score.pct}%` : "N/A", tone: d.score ? scoreTone(d.score.pct) : "neu", sub: d.score ? `${d.score.cur} of ${d.score.max} points` : "Unavailable" },
         { label: "Risky users", val: String(d.risky || 0), tone: (d.risky || 0) > 0 ? "bad" : "good", sub: (d.risky || 0) > 0 ? "Accounts flagged at risk" : "No accounts at risk" },
         { label: "Renewals due (90 days)", val: renewErr ? "N/A" : String(renew.length), tone: renewErr ? "neu" : "info", sub: renewErr ? "Data unavailable" : `Next: ${nxt ? dShort(nxt.renewalDate) : "none"}` },
@@ -448,9 +448,9 @@ exports.handler = async (event) => {
       const legendLine = (color, text) => para([run("■ ", { size: 18, color }), run(text, { size: 18, color: C.GRAY })], { after: 30 });
       const left = [
         cardLabel("Compliance"),
-        para([run(evaluated > 0 ? `${pctComp}%` : "N/A", { size: 80, bold: true, color: evaluated > 0 ? KPI_VALUE[pctComp >= 95 ? "good" : pctComp >= 80 ? "warn" : "bad"] : C.DARK })], { keepNext: true }),
+        para([run(evaluated > 0 ? `${pctComp}%` : "N/A", { size: 80, bold: true, color: evaluated > 0 ? KPI_VALUE[pctComp >= 80 ? "good" : pctComp >= 60 ? "warn" : "bad"] : C.DARK })], { keepNext: true }),
         para([run("compliant", { size: 17, bold: true, color: C.GRAY })], { after: 80, keepNext: true }),
-        ...(evaluated > 0 ? [gauge(pctComp, KPI_ACCENT[pctComp >= 95 ? "good" : pctComp >= 80 ? "warn" : "bad"], LW - 2 * 180), gap(120)] : []),
+        ...(evaluated > 0 ? [gauge(pctComp, KPI_ACCENT[pctComp >= 80 ? "good" : pctComp >= 60 ? "warn" : "bad"], LW - 2 * 180), gap(120)] : []),
         legendLine(C.GOOD, `${comp.compliant || 0} compliant`),
         legendLine(C.BAD, `${comp.noncompliant || 0} non-compliant`),
         legendLine(C.NEU, `${comp.unknown || 0} not evaluated (not counted)`),

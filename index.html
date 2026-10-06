@@ -1057,7 +1057,7 @@ function buildReport() {
   var sc = d.score;
   var nextRen = renewals.length ? shortDate(renewals[0].renewalDate) : 'none';
   html += '<div class="r2-strip">';
-  html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=95?'r2-good':pctComp>=80?'r2-warn':'r2-bad')+'">'+(evaluated>0?pctComp+'%':'N/A')+'</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(evaluated)+' evaluated devices</div></div>';
+  html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=80?'r2-good':pctComp>=60?'r2-warn':'r2-bad')+'">'+(evaluated>0?pctComp+'%':'N/A')+'</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(evaluated)+' evaluated devices</div></div>';
   if (sc) html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val '+(sc.pct>=70?'r2-good':sc.pct>=50?'r2-warn':'r2-bad')+'">'+sc.pct+'%</div><div class="r2-sub">'+num(sc.cur)+' of '+num(sc.max)+' points</div></div>';
   else html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Not available</div></div>';
   html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val '+((d.risky||0)>0?'r2-bad':'r2-good')+'">'+num(d.risky)+'</div><div class="r2-sub">'+((d.risky||0)>0?'Accounts flagged at risk':'No accounts at risk')+'</div></div>';
@@ -1093,7 +1093,7 @@ function buildReport() {
   if ((comp.unknown||0) > 0) cLeg += '<span style="--c:var(--r2-neutral)">'+num(comp.unknown)+' not evaluated (not counted)</span>';
   cLeg += '<span style="--c:var(--r2-warn)">'+num(d.staleCount)+' not checked in for 90+ days</span>';
   dev += '<div class="r2-grid r2-g2" style="margin-top:14px"><div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Compliance</h3><div class="r2-row">'
-    + donut(pctComp, pctComp>=95?'var(--r2-good)':pctComp>=80?'var(--r2-warn)':'var(--r2-bad)', pctComp+'%', 'compliant')
+    + donut(pctComp, pctComp>=80?'var(--r2-good)':pctComp>=60?'var(--r2-warn)':'var(--r2-bad)', pctComp+'%', 'compliant')
     + '<div class="r2-legend r2-legend-col">'+cLeg+'</div></div>';
   if ((comp.unknown||0) > 0) dev += '<p class="r2-note">&ldquo;Not evaluated&rdquo; devices have not completed a compliance check-in, have no compliance policy assigned, or are newly enrolled.</p>';
   dev += '</div>';

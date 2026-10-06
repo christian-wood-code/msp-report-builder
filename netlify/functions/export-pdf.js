@@ -434,7 +434,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const ren = u0.licenceRenewals || [];
     const next = ren.length ? ren.slice().sort((a, b) => String(a.renewalDate).localeCompare(String(b.renewalDate)))[0] : null;
     const tiles = [
-      { l: 'Devices compliant', v: pctComp === null ? 'N/A' : `${pctComp}%`, t: pctComp === null ? 'neu' : pctComp >= 95 ? 'good' : 'warn', s: `${comp.compliant ?? 0} of ${evaluated} evaluated devices` },
+      { l: 'Devices compliant', v: pctComp === null ? 'N/A' : `${pctComp}%`, t: pctComp === null ? 'neu' : pctComp >= 80 ? 'good' : pctComp >= 60 ? 'warn' : 'bad', s: `${comp.compliant ?? 0} of ${evaluated} evaluated devices` },
       { l: 'Secure Score', v: sc ? `${sc.pct}%` : 'N/A', t: scTone, s: sc ? `${sc.cur} of ${sc.max} points` : 'Not available' },
       { l: 'Risky users', v: String(d.risky ?? 0), t: (d.risky ?? 0) > 0 ? 'bad' : 'good', s: (d.risky ?? 0) > 0 ? 'Accounts flagged at risk' : 'No accounts at risk' },
       u0.licenceRenewalsError
@@ -501,7 +501,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const evaluated = (comp.compliant ?? 0) + (comp.noncompliant ?? 0);
     const pctComp = evaluated > 0 ? Math.round((comp.compliant ?? 0) / evaluated * 100) : 0;
     const R = 38;
-    donut(M + 14 + R + 2, y + 22 + (hCard - 22) / 2, R, 11, pctComp, pctComp >= 95 ? C.good : C.warn, `${pctComp}%`, 'compliant');
+    donut(M + 14 + R + 2, y + 22 + (hCard - 22) / 2, R, 11, pctComp, pctComp >= 80 ? C.good : pctComp >= 60 ? C.warn : C.bad, `${pctComp}%`, 'compliant');
     {
       const items = [
         { c: C.good, t: `${comp.compliant ?? 0} compliant` },
