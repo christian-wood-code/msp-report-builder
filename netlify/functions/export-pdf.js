@@ -296,16 +296,16 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const cw = cols.map(c => c.w / wsum * inner);
     const cx = []; let acc = M + PX; cw.forEach(w => { cx.push(acc); acc += w; });
     const meas = row => {
-      let h = 22;
+      let h = 19;
       const cells = row.map((v, i) => {
         const c = cols[i];
         if (c.k === 'pill' || c.k === 'pills') {
           const pr = pillRows(c.k === 'pill' ? [v] : v, cw[i] - GAP, 7);
-          h = Math.max(h, pr.h + 11); return { pr };
+          h = Math.max(h, pr.h + 8); return { pr };
         }
         F(c.k === 'b' ? 'bold' : 'normal', 8.5);
         const lines = doc.splitTextToSize(clean(v), cw[i] - GAP);
-        h = Math.max(h, lines.length * 10.5 + 11); return { lines };
+        h = Math.max(h, lines.length * 10.5 + 8); return { lines };
       });
       return { h, cells };
     };
@@ -562,15 +562,25 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
       }
     }
 
+    if ((d.comp?.noncompliant ?? 0) > 0) {
+      const n = d.comp.noncompliant;
+      callout(`${n} device${n > 1 ? 's are' : ' is'} non-compliant with your organisation's policies.`, '', 'bad');
+    }
     if ((d.notCompliantList || []).length) {
       dataTable([{ h: 'Device', w: 26, k: 'b' }, { h: 'Primary user', w: 32 }, { h: 'OS', w: 20 }, { h: 'Last seen', w: 14 }],
         d.notCompliantList.map(x => [x.name || '', x.user || 'Unknown', x.os || '', x.lastSync ? fmtShort(x.lastSync) : 'Never']), 'Non-compliant devices');
+    }
+    if ((d.encryption?.notEncrypted ?? 0) > 0) {
+      const n = d.encryption.notEncrypted;
+      callout(`${n} device${n > 1 ? 's are' : ' is'} not encrypted.`, 'This is a significant data protection risk.', 'bad');
     }
     if ((d.notEncryptedList || []).length) {
       dataTable([{ h: 'Device', w: 28, k: 'b' }, { h: 'Primary user', w: 34 }, { h: 'OS', w: 28 }],
         d.notEncryptedList.map(x => [x.name || '', x.user || 'Unknown', x.os || '']), 'Devices not encrypted');
     }
     if ((d.lowDisk || []).length) {
+      const n = d.lowDisk.length;
+      callout(`${n} device${n > 1 ? 's have' : ' has'} low disk space (less than 15% free).`, '', 'warn');
       dataTable([{ h: 'Device', w: 28, k: 'b' }, { h: 'Primary user', w: 34 }, { h: 'Free', w: 12, a: 'r' }, { h: 'Free %', w: 12, k: 'pill', a: 'r' }],
         d.lowDisk.map(x => [x.name || '', x.user || '', `${x.gb} GB`, [`${x.pct}%`, x.pct < 5 ? 'bad' : 'warn']]), 'Low disk space');
     }
@@ -632,6 +642,8 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     rowsCard(M, y, hw, hh, 'Key policies', kpRows);
     rowsCard(M + hw + gap, y, hw, hh, 'Authentication methods', amRows);
     y += hh + 12;
+    if ((d.risky ?? 0) > 0) callout(`${d.risky} account${d.risky > 1 ? 's are' : ' is'} flagged as at-risk by Entra ID Protection.`, 'Reset passwords immediately.', 'bad');
+    if ((d.appProtection?.total ?? 0) === 0) callout('No app protection (MAM) policies found.', 'If BYOD access is permitted, this is a gap.', 'warn');
   }
 
   // ══════════════════════════ Patch status ═════════════════════════════════════
@@ -653,6 +665,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
       drawLegend(legend, M + 14, y + 14 + 12 + 17, CW - 28, 8.5);
       y += h + 12;
       if ((d.patchOver90 || []).length) {
+        callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? 's have' : ' has'} not checked in for 90+ days - 3 or more patch cycles behind.`, '', 'bad');
                 dataTable([{ h: 'Device', w: 24, k: 'b' }, { h: 'Primary user', w: 30 }, { h: 'Last seen', w: 14 }, { h: 'OS', w: 32 }],
           d.patchOver90.map(x => [x.name || '', x.user || 'Unknown', x.lastSeen ? fmtShort(x.lastSeen) : 'Never', x.os || 'Unknown']), 'Devices over 90 days without a check-in');
       }
@@ -736,9 +749,17 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     }
 
     const dayText = x => (x.daysSince ? `${x.daysSince} days` : 'Never signed in');
+    if ((u.notSignedIn90Licensed ?? 0) > 0) {
+      const n = u.notSignedIn90Licensed;
+      callout(`${n} M365 licensed user${n > 1 ? 's have' : ' has'} not signed in for 90+ days.`, 'Service accounts and unlicensed accounts are excluded.', 'warn');
+    }
     if ((u.notSignedIn90LicensedList || []).length) {
       dataTable([{ h: 'User', w: 28, k: 'b' }, { h: 'Account', w: 34 }, { h: 'Last sign-in', w: 16 }, { h: 'Inactive', w: 16 }],
         u.notSignedIn90LicensedList.map(x => [x.name || '', x.upn || '', x.lastSignIn ? fmtShort(x.lastSignIn) : 'Never', dayText(x)]), 'Licensed users inactive for 90+ days');
+    }
+    if ((u.notSignedIn90Guest ?? 0) > 0) {
+      const n = u.notSignedIn90Guest;
+      callout(`${n} guest account${n > 1 ? 's have' : ' has'} not signed in for 90+ days.`, 'Review for stale guest access and remove if no longer needed.', 'warn');
     }
     if ((u.notSignedIn90GuestList || []).length) {
       dataTable([{ h: 'Guest', w: 28, k: 'b' }, { h: 'Account', w: 34 }, { h: 'Last sign-in', w: 16 }, { h: 'Inactive', w: 16 }],

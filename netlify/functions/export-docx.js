@@ -471,12 +471,20 @@ exports.handler = async (event) => {
       }
     }
 
+    if ((d.comp?.noncompliant || 0) > 0) {
+      const n = d.comp.noncompliant;
+      children.push(callout(`${n} device${n > 1 ? "s are" : " is"} non-compliant with your organisation's policies.`, "bad")); children.push(gap(100));
+    }
     if ((d.notCompliantList || []).length > 0) {
       children.push(subLabel("Non-compliant devices"));
       children.push(dataTable(["Device", "Primary user", "OS", "Last seen"],
         d.notCompliantList.map(x => [{ t: x.name, b: true }, x.user || "Unknown", { t: x.os || "", size: 16 }, dOrNever(x.lastSync)]),
         colsFrom([0.25, 0.32, 0.25, 0.18])));
       children.push(gap(100));
+    }
+    if ((d.encryption?.notEncrypted || 0) > 0) {
+      const n = d.encryption.notEncrypted;
+      children.push(callout("This is a significant data protection risk.", "bad", `${n} device${n > 1 ? "s are" : " is"} not encrypted.`)); children.push(gap(100));
     }
     if ((d.notEncryptedList || []).length > 0) {
       children.push(subLabel("Devices not encrypted"));
@@ -486,6 +494,7 @@ exports.handler = async (event) => {
       children.push(gap(100));
     }
     if (lowDisk.length > 0) {
+      children.push(callout(`${lowDisk.length} device${lowDisk.length > 1 ? "s have" : " has"} low disk space (less than 15% free).`, "warn")); children.push(gap(100));
       children.push(subLabel("Low disk space"));
       children.push(dataTable(["Device", "Primary user", "Free", "Free %"],
         lowDisk.map(x => [{ t: x.name, b: true }, x.user || "Unknown", `${x.gb} GB`, { runs: [tag(`${x.pct}%`, x.pct < 5 ? "bad" : "warn")] }]),
@@ -543,6 +552,8 @@ exports.handler = async (event) => {
         cardCell([cardLabel("Authentication methods"), ...labelValueRows(amRows, HW2 - 2 * 180)], HW2),
       ]})]));
       children.push(gap(100));
+      if ((d.risky || 0) > 0) { children.push(callout("Reset passwords immediately.", "bad", `${d.risky} account${d.risky > 1 ? "s are" : " is"} flagged as at-risk by Entra ID Protection.`)); children.push(gap(100)); }
+      if ((d.appProtection?.total || 0) === 0) { children.push(callout("If BYOD access is permitted, this is a gap.", "warn", "No app protection (MAM) policies found.")); children.push(gap(100)); }
     }
 
     // ── Patch Status ─────────────────────────────────────────────────────────
@@ -561,6 +572,7 @@ exports.handler = async (event) => {
       ], PW)] })]));
       children.push(gap(100));
       if ((d.patchOver90 || []).length > 0) {
+        children.push(callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? "s have" : " has"} not checked in for 90+ days - 3 or more patch cycles behind.`, "bad")); children.push(gap(100));
         children.push(subLabel("Devices over 90 days without a check-in"));
         children.push(dataTable(["Device", "Primary user", "Last seen", "OS"],
           d.patchOver90.map(x => [{ t: x.name, b: true }, x.user || "Unknown", dOrNever(x.lastSeen), { t: x.os || "Unknown", size: 16 }]),
@@ -656,12 +668,20 @@ exports.handler = async (event) => {
         }
       }
 
+      if ((u.notSignedIn90Licensed || 0) > 0) {
+        const n = u.notSignedIn90Licensed;
+        children.push(callout("Service accounts and unlicensed accounts are excluded.", "warn", `${n} M365 licensed user${n > 1 ? "s have" : " has"} not signed in for 90+ days.`)); children.push(gap(100));
+      }
       if ((u.notSignedIn90LicensedList || []).length > 0) {
         children.push(subLabel("Licensed users inactive for 90+ days"));
         children.push(dataTable(["User", "Account", "Last sign-in", "Inactive"],
           u.notSignedIn90LicensedList.map(x => [{ t: x.name || "", b: true }, { t: x.upn || "", size: 16 }, dOrNever(x.lastSignIn), x.daysSince ? `${x.daysSince} days` : "Never signed in"]),
           colsFrom([0.25, 0.33, 0.20, 0.22])));
         children.push(gap(100));
+      }
+      if ((u.notSignedIn90Guest || 0) > 0) {
+        const n = u.notSignedIn90Guest;
+        children.push(callout("Review for stale guest access and remove if no longer needed.", "warn", `${n} guest account${n > 1 ? "s have" : " has"} not signed in for 90+ days.`)); children.push(gap(100));
       }
       if ((u.notSignedIn90GuestList || []).length > 0) {
         children.push(subLabel("Guest accounts inactive for 90+ days"));
