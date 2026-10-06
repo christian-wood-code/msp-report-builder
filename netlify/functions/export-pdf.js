@@ -114,7 +114,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   // ── section header: rounded accent tile (no icon) + title + THIS MONTH tag ─
   const sectionHeader = (title, color, intro, minFollow = 110) => {
     let introLines = [];
-    if (intro) { F('normal', 9, C.muted); introLines = doc.splitTextToSize(intro, CW * 0.86); }
+    if (intro) { F('normal', 9, C.muted); introLines = doc.splitTextToSize(intro, CW * 0.64); }
     const need = 24 + 12 + (introLines.length ? introLines.length * 12 + 8 : 0) + minFollow;
     ensure(need + (y > M + 1 ? 22 : 0));
     if (y > M + 1) y += 22;
@@ -124,7 +124,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     spaced('THIS MONTH', PW - M, y + 16, 7, C.muted, 0.8, { align: 'right' });
     y += 24 + 12;
     if (introLines.length) {
-      F('normal', 9, C.muted); doc.text(introLines, M, y + 2, { lineHeightFactor: 1.35 });
+      F('normal', 9, C.muted); doc.text(introLines, PW - M, y + 2, { align: 'right', lineHeightFactor: 1.35 });
       y += introLines.length * 12 + 8;
     }
   };
