@@ -203,7 +203,9 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .rpt2 td{padding:8px 12px;border-bottom:1px solid var(--r2-line);color:var(--r2-text);vertical-align:middle;background:transparent}
 .rpt2 tr:last-child td{border-bottom:0}
 .rpt2 td.r2-num,.rpt2 th.r2-num{text-align:right;font-variant-numeric:tabular-nums}
-.rpt2 table.r2-nowrap td{white-space:nowrap}
+.rpt2 table.r2-nowrap td:first-child{white-space:nowrap}
+.rpt2 table.r2-nowrap td:not(:first-child){white-space:normal}
+.rpt2 table.r2-nowrap td:last-child .r2-pill{margin:2px 0 2px 4px}
 .rpt2 .r2-tw{overflow-x:auto}
 .rpt2 .r2-risktbl th:nth-child(1){width:32%} .rpt2 .r2-risktbl th:nth-child(2){width:22%} .rpt2 .r2-risktbl th:nth-child(3){width:9%}
 .rpt2 .r2-risktbl td{vertical-align:top} .rpt2 .r2-risktbl td:nth-child(3){white-space:nowrap}
@@ -1158,8 +1160,8 @@ function buildReport() {
     var p = a[1] ? (a[2] ? pill('Enabled - review','warn') : pill('Enabled','good')) : pill('Disabled','neu');
     return '<tr><td>'+a[0]+'</td><td class="r2-num">'+p+'</td></tr>';
   }).join('');
-  sec += '<div class="r2-grid r2-g2" style="margin-top:14px"><div>'+h3('Key policy status',true)+'<div class="r2-card" style="padding:6px 16px"><table class="r2-nowrap"><tbody>'+kpRows+'</tbody></table></div></div>'
-    + '<div>'+h3('Authentication methods',true)+'<div class="r2-card" style="padding:6px 16px"><table class="r2-nowrap"><tbody>'+amRows+'</tbody></table></div></div></div>';
+  sec += '<div class="r2-grid r2-g2" style="margin-top:14px"><div>'+h3('Key policy status',true)+'<div class="r2-card" style="padding:6px 16px"><table><tbody>'+kpRows+'</tbody></table></div></div>'
+    + '<div>'+h3('Authentication methods',true)+'<div class="r2-card" style="padding:6px 16px"><table><tbody>'+amRows+'</tbody></table></div></div></div>';
   html += section('🛡️', 'Security Posture', sec, 'Overview of the tenant&#39;s security configuration including Microsoft Secure Score, Conditional Access (CA) policy status, authentication methods, and identity protection alerts.');
 
   // ── Patch Status ───────────────────────────────────────────────────────────
