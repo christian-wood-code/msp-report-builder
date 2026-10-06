@@ -1027,7 +1027,9 @@ function buildReport() {
   var sp = d.sharepoint || {};
   var comp = d.comp || {compliant:0, noncompliant:0, unknown:0};
   var total = d.total || 0;
-  var pctComp = total > 0 ? Math.round(comp.compliant / total * 100) : 0;
+  // Devices that have not been evaluated (unknown / no policy / not yet checked in) are excluded from the score
+  var evaluated = (comp.compliant||0) + (comp.noncompliant||0);
+  var pctComp = evaluated > 0 ? Math.round(comp.compliant / evaluated * 100) : 0;
   var renewals = (u.licenceRenewals || []).slice().sort(function(a,b){ return String(a.renewalDate).localeCompare(String(b.renewalDate)); });
 
   // ── Hero ───────────────────────────────────────────────────────────────────
@@ -1046,7 +1048,7 @@ function buildReport() {
   var sc = d.score;
   var nextRen = renewals.length ? shortDate(renewals[0].renewalDate) : 'none';
   html += '<div class="r2-strip">';
-  html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=95?'r2-good':pctComp>=80?'r2-warn':'r2-bad')+'">'+pctComp+'%</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(total)+' devices</div></div>';
+  html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=95?'r2-good':pctComp>=80?'r2-warn':'r2-bad')+'">'+(evaluated>0?pctComp+'%':'N/A')+'</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(evaluated)+' evaluated devices</div></div>';
   if (sc) html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val '+(sc.pct>=70?'r2-good':sc.pct>=50?'r2-warn':'r2-bad')+'">'+sc.pct+'%</div><div class="r2-sub">'+num(sc.cur)+' of '+num(sc.max)+' points</div></div>';
   else html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Not available</div></div>';
   html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val '+((d.risky||0)>0?'r2-bad':'r2-good')+'">'+num(d.risky)+'</div><div class="r2-sub">'+((d.risky||0)>0?'Accounts flagged at risk':'No accounts at risk')+'</div></div>';
@@ -1079,7 +1081,7 @@ function buildReport() {
     + kpi(num(comp.noncompliant), 'Non-compliant', comp.noncompliant>0?'bad':'good')
     + kpi(num(lowDisk.length), 'Low disk (&lt;15%)', lowDisk.length>0?'warn':'good') + '</div>';
   var cLeg = '<span style="--c:var(--r2-good)">'+num(comp.compliant)+' compliant</span><span style="--c:var(--r2-bad)">'+num(comp.noncompliant)+' non-compliant</span>';
-  if ((comp.unknown||0) > 0) cLeg += '<span style="--c:var(--r2-neutral)">'+num(comp.unknown)+' not evaluated</span>';
+  if ((comp.unknown||0) > 0) cLeg += '<span style="--c:var(--r2-neutral)">'+num(comp.unknown)+' not evaluated (not counted)</span>';
   cLeg += '<span style="--c:var(--r2-warn)">'+num(d.staleCount)+' not checked in for 90+ days</span>';
   dev += '<div class="r2-grid r2-g2" style="margin-top:14px"><div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Compliance</h3><div class="r2-row">'
     + donut(pctComp, pctComp>=95?'var(--r2-good)':pctComp>=80?'var(--r2-warn)':'var(--r2-bad)', pctComp+'%', 'compliant')
@@ -1227,7 +1229,7 @@ function buildReport() {
           cnt = '<span class="r2-c"><b>'+num(n)+'</b> assigned '+pill('none purchased','neu','font-size:10px')+'</span>';
         } else {
           var p = Math.min(100, n / a * 100);
-          var col = p >= 100 ? 'var(--r2-bad)' : p >= 90 ? 'var(--r2-warn)' : l.free ? 'var(--r2-info)' : 'var(--r2-good)';
+          var col = n > a ? 'var(--r2-bad)' : n === a ? 'var(--r2-info)' : p >= 90 ? 'var(--r2-warn)' : l.free ? 'var(--r2-info)' : 'var(--r2-good)';
           bar = '<div class="r2-bar"><i style="width:'+Math.max(p,1.5).toFixed(1)+'%;background:'+col+'"></i></div>';
           cnt = '<span class="r2-c"><b>'+num(n)+'</b> / '+num(a)+'</span>';
         }
