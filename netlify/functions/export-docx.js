@@ -603,7 +603,7 @@ exports.handler = async (event) => {
     // ── User Data ─────────────────────────────────────────────────────────────
     if (u.total > 0) {
       children.push(...sectionHeaderBlock("User Data", C.PURPLE));
-      children.push(lead("Summary of M365 licensed users, guest accounts, administrative role holders, and sign-in activity including accounts not used in the last 90 days and logins from outside Australia and New Zealand."));
+      children.push(lead("Overview of Microsoft 365 user accounts: licensed users, guests, shared mailboxes and administrator role holders. It also covers sign-in activity, including accounts not used in the last 90 days" + ((u.externalSignIns || {}).skipped ? "." : " and logins from outside Australia, New Zealand and Malaysia.")));
       children.push(kpiGrid([
         k(u.total || 0, "Licensed users", "info"),
         k(u.sharedMailboxes || 0, "Shared mailboxes", "neu"),

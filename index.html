@@ -1301,7 +1301,7 @@ function buildReport() {
         return ['<b>'+esc(a.name||'')+'</b>', esc(a.upn||'-'), '<div class="r2-roles">'+roles+'</div>'];
       }));
     }
-    html += section('👥', 'User Data', ub, 'Summary of M365 licensed users, guest accounts, shared mailboxes and administrative role holders, and sign-in activity including accounts not used in the last 90 days and logins from outside Australia and New Zealand.');
+    html += section('👥', 'User Data', ub, 'Overview of Microsoft 365 user accounts: licensed users, guests, shared mailboxes and administrator role holders. It also covers sign-in activity, including accounts not used in the last 90 days' + ((u.externalSignIns || {}).skipped ? '.' : ' and logins from outside Australia, New Zealand and Malaysia.'));
   }
 
   // ── SharePoint ─────────────────────────────────────────────────────────────
