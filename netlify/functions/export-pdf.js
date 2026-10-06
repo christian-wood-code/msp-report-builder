@@ -688,6 +688,10 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     ];
     kpiGrid(uk);
 
+    if (ext && !ext.timedOut && ext.sharedGateway && ext.sharedGateway.events > 0) {
+      const sg = ext.sharedGateway;
+      callout(`${sg.events.toLocaleString('en-NZ')} sign-ins through ${sg.ips.length} shared IP address${sg.ips.length > 1 ? 'es' : ''} were left out.`, `An overseas IP address used by ${sg.minUsers} or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.`, 'info');
+    }
     if (ext && !ext.timedOut && ext.retentionFrom) {
       callout('Sign-in history limit.', `Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${ext.retentionFrom} can no longer be retrieved and are not covered by this check.`, 'info');
     }

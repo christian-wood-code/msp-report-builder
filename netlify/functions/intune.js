@@ -355,25 +355,35 @@ exports.handler = async (event) => {
     async function fetchSliceOnce(startMs, endMs, excl, rich = true) {
       const t0 = Date.now();
       const filter = encodeURIComponent(`createdDateTime ge ${isoZ(startMs)} and createdDateTime lt ${isoZ(endMs)}${excl ? COUNTRY_EXCL : ""}`);
-      let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${rich ? siSelRich : siSelMin}&$filter=${filter}`;
+      let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=${rich ? 1000 : 500}&${rich ? siSelRich : siSelMin}&$filter=${filter}`;
       const results = [];
-      let error = null, pages = 0;
+      let error = null, pages = 0, throttled = 0;
       while (url) {
         const left = siDeadline - Date.now();
         if (left < 300) { error = "timeout"; break; }
         const ac = new AbortController();
         const timer = setTimeout(() => ac.abort(), left);
         try {
-          const j = await withTimeout((async () => { const r = await fetch(url, { headers: excl ? { ...siHdr, ConsistencyLevel: "eventual" } : siHdr, signal: ac.signal }); return r.json(); })(),
-            left, { error: { message: "timeout" } });
+          const resp = await withTimeout((async () => {
+            const r = await fetch(url, { headers: excl ? { ...siHdr, ConsistencyLevel: "eventual" } : siHdr, signal: ac.signal });
+            const body = await r.json().catch(() => ({}));
+            return { j: body, status: r.status, retry: r.headers && r.headers.get ? r.headers.get("retry-after") : null };
+          })(), left, { j: { error: { message: "timeout" } }, status: 0 });
           clearTimeout(timer);
+          const j = resp.j || {};
+          // Graph is throttling us (5 requests / 10 s on the sign-in log): wait Retry-After and try this page again.
+          if (resp.status === 429 || /too many requests/i.test((j.error && j.error.message) || "")) {
+            const waitMs = Math.min(5, Number(resp.retry) || 2) * 1000;
+            if (throttled < 4 && siDeadline - Date.now() > waitMs + 1500) { throttled++; await new Promise(r => setTimeout(r, waitMs)); continue; }
+            error = "Too Many Requests"; break;
+          }
           if (j.error) { error = j.error.message; break; }
           results.push(...(j.value || [])); pages++;
           url = j["@odata.nextLink"] || null;
           if (url && results.length >= 20000) { error = "too many sign-ins to read"; break; }   // safety cap
         } catch (e) { clearTimeout(timer); error = e.name === "AbortError" ? "timeout" : e.message; break; }
       }
-      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0, filtered: excl, rich };
+      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0, filtered: excl, rich, throttled };
     }
     async function fetchSlice(startMs, endMs) {
       const rejected = r => r.error && r.error !== "timeout" && r.pages === 0 && siDeadline - Date.now() > 2000;
@@ -709,9 +719,10 @@ exports.handler = async (event) => {
     const extMap = new Map();
     let totalOverseasLogins = 0;
     // Diagnostics: what the overseas traffic actually is (interactive or background, which IPs/apps)
-    const ovStat = { read: 0, overseas: 0, interactive: 0, nonInteractive: 0 };
+    const ovStat = { read: 0, overseas: 0, interactive: 0, nonInteractive: 0, sharedGateway: 0 };
     const ovIps = new Map(), ovApps = new Map();
     const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+    const ovEvents = [];
     for (const s of (signInsRFinal.results || [])) {
       const upn = s.userPrincipalName;
       const cc  = s.location?.countryOrRegion || "";
@@ -725,11 +736,27 @@ exports.handler = async (event) => {
       // If Graph did not return the flag, the sign-in is treated as interactive.
       if (s.isInteractive === false) { ovStat.nonInteractive++; continue; }
       ovStat.interactive++;
+      ovEvents.push({ upn, cc, ip: s.ipAddress || "" });
+    }
+    // Shared gateway filter: a company VPN / web gateway puts many different people on the same
+    // overseas IP address. Any IP used by SHARED_IP_MIN_USERS or more different users is treated as
+    // shared infrastructure and left out of the metric (it is reported separately, never hidden).
+    const SHARED_IP_MIN_USERS = 5;
+    const ipUsers = new Map();
+    for (const e of ovEvents) { if (!e.ip) continue; if (!ipUsers.has(e.ip)) ipUsers.set(e.ip, new Set()); ipUsers.get(e.ip).add(e.upn); }
+    const sharedIps = new Map();   // ip -> { users, events }
+    for (const [ip, users] of ipUsers) if (users.size >= SHARED_IP_MIN_USERS) sharedIps.set(ip, { users: users.size, events: 0 });
+    for (const e of ovEvents) {
+      if (e.ip && sharedIps.has(e.ip)) { sharedIps.get(e.ip).events++; ovStat.sharedGateway++; continue; }
       totalOverseasLogins++;
-      const key = upn + "|" + cc;
-      if (!extMap.has(key)) extMap.set(key, { upn, cc, countryFull: countryName(cc), eventCount: 0 });
+      const key = e.upn + "|" + e.cc;
+      if (!extMap.has(key)) extMap.set(key, { upn: e.upn, cc: e.cc, countryFull: countryName(e.cc), eventCount: 0 });
       extMap.get(key).eventCount++;
     }
+    const sharedGatewaySummary = {
+      events: ovStat.sharedGateway, minUsers: SHARED_IP_MIN_USERS,
+      ips: [...sharedIps].map(([ip, v]) => ({ ip, users: v.users, events: v.events })).sort((x, y) => y.events - x.events).slice(0, 10),
+    };
     // Group by user — collect all countries and total events
     const userMap = new Map();
     for (const row of extMap.values()) {
@@ -927,7 +954,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null })) } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
       },
       sharepoint: {
         siteCount: spSiteCount,

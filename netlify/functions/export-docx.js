@@ -611,6 +611,11 @@ exports.handler = async (event) => {
         k((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0), "Inactive 90+ days", ((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0)) > 0 ? "warn" : "good"),
       ], 4));
       children.push(gap(120));
+      if ((u.externalSignIns || {}).sharedGateway && u.externalSignIns.sharedGateway.events > 0 && !u.externalSignIns.timedOut) {
+        const sg = u.externalSignIns.sharedGateway;
+        children.push(callout(`An overseas IP address used by ${sg.minUsers} or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.`, "info", `${sg.events.toLocaleString("en-NZ")} sign-ins through ${sg.ips.length} shared IP address${sg.ips.length > 1 ? "es" : ""} were left out.`));
+        children.push(gap(100));
+      }
       if ((u.externalSignIns || {}).retentionFrom && !(u.externalSignIns || {}).timedOut) {
         children.push(callout(`Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${u.externalSignIns.retentionFrom} can no longer be retrieved and are not covered by this check.`, "info", "Sign-in history limit."));
         children.push(gap(100));
