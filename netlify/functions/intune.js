@@ -340,7 +340,10 @@ exports.handler = async (event) => {
     const siDeadline = Date.now() + SI_MS;
     const periodStartMs = new Date(siPeriodStart).getTime();
     const periodEndMs = siPeriodEnd ? new Date(siPeriodEnd).getTime() : now_ms;
-    const siSel = "$select=userPrincipalName,location,status";
+    // isInteractive lets us count only real (interactive) sign-ins client-side - the log also holds
+    // huge numbers of background token refreshes. ipAddress/appDisplayName are for diagnostics only.
+    const siSelRich = "$select=userPrincipalName,location,status,isInteractive,ipAddress,appDisplayName";
+    const siSelMin = "$select=userPrincipalName,location,status";
     const siHdr = { Authorization: `Bearer ${token}` };
     const isoZ = ms => new Date(ms).toISOString().split(".")[0] + "Z";
 
@@ -349,10 +352,10 @@ exports.handler = async (event) => {
     // Switch: set to false to stop asking Graph to filter countries (the client-side filtering stays either way).
     const SI_COUNTRY_FILTER = true;
     const COUNTRY_EXCL = ["AU", "NZ", "MY"].map(c => ` and location/countryOrRegion ne '${c}'`).join("");
-    async function fetchSliceOnce(startMs, endMs, excl) {
+    async function fetchSliceOnce(startMs, endMs, excl, rich = true) {
       const t0 = Date.now();
       const filter = encodeURIComponent(`createdDateTime ge ${isoZ(startMs)} and createdDateTime lt ${isoZ(endMs)}${excl ? COUNTRY_EXCL : ""}`);
-      let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
+      let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${rich ? siSelRich : siSelMin}&$filter=${filter}`;
       const results = [];
       let error = null, pages = 0;
       while (url) {
@@ -370,16 +373,16 @@ exports.handler = async (event) => {
           if (url && results.length >= 20000) { error = "too many sign-ins to read"; break; }   // safety cap
         } catch (e) { clearTimeout(timer); error = e.name === "AbortError" ? "timeout" : e.message; break; }
       }
-      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0, filtered: excl };
+      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0, filtered: excl, rich };
     }
     async function fetchSlice(startMs, endMs) {
-      const first = await fetchSliceOnce(startMs, endMs, SI_COUNTRY_FILTER);
-      // Filter rejected by Graph (not a timeout): retry this slice unfiltered if there is time left.
-      if (first.filtered && first.error && first.error !== "timeout" && first.pages === 0 && siDeadline - Date.now() > 2000) {
-        const second = await fetchSliceOnce(startMs, endMs, false);
-        return { ...second, filterError: first.error };
-      }
-      return first;
+      const rejected = r => r.error && r.error !== "timeout" && r.pages === 0 && siDeadline - Date.now() > 2000;
+      let r = await fetchSliceOnce(startMs, endMs, SI_COUNTRY_FILTER, true);
+      let filterError = null, selectError = null;
+      // Rejected by Graph (not a timeout): first drop the country filter, then the extra fields.
+      if (r.filtered && rejected(r)) { filterError = r.error; r = await fetchSliceOnce(startMs, endMs, false, true); }
+      if (r.rich && rejected(r)) { selectError = r.error; r = await fetchSliceOnce(startMs, endMs, false, false); }
+      return { ...r, filterError, selectError };
     }
 
     // Start the slices NOW, in parallel with the main batch of Graph calls below.
@@ -705,12 +708,23 @@ exports.handler = async (event) => {
     const SKIP_CC = new Set(["AU", "NZ", "MY", ""]);  // AU, NZ, Malaysia = expected
     const extMap = new Map();
     let totalOverseasLogins = 0;
+    // Diagnostics: what the overseas traffic actually is (interactive or background, which IPs/apps)
+    const ovStat = { read: 0, overseas: 0, interactive: 0, nonInteractive: 0 };
+    const ovIps = new Map(), ovApps = new Map();
+    const bump = (m, k) => m.set(k, (m.get(k) || 0) + 1);
     for (const s of (signInsRFinal.results || [])) {
       const upn = s.userPrincipalName;
       const cc  = s.location?.countryOrRegion || "";
+      ovStat.read++;
       if (!upn) continue;
       if (SKIP_CC.has(cc)) continue;                    // expected countries
       if ((s.status?.errorCode ?? 1) !== 0) continue;  // successful only
+      ovStat.overseas++;
+      bump(ovIps, s.ipAddress || "(unknown)"); bump(ovApps, s.appDisplayName || "(unknown)");
+      // Count real (interactive) sign-ins only; background token refreshes are not "logins".
+      // If Graph did not return the flag, the sign-in is treated as interactive.
+      if (s.isInteractive === false) { ovStat.nonInteractive++; continue; }
+      ovStat.interactive++;
       totalOverseasLogins++;
       const key = upn + "|" + cc;
       if (!extMap.has(key)) extMap.set(key, { upn, cc, countryFull: countryName(cc), eventCount: 0 });
@@ -913,7 +927,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, debug: { slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null })) } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null })) } },
       },
       sharepoint: {
         siteCount: spSiteCount,

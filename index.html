@@ -686,6 +686,11 @@ async function fetchData() {
     iData = data;
     renderPreview();
     var diag = document.getElementById('sp-detail').innerHTML;
+    var ovd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug && iData.users.externalSignIns.debug.overseas;
+    if (ovd) {
+      var topL = function(a){ return (a || []).map(function(x){ return esc(x[0]) + ' (' + x[1] + ')'; }).join(', ') || '-'; };
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Overseas sign-in traffic: ' + ovd.read + ' sign-ins read; ' + ovd.overseas + ' successful from outside AU/NZ/MY, of which ' + ovd.interactive + ' interactive (counted) and ' + ovd.nonInteractive + ' background/non-interactive (not counted). Top IPs: ' + topL(ovd.topIps) + '. Top apps: ' + topL(ovd.topApps) + '.</div>';
+    }
     var rl = (iData && iData.riskyList) || [];
     if (rl.length) {
       var lvl = function(l){ var k = String(l).toLowerCase(); return k === 'high' ? 'bad' : k === 'medium' ? 'warn' : 'info'; };
@@ -697,7 +702,7 @@ async function fetchData() {
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
     if (sd && sd.slices) {
       var okN = sd.slices.filter(function(x){ return x.ok; }).length;
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return (x.range || x.days + 'd') + ': ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + (x.filterError ? 'country filter rejected: ' + esc(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : '')) + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return (x.range || x.days + 'd') + ': ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + (x.filterError ? 'country filter rejected: ' + esc(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : '')) + (x.selectError ? 'extra fields rejected: ' + esc(x.selectError) + '; ' : '') + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
     }
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
