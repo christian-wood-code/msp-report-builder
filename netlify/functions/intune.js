@@ -328,44 +328,50 @@ exports.handler = async (event) => {
     // 3. Single page fetch, no pagination — one HTTP request
     // 4. Minimal $select — smallest payload
     // 5. Falls back to 14-day window in parallel
-    const halfPeriodStart = reportFrom
-      ? new Date(new Date(reportFrom).getTime() + Math.floor((new Date(reportTo||now_ms).getTime() - new Date(reportFrom).getTime()) / 2)).toISOString().split(".")[0] + "Z"
-      : new Date(now_ms - 14 * MS_DAY).toISOString().split(".")[0] + "Z";
-
-    // Date range only. The v1.0 sign-in log already returns just interactive sign-ins, and the
-    // signInEventTypes/any(...) lambda filter that used to be added here is very slow on Graph's
-    // side (it was the likely cause of the query timing out every time), so it is not used.
-    const siEndClause = siPeriodEnd ? ` and createdDateTime le ${siPeriodEnd}` : "";
-    const periodEndMs = reportTo ? new Date(reportTo).getTime() + MS_DAY : now_ms;
-    const recentStart = new Date(Math.max(new Date(siPeriodStart).getTime(), periodEndMs - 7 * MS_DAY)).toISOString().split(".")[0] + "Z";
-    const siF_full = encodeURIComponent(`createdDateTime ge ${siPeriodStart}${siEndClause}`);
-    const siF_half = encodeURIComponent(`createdDateTime ge ${halfPeriodStart}${siEndClause}`);
-    const siF_recent = encodeURIComponent(`createdDateTime ge ${recentStart}${siEndClause}`);
+    // ── Sign-in log (unexpected overseas sign-ins) ───────────────────────────
+    // The report period is split into SI_SLICES date slices that are fetched in parallel. Each
+    // slice is paged (@odata.nextLink) until it is complete or the shared deadline passes, so the
+    // whole period is read instead of only the newest 500 sign-ins. Only slices that finished are
+    // counted as "checked", which lets the report say exactly how many days it really covered.
+    // Date range only: no event-type lambda filter (very slow on Graph's side) - the v1.0 sign-in
+    // log already returns only interactive sign-ins.
+    const SI_SLICES = 4;
+    const SI_MS = 9000;
+    const siDeadline = Date.now() + SI_MS;
+    const periodStartMs = new Date(siPeriodStart).getTime();
+    const periodEndMs = siPeriodEnd ? new Date(siPeriodEnd).getTime() : now_ms;
     const siSel = "$select=userPrincipalName,location,status";
     const siHdr = { Authorization: `Bearer ${token}` };
+    const isoZ = ms => new Date(ms).toISOString().split(".")[0] + "Z";
 
-    async function fetchSI(filter) {
+    async function fetchSlice(startMs, endMs) {
       const t0 = Date.now();
-      const tag = r => ({ ...r, ms: Date.now() - t0 });
-      try {
-        const url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
-        const r = await fetch(url, { headers: siHdr });
-        const j = await r.json();
-        if (j.error) return tag({ results: [], error: j.error.message });
-        return tag({ results: j.value || [], error: null });
-      } catch(e) { return tag({ results: [], error: e.message }); }
+      const filter = encodeURIComponent(`createdDateTime ge ${isoZ(startMs)} and createdDateTime lt ${isoZ(endMs)}`);
+      let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
+      const results = [];
+      let error = null, pages = 0;
+      while (url) {
+        const left = siDeadline - Date.now();
+        if (left < 300) { error = "timeout"; break; }
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(), left);
+        try {
+          const j = await withTimeout((async () => { const r = await fetch(url, { headers: siHdr, signal: ac.signal }); return r.json(); })(),
+            left, { error: { message: "timeout" } });
+          clearTimeout(timer);
+          if (j.error) { error = j.error.message; break; }
+          results.push(...(j.value || [])); pages++;
+          url = j["@odata.nextLink"] || null;
+          if (url && results.length >= 20000) { error = "too many sign-ins to read"; break; }   // safety cap
+        } catch (e) { clearTimeout(timer); error = e.name === "AbortError" ? "timeout" : e.message; break; }
+      }
+      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0 };
     }
 
-    // Start both sign-in queries NOW, in parallel with the main batch of Graph calls
-    // below, instead of after it: the sign-in log is by far the slowest call, so it
-    // gets the whole request budget rather than whatever is left over.
-    const SI_MS = 9000;
-    const siTO = { results: [], error: "timeout", ms: SI_MS };
-    const siPromise = Promise.all([
-      withTimeout(fetchSI(siF_full), SI_MS, siTO),
-      withTimeout(fetchSI(siF_half), SI_MS, siTO),
-      withTimeout(fetchSI(siF_recent), SI_MS, siTO),   // last 7 days: small enough to finish even on a busy tenant
-    ]);
+    // Start the slices NOW, in parallel with the main batch of Graph calls below.
+    const sliceMs = (periodEndMs - periodStartMs) / SI_SLICES;
+    const siPromise = Promise.all(Array.from({ length: SI_SLICES }, (_, i) =>
+      fetchSlice(Math.round(periodStartMs + i * sliceMs), i === SI_SLICES - 1 ? periodEndMs : Math.round(periodStartMs + (i + 1) * sliceMs))));
 
     const FAST = 8500, SLOW = 8000;
     const emptyAll = { results: [], error: "timeout" };
@@ -398,25 +404,16 @@ exports.handler = async (event) => {
       withTimeout(graphAll(token, "/directory/subscriptions"), FAST, emptyAll),
     ]);
 
-    // Run full period and half period in parallel — use full if it succeeds
-    let signInWindow = 30;
-    const siWindowDays = reportFrom
-      ? Math.round((new Date(reportTo||now_ms) - new Date(reportFrom)) / MS_DAY)
-      : 30;
-    const TO = { results: [], error: "timeout" };
-    const [siFull, siHalf, siRecent] = await siPromise;
-    let signInsRFinal;
-    if (!siFull.error) {
-      signInsRFinal = siFull; signInWindow = siWindowDays;
-    } else if (!siHalf.error) {
-      signInsRFinal = siHalf; signInWindow = Math.round(siWindowDays / 2);
-    } else if (!siRecent.error) {
-      signInsRFinal = siRecent; signInWindow = Math.min(7, siWindowDays);
-    } else {
-      signInsRFinal = TO; signInWindow = 0;
-    }
-
-
+    // Combine the slices. Events from every slice are used, but only slices that finished count
+    // as "checked" days, so a partial result is reported as partial.
+    const siRes = await siPromise;
+    const periodDays = Math.max(1, Math.round((periodEndMs - periodStartMs) / MS_DAY));
+    const okSlices = siRes.filter(x => x.complete);
+    const signInWindow = okSlices.length
+      ? Math.min(periodDays, Math.round(okSlices.reduce((acc, x) => acc + (x.endMs - x.startMs), 0) / MS_DAY))
+      : 0;
+    const signInPartial = okSlices.length > 0 && okSlices.length < siRes.length;
+    const signInsRFinal = { results: siRes.flatMap(x => x.results), error: okSlices.length ? null : "timeout" };
 
     // ── Devices ───────────────────────────────────────────────────────────────
     const comp  = { compliant: 0, noncompliant: 0, unknown: 0 };
@@ -896,7 +893,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, debug: { fullMs: siFull.ms ?? null, fullError: siFull.error || null, halfMs: siHalf.ms ?? null, halfError: siHalf.error || null, recentMs: siRecent.ms ?? null, recentError: siRecent.error || null } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, debug: { slices: siRes.map(x => ({ days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null })) } },
       },
       sharepoint: {
         siteCount: spSiteCount,

@@ -611,6 +611,11 @@ exports.handler = async (event) => {
         k((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0), "Inactive 90+ days", ((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0)) > 0 ? "warn" : "good"),
       ], 4));
       children.push(gap(120));
+      if ((u.externalSignIns || {}).partial && !(u.externalSignIns || {}).timedOut) {
+        const e0 = u.externalSignIns;
+        children.push(callout("The sign-in log could not be fully retrieved in time, so results may be incomplete.", "info", `Overseas sign-ins: only ${e0.windowDays} of ${e0.periodDays} days could be checked.`));
+        children.push(gap(100));
+      }
       if ((u.externalSignIns || {}).timedOut) {
         children.push(callout("The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Re-pulling usually resolves it.", "info", "Overseas sign-in data unavailable this run."));
         children.push(gap(100));
@@ -727,8 +732,9 @@ exports.handler = async (event) => {
       const ext = u.externalSignIns || {};
       const extUsers = ext.byUser || [];
       if (extUsers.length > 0) {
-        const extTotal = ext.total || 0, extWindow = ext.windowDays || 30;
-        children.push(subLabel(`Unexpected overseas sign-ins - last ${extWindow} days`));
+        const extTotal = ext.total || 0;
+        const extWindow = ext.partial ? `${ext.windowDays} of ${ext.periodDays} days checked` : `report period, ${ext.periodDays || 30} days`;
+        children.push(subLabel(`Unexpected overseas sign-ins - ${extWindow}`));
         children.push(callout(`${extTotal} successful login${extTotal > 1 ? "s" : ""} from unexpected locations by ${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? "s" : ""}. Australia, New Zealand and Malaysia are excluded as expected locations.`, "warn"));
         children.push(gap(100));
         children.push(dataTable(["Name", "Email", "Country / Territory", "Logins"],

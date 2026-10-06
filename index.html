@@ -695,9 +695,9 @@ async function fetchData() {
       diag += '</table>';
     }
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
-    if (sd) {
-      var fmtQ = function(ms, err){ return (err ? 'failed - ' + esc(err) : 'ok') + (ms != null ? ' (' + ms + ' ms)' : ''); };
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log query: full period ' + fmtQ(sd.fullMs, sd.fullError) + '; half period ' + fmtQ(sd.halfMs, sd.halfError) + '; last 7 days ' + fmtQ(sd.recentMs, sd.recentError) + '.</div>';
+    if (sd && sd.slices) {
+      var okN = sd.slices.filter(function(x){ return x.ok; }).length;
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return x.days + 'd: ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
     }
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
@@ -1206,18 +1206,20 @@ function buildReport() {
       + kpi(num(u.notSignedIn90Licensed),'Licensed users not signed in 90+ days',(u.notSignedIn90Licensed||0)>0?'warn':'good')
       + kpi(num(u.notSignedIn90Guest),'Guests not signed in 90+ days',(u.notSignedIn90Guest||0)>0?'warn':'good')
       + kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good')) + '</div>';
+    if (!extNA && ext.partial) {
+      ub += callout('<b>Overseas sign-ins: only '+ext.windowDays+' of '+ext.periodDays+' days could be checked.</b> The sign-in log could not be fully retrieved in time, so results may be incomplete. Pulling the data again may cover the rest.', 'info');
+    }
     if (extNA) {
       ub += callout('<b>Overseas sign-in data unavailable this run.</b> The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Pulling the data again usually resolves it.', 'info');
     } else if (extUsers.length > 0) {
-      var extWindow = ext.windowDays || 30;
-      var windowLabel = extWindow < 30 ? extWindow+'-day window (30-day timed out)' : 'last 30 days';
+      var windowLabel = ext.partial ? (ext.windowDays + ' of ' + ext.periodDays + ' days checked') : ('report period, ' + (ext.periodDays || 30) + ' days');
       ub += h3('Unexpected overseas sign-ins - '+esc(windowLabel));
       ub += callout('<b>'+ext.total+' successful login'+(ext.total>1?'s':'')+'</b> from unexpected locations by <b>'+ext.uniqueUsers+' user'+(ext.uniqueUsers>1?'s':'')+'</b>. Australia, New Zealand and Malaysia are excluded as expected locations. Review for suspicious access.', 'warn');
       ub += table(['Name','Email','Country / Territory','Successful logins'], extUsers.map(function(x){
         return ['<b>'+esc(x.name||String(x.upn||'').split('@')[0])+'</b>', esc(x.upn||''), esc((x.countries||[]).join(', ')), esc(x.eventCount)];
       }), [3]);
     } else {
-      ub += callout('No unexpected overseas sign-ins detected in the last 30 days. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
+      ub += callout(ext.partial ? 'No unexpected overseas sign-ins found in the '+ext.windowDays+' of '+ext.periodDays+' days checked. Australia, New Zealand and Malaysia are treated as expected locations.' : 'No unexpected overseas sign-ins detected in the report period. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
     }
     // Licence assignment: server already orders paid first; keep order, split by flag only.
     var lics = u.licenceSummary || [];

@@ -688,6 +688,9 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     ];
     kpiGrid(uk);
 
+    if (ext && !ext.timedOut && ext.partial) {
+      callout(`Overseas sign-ins: only ${ext.windowDays} of ${ext.periodDays} days could be checked.`, 'The sign-in log could not be fully retrieved in time, so results may be incomplete.', 'info');
+    }
     if (ext && ext.timedOut) {
       callout('Overseas sign-in data unavailable this run.', 'The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Re-pulling usually resolves it.', 'info');
     }
@@ -774,7 +777,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const extUsers = (ext && ext.byUser) || [];
     if (extUsers.length) {
       const extTotal = ext.total ?? 0;
-      h3(`Unexpected overseas sign-ins · last ${ext.windowDays ?? 30} days`, 90);
+      h3(`Unexpected overseas sign-ins · ${ext.partial ? `${ext.windowDays} of ${ext.periodDays} days checked` : `report period, ${ext.periodDays ?? 30} days`}`, 90);
       callout(`${extTotal} successful login${extTotal > 1 ? 's' : ''} from unexpected locations by ${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? 's' : ''}.`,
         'Australia, New Zealand and Malaysia are excluded as expected locations.', 'warn');
       dataTable([{ h: 'Name', w: 22, k: 'b' }, { h: 'Email', w: 32 }, { h: 'Country / Territory', w: 32 }, { h: 'Logins', w: 10, a: 'r' }],
