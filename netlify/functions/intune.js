@@ -639,9 +639,13 @@ exports.handler = async (event) => {
       .filter(s => s.skuId && s.skuPartNumber && (s.consumedUnits || 0) > 0)
       .map(s => {
         const name = skuNames[s.skuId] || s.skuPartNumber;
-        // Free/viral SKUs (Power Automate/Power Apps/Power BI Free, etc.) are listed after the paid ones
-        const free = /(^|_)(FREE|VIRAL)(_|$)|^POWER_BI_STANDARD$/i.test(s.skuPartNumber) || /\(free\)/i.test(name);
-        return { name, count: s.consumedUnits || 0, available: s.prepaidUnits?.enabled || 0, free };
+        // Free/viral SKUs (Power Automate/Power Apps/Power BI Free, etc.) and anything with "trial" in the
+        // name are listed after the paid ones
+        const free = /(^|_)(FREE|VIRAL)(_|$)|^POWER_BI_STANDARD$/i.test(s.skuPartNumber) || /\(free\)/i.test(name) || /trial/i.test(name) || /trial/i.test(s.skuPartNumber);
+        // A licence with no purchased units (e.g. Microsoft Intune included with another plan) shows as n / n
+        // like the others, instead of a special "assigned / none purchased" row.
+        const consumed = s.consumedUnits || 0;
+        return { name, count: consumed, available: s.prepaidUnits?.enabled || consumed, free };
       });
     licenceSummary = sortLicences(licenceSummary);
 
