@@ -861,6 +861,11 @@ exports.handler = async (event) => {
       av: { active: avActiveCount, notActive: avNotActiveCount, outOfDate: avOutOfDateCount, notActiveList: avNotActive.slice(0,50), outOfDateList: avOutOfDate.slice(0,50) },
       score: scoreRaw ? { pct: Math.round((scoreRaw.currentScore/scoreRaw.maxScore)*100), cur: Math.round(scoreRaw.currentScore), max: Math.round(scoreRaw.maxScore) } : null,
       risky: riskyR.results.length,
+      // At-risk accounts for the on-screen diagnostics panel only (names are NOT used in any report or export)
+      riskyList: riskyR.results.slice(0, 50).map(r => ({
+        name: r.userDisplayName || "", upn: r.userPrincipalName || "", level: r.riskLevel || "",
+        detail: r.riskDetail || "", updated: r.riskLastUpdatedDateTime || null,
+      })),
       securityDefaults: secDefaultsR.data?.isEnabled ?? null,
       conditionalAccess: { total: caPolicies.length, enabled: caEnabled, reportOnly: caReportOnly },
       keyPolicies: {

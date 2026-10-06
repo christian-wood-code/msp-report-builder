@@ -488,7 +488,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
         <button onclick="showPage(2)">← Edit inputs</button>
         <button onclick="startOver()">+ New report</button>
       </div>
-      <details id="sp-diag" style="display:none;margin-bottom:1rem;font-size:13px;"><summary style="cursor:pointer;color:var(--text-secondary);">SharePoint template diagnostics (not part of the report)</summary><div id="sp-diag-body" style="margin-top:8px;"></div></details>
+      <details id="sp-diag" style="display:none;margin-bottom:1rem;font-size:13px;"><summary style="cursor:pointer;color:var(--text-secondary);">Diagnostics: SharePoint templates, at-risk accounts (not part of the report)</summary><div id="sp-diag-body" style="margin-top:8px;"></div></details>
       <div id="report-out" class="report-wrap rpt2"></div>
     </div>
   </div>
@@ -686,6 +686,14 @@ async function fetchData() {
     iData = data;
     renderPreview();
     var diag = document.getElementById('sp-detail').innerHTML;
+    var rl = (iData && iData.riskyList) || [];
+    if (rl.length) {
+      var lvl = function(l){ var k = String(l).toLowerCase(); return k === 'high' ? 'bad' : k === 'medium' ? 'warn' : 'info'; };
+      diag += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:14px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">At-risk accounts (' + rl.length + (iData.risky > rl.length ? ' of ' + iData.risky : '') + ') - not part of the report</div>';
+      diag += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>' + ['Name','Account','Risk level','Reason','Last updated'].map(function(h){ return '<th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">' + h + '</th>'; }).join('') + '</tr>';
+      rl.forEach(function(r){ var td = 'padding:4px 8px;border-bottom:1px solid var(--border)'; diag += '<tr><td style="' + td + '">' + esc(r.name) + '</td><td style="' + td + ';font-family:monospace">' + esc(r.upn) + '</td><td style="' + td + '">' + esc(r.level || '-') + '</td><td style="' + td + '">' + esc(r.detail || '-') + '</td><td style="' + td + '">' + esc(r.updated ? String(r.updated).slice(0,10) : '-') + '</td></tr>'; });
+      diag += '</table>';
+    }
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
     if (sd) {
       var fmtQ = function(ms, err){ return (err ? 'failed - ' + esc(err) : 'ok') + (ms != null ? ' (' + ms + ' ms)' : ''); };
