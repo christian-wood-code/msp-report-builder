@@ -289,7 +289,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return respond(400, { error: "Invalid JSON" }); }
 
-  const { tenantId, clientId, clientSecret, reportFrom, reportTo, retainMetrics } = body;
+  const { tenantId, clientId, clientSecret, reportFrom, reportTo, retainMetrics, skipOverseas } = body;
   // Default true (existing clients / report-hub calls that don't send this
   // field keep today's behaviour). false = one-off engagement: don't save
   // this run's metrics, and wipe any prior history for this tenant too --
@@ -397,7 +397,9 @@ exports.handler = async (event) => {
 
     // Start the slices NOW, in parallel with the main batch of Graph calls below.
     const sliceMs = (periodEndMs - periodStartMs) / SI_SLICES;
-    const siPromise = Promise.all(Array.from({ length: SI_SLICES }, (_, i) =>
+    // skipOverseas (a per-client setting): do not query the sign-in log at all
+    const signInSkipped = skipOverseas === true;
+    const siPromise = signInSkipped ? Promise.resolve([]) : Promise.all(Array.from({ length: SI_SLICES }, (_, i) =>
       fetchSlice(Math.round(periodStartMs + i * sliceMs), i === SI_SLICES - 1 ? periodEndMs : Math.round(periodStartMs + (i + 1) * sliceMs))));
 
     const FAST = 8500, SLOW = 8000;
@@ -966,7 +968,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !signInSkipped && !!signInsRFinal.error, skipped: signInSkipped, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInSkipped ? null : signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
       },
       sharepoint: {
         siteCount: spSiteCount,

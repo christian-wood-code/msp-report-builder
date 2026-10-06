@@ -349,6 +349,10 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
           <input type="password" id="c-secret" placeholder="••••••••••••" />
         </div>
       </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="c-skipsi" style="width:auto;margin:0;" /> Skip the overseas sign-in check for this client</label>
+        <span class="hint">Leaves overseas sign-in metrics out of the report entirely and skips that query (useful where everyone works through a VPN or the check isn't meaningful).</span>
+      </div>
       <div class="action-row"><button class="primary" id="save-cred-btn" onclick="saveCred()">→ Save & continue</button></div>
     </div>
   </div>
@@ -582,6 +586,7 @@ function editCred(name) {
   document.getElementById('c-tenant').value = c.tenantId;
   document.getElementById('c-client').value = c.clientId;
   document.getElementById('c-secret').value = c.secret;
+  document.getElementById('c-skipsi').checked = !!c.skipOverseas;
   document.getElementById('edit-name').textContent = c.name;
   document.getElementById('edit-banner').style.display = 'flex';
   document.getElementById('save-cred-btn').textContent = '→ Save changes & continue';
@@ -605,6 +610,7 @@ function deleteCred(name) {
 
 function resetEditUI() {
   editingCred = null;
+  document.getElementById('c-skipsi').checked = false;
   document.getElementById('edit-banner').style.display = 'none';
   document.getElementById('save-cred-btn').textContent = '→ Save & continue';
 }
@@ -642,7 +648,7 @@ function saveCred() {
   if (!guidRe.test(t)) { err('Tenant ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
   if (!guidRe.test(c)) { err('Client ID must be a valid GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).'); return; }
   if (s.length < 8 || s.length > 256) { err('Client Secret appears too short - check it was copied correctly.'); return; }
-  var entry = {name:n, tenantId:t, clientId:c, secret:s};
+  var entry = {name:n, tenantId:t, clientId:c, secret:s, skipOverseas: document.getElementById('c-skipsi').checked};
   var editIdx = editingCred ? creds.findIndex(function(x){ return x.name === editingCred; }) : -1;
   if (editIdx >= 0) {
     // Renaming onto a *different* saved client would silently overwrite it.
@@ -679,7 +685,7 @@ async function fetchData() {
       credentials: 'omit',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId: cred.tenantId, clientId: cred.clientId, clientSecret: cred.secret, reportFrom: document.getElementById('r-from').value, reportTo: document.getElementById('r-to').value, retainMetrics: !document.getElementById('r-oneoff').checked }),
+      body: JSON.stringify({ tenantId: cred.tenantId, clientId: cred.clientId, clientSecret: cred.secret, reportFrom: document.getElementById('r-from').value, reportTo: document.getElementById('r-to').value, retainMetrics: !document.getElementById('r-oneoff').checked, skipOverseas: !!cred.skipOverseas }),
     });
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
@@ -704,7 +710,9 @@ async function fetchData() {
       diag += '</table>';
     }
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
-    if (sd && sd.slices) {
+    if (iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.skipped) {
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Overseas sign-in check skipped for this client (setting on the saved client).</div>';
+    } else if (sd && sd.slices) {
       var okN = sd.slices.filter(function(x){ return x.ok; }).length;
       diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return (x.range || x.days + 'd') + ': ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + (x.filterError ? 'country filter rejected: ' + esc(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : '')) + (x.selectError ? 'extra fields rejected: ' + esc(x.selectError) + '; ' : '') + (x.throttled ? x.throttled + ' throttle retr' + (x.throttled === 1 ? 'y' : 'ies') + '; ' : '') + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
     }
@@ -1207,14 +1215,15 @@ function buildReport() {
     var ub = '';
     var ext = u.externalSignIns || {};
     var extUsers = ext.byUser || [];
-    var extNA = !!ext.timedOut && extUsers.length === 0;
+    var extSkip = !!ext.skipped;   // overseas check switched off for this client: leave the whole section out
+    var extNA = !extSkip && !!ext.timedOut && extUsers.length === 0;
     var adminCount = (u.adminRoles||[]).length;
     ub += '<div class="r2-grid r2-g4">' + kpi(num(u.total),'Licensed users','info') + kpi(num(u.guests),'Guest accounts',(u.guests||0)>0?'warn':'neu')
       + kpi(num(u.sharedMailboxes),'Shared mailboxes','neu') + kpi(num(adminCount),'Admin role holders',adminCount>0?'warn':'neu') + '</div>';
-    ub += '<div class="r2-grid r2-g3" style="margin-top:14px">'
+    ub += '<div class="r2-grid '+(extSkip?'r2-g2':'r2-g3')+'" style="margin-top:14px">'
       + kpi(num(u.notSignedIn90Licensed),'Licensed users not signed in 90+ days',(u.notSignedIn90Licensed||0)>0?'warn':'good')
       + kpi(num(u.notSignedIn90Guest),'Guests not signed in 90+ days',(u.notSignedIn90Guest||0)>0?'warn':'good')
-      + kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good')) + '</div>';
+      + (extSkip ? '' : kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good'))) + '</div>';
     if (!extNA && ext.sharedGateway && ext.sharedGateway.events > 0) {
       ub += callout('<b>'+num(ext.sharedGateway.events)+' sign-ins through '+ext.sharedGateway.ips.length+' shared IP address'+(ext.sharedGateway.ips.length>1?'es':'')+' were left out.</b> An overseas IP address used by '+ext.sharedGateway.minUsers+' or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.', 'info');
     }
@@ -1233,7 +1242,7 @@ function buildReport() {
       ub += table(['Name','Email','Country / Territory','Successful logins'], extUsers.map(function(x){
         return ['<b>'+esc(x.name||String(x.upn||'').split('@')[0])+'</b>', esc(x.upn||''), esc((x.countries||[]).join(', ')), esc(x.eventCount)];
       }), [3]);
-    } else {
+    } else if (!extSkip) {
       ub += callout(ext.partial ? 'No unexpected overseas sign-ins found in the '+ext.windowDays+' of '+ext.periodDays+' days checked. Australia, New Zealand and Malaysia are treated as expected locations.' : 'No unexpected overseas sign-ins detected in the report period. Australia, New Zealand and Malaysia are treated as expected locations.', 'good');
     }
     // Licence assignment: server already orders paid first; keep order, split by flag only.

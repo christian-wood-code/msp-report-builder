@@ -44,6 +44,7 @@ exports.handler = async (event) => {
       clientSecret: client.clientSecret,
       reportFrom: q.from || undefined,
       reportTo: q.to || undefined,
+      skipOverseas: client.skipOverseas === true,   // optional per-client flag in INTUNE_CLIENTS_JSON
     }),
   };
 
