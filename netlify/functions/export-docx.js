@@ -611,9 +611,13 @@ exports.handler = async (event) => {
         k((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0), "Inactive 90+ days", ((u.notSignedIn90Licensed || 0) + (u.notSignedIn90Guest || 0)) > 0 ? "warn" : "good"),
       ], 4));
       children.push(gap(120));
+      if ((u.externalSignIns || {}).retentionFrom && !(u.externalSignIns || {}).timedOut) {
+        children.push(callout(`Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${u.externalSignIns.retentionFrom} can no longer be retrieved and are not covered by this check.`, "info", "Sign-in history limit."));
+        children.push(gap(100));
+      }
       if ((u.externalSignIns || {}).partial && !(u.externalSignIns || {}).timedOut) {
         const e0 = u.externalSignIns;
-        children.push(callout("The sign-in log could not be fully retrieved in time, so results may be incomplete.", "info", `Overseas sign-ins: only ${e0.windowDays} of ${e0.periodDays} days could be checked.`));
+        children.push(callout(`The sign-in log could not be fully retrieved in time, so results may be incomplete.${(e0.missing || []).length ? " Not checked: " + e0.missing.join(", ") + "." : ""}`, "info", `Overseas sign-ins: only ${e0.windowDays} of ${e0.periodDays} days could be checked.`));
         children.push(gap(100));
       }
       if ((u.externalSignIns || {}).timedOut) {

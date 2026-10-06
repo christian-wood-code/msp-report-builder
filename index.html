@@ -697,7 +697,7 @@ async function fetchData() {
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
     if (sd && sd.slices) {
       var okN = sd.slices.filter(function(x){ return x.ok; }).length;
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return x.days + 'd: ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return (x.range || x.days + 'd') + ': ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + (x.filterError ? 'country filter rejected: ' + esc(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : '')) + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
     }
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
@@ -1206,8 +1206,11 @@ function buildReport() {
       + kpi(num(u.notSignedIn90Licensed),'Licensed users not signed in 90+ days',(u.notSignedIn90Licensed||0)>0?'warn':'good')
       + kpi(num(u.notSignedIn90Guest),'Guests not signed in 90+ days',(u.notSignedIn90Guest||0)>0?'warn':'good')
       + kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good')) + '</div>';
+    if (!extNA && ext.retentionFrom) {
+      ub += callout('<b>Sign-in history limit.</b> Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before '+esc(ext.retentionFrom)+' can no longer be retrieved and are not covered by this check.', 'info');
+    }
     if (!extNA && ext.partial) {
-      ub += callout('<b>Overseas sign-ins: only '+ext.windowDays+' of '+ext.periodDays+' days could be checked.</b> The sign-in log could not be fully retrieved in time, so results may be incomplete. Pulling the data again may cover the rest.', 'info');
+      ub += callout('<b>Overseas sign-ins: only '+ext.windowDays+' of '+ext.periodDays+' days could be checked.</b> The sign-in log could not be fully retrieved in time, so results may be incomplete.'+((ext.missing||[]).length?' <b>Not checked: '+esc(ext.missing.join(', '))+'.</b>':'')+' Pulling the data again may cover the rest.', 'info');
     }
     if (extNA) {
       ub += callout('<b>Overseas sign-in data unavailable this run.</b> The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Pulling the data again usually resolves it.', 'info');

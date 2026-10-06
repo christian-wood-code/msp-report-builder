@@ -344,9 +344,14 @@ exports.handler = async (event) => {
     const siHdr = { Authorization: `Bearer ${token}` };
     const isoZ = ms => new Date(ms).toISOString().split(".")[0] + "Z";
 
-    async function fetchSlice(startMs, endMs) {
+    // excl=true also asks Graph to leave out the expected countries (AU/NZ/MY) so far fewer rows come back;
+    // if Graph rejects that filter the slice is retried without it (see fetchSlice below).
+    // Switch: set to false to stop asking Graph to filter countries (the client-side filtering stays either way).
+    const SI_COUNTRY_FILTER = true;
+    const COUNTRY_EXCL = ["AU", "NZ", "MY"].map(c => ` and location/countryOrRegion ne '${c}'`).join("");
+    async function fetchSliceOnce(startMs, endMs, excl) {
       const t0 = Date.now();
-      const filter = encodeURIComponent(`createdDateTime ge ${isoZ(startMs)} and createdDateTime lt ${isoZ(endMs)}`);
+      const filter = encodeURIComponent(`createdDateTime ge ${isoZ(startMs)} and createdDateTime lt ${isoZ(endMs)}${excl ? COUNTRY_EXCL : ""}`);
       let url = `https://graph.microsoft.com/v1.0/auditLogs/signIns?$top=500&${siSel}&$filter=${filter}`;
       const results = [];
       let error = null, pages = 0;
@@ -356,7 +361,7 @@ exports.handler = async (event) => {
         const ac = new AbortController();
         const timer = setTimeout(() => ac.abort(), left);
         try {
-          const j = await withTimeout((async () => { const r = await fetch(url, { headers: siHdr, signal: ac.signal }); return r.json(); })(),
+          const j = await withTimeout((async () => { const r = await fetch(url, { headers: excl ? { ...siHdr, ConsistencyLevel: "eventual" } : siHdr, signal: ac.signal }); return r.json(); })(),
             left, { error: { message: "timeout" } });
           clearTimeout(timer);
           if (j.error) { error = j.error.message; break; }
@@ -365,7 +370,16 @@ exports.handler = async (event) => {
           if (url && results.length >= 20000) { error = "too many sign-ins to read"; break; }   // safety cap
         } catch (e) { clearTimeout(timer); error = e.name === "AbortError" ? "timeout" : e.message; break; }
       }
-      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0 };
+      return { startMs, endMs, results, complete: !error && !url, error, pages, ms: Date.now() - t0, filtered: excl };
+    }
+    async function fetchSlice(startMs, endMs) {
+      const first = await fetchSliceOnce(startMs, endMs, SI_COUNTRY_FILTER);
+      // Filter rejected by Graph (not a timeout): retry this slice unfiltered if there is time left.
+      if (first.filtered && first.error && first.error !== "timeout" && first.pages === 0 && siDeadline - Date.now() > 2000) {
+        const second = await fetchSliceOnce(startMs, endMs, false);
+        return { ...second, filterError: first.error };
+      }
+      return first;
     }
 
     // Start the slices NOW, in parallel with the main batch of Graph calls below.
@@ -413,6 +427,12 @@ exports.handler = async (event) => {
       ? Math.min(periodDays, Math.round(okSlices.reduce((acc, x) => acc + (x.endMs - x.startMs), 0) / MS_DAY))
       : 0;
     const signInPartial = okSlices.length > 0 && okSlices.length < siRes.length;
+    // Which dates were NOT fully read, and whether the period is older than Microsoft keeps sign-in
+    // logs (30 days on Entra ID P1/P2, 7 on free) - older sign-ins return nothing, with no error.
+    const fmtDay = ms => new Date(ms).toLocaleDateString("en-NZ", { day: "numeric", month: "short", timeZone: "UTC" });
+    const signInMissing = siRes.filter(x => !x.complete).map(x => `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`);
+    const retentionCutoffMs = now_ms - 30 * MS_DAY;
+    const signInRetentionFrom = periodStartMs < retentionCutoffMs ? fmtDay(retentionCutoffMs) : null;
     const signInsRFinal = { results: siRes.flatMap(x => x.results), error: okSlices.length ? null : "timeout" };
 
     // ── Devices ───────────────────────────────────────────────────────────────
@@ -893,7 +913,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, debug: { slices: siRes.map(x => ({ days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null })) } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInRetentionFrom, debug: { slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null })) } },
       },
       sharepoint: {
         siteCount: spSiteCount,

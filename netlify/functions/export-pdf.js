@@ -688,8 +688,11 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     ];
     kpiGrid(uk);
 
+    if (ext && !ext.timedOut && ext.retentionFrom) {
+      callout('Sign-in history limit.', `Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${ext.retentionFrom} can no longer be retrieved and are not covered by this check.`, 'info');
+    }
     if (ext && !ext.timedOut && ext.partial) {
-      callout(`Overseas sign-ins: only ${ext.windowDays} of ${ext.periodDays} days could be checked.`, 'The sign-in log could not be fully retrieved in time, so results may be incomplete.', 'info');
+      callout(`Overseas sign-ins: only ${ext.windowDays} of ${ext.periodDays} days could be checked.`, `The sign-in log could not be fully retrieved in time, so results may be incomplete.${(ext.missing || []).length ? ' Not checked: ' + ext.missing.join(', ') + '.' : ''}`, 'info');
     }
     if (ext && ext.timedOut) {
       callout('Overseas sign-in data unavailable this run.', 'The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Re-pulling usually resolves it.', 'info');
