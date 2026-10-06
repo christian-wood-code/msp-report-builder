@@ -38,8 +38,10 @@ const rowB = (color = C.BORDER, size = 4) => ({ top: none(), bottom: bdr(color,s
 const NO_TABLE_BORDERS = { top: none(), bottom: none(), left: none(), right: none(), insideHorizontal: none(), insideVertical: none() };
 
 // ── Text & paragraph helpers ─────────────────────────────────────────────────
-const run = (text, { size=20, bold=false, color="333333", font="Arial", italics=false, shade } = {}) =>
-  new TextRun({ text: String(text ?? ""), font, size, bold, color, italics,
+// Calibri sets noticeably smaller than Arial at the same point size, so scale up to keep the same visual weight.
+const FONT_SCALE = 1.1;
+const run = (text, { size=20, bold=false, color="333333", font="Calibri", italics=false, shade } = {}) =>
+  new TextRun({ text: String(text ?? ""), font, size: Math.round(size * FONT_SCALE), bold, color, italics,
     ...(shade ? { shading: { type: ShadingType.CLEAR, fill: shade, color: "auto" } } : {}) });
 
 // Shaded "pill" text (Word cannot round the corners, but shading + padding reads as a tag)
@@ -257,6 +259,11 @@ function stackedBar(parts, total = PW - 2 * 180, height = 220) {
     children: parts.map((p, i) => cell(new Paragraph({ children: [run("", { size: 2 })], spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.EXACT } }),
       { width: w[i], bg: p.color, margins: { top:0, bottom:0, left:0, right:0 } })) })]);
 }
+// Horizontal gauge for a percentage (stands in for the web report's ring charts).
+function gauge(pct, color, total) {
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  return stackedBar([{ n: p, color }, { n: 100 - p, color: "E5E9F2" }], total, 160);
+}
 function legendPara(items) {
   const runs = [];
   items.forEach((it, i) => {
@@ -348,26 +355,35 @@ exports.handler = async (event) => {
     const monthLabel = new Date(from).toLocaleDateString("en-NZ", { month: "long", year: "numeric" });
     const NAVY = "0F1A3C", CHIP = "27345E", MUTED = "B9C6E6";
     const highRisks = risks.filter(r => r.severity === "high").length;
+    const NB = " ";
     const chip = (label, val) => [
-      run(` ${label} `, { size: 17, color: MUTED, shade: CHIP }),
-      ...(val ? [run(`${val} `, { size: 17, bold: true, color: C.WHITE, shade: CHIP })] : [run(" ", { size: 17, shade: CHIP })]),
-      run("   ", { size: 17 }),
+      run(`${NB}${label}${NB}`, { size: 17, color: MUTED, shade: CHIP }),
+      ...(val ? [run(`${val}${NB}`, { size: 17, bold: true, color: C.WHITE, shade: CHIP })] : []),
+      run(`${NB}${NB}${NB}`, { size: 17 }),
     ];
-    const heroTop = [];
-    if (hasLogo) heroTop.push(new ImageRun({ data: coverLogo, transformation: { width: 186, height: 48 }, type: "png" }));
-    else heroTop.push(run("Integricity Technology", { size: 28, bold: true, color: C.WHITE }));
-    heroTop.push(run("\t"), run(` ● Monthly IT report · ${monthLabel} `, { size: 17, bold: true, color: "E8F0FF", shade: CHIP }));
-    children.push(mkTable([PW], [new TableRow({ cantSplit: true, children: [cell([
-      para(heroTop, { after: 360, tabStops: [{ type: TabStopType.RIGHT, position: PW - 480 }] }),
-      para([run(client, { size: 72, bold: true, color: C.WHITE })], { after: 80 }),
-      para([run(`Report period: ${fmt(from)} – ${fmt(to)}`, { size: 22, color: MUTED })], { after: 240 }),
-      para([
-        ...chip("Prepared", today),
-        ...chip("Source", "Microsoft Intune & Graph API"),
+    const CHIPW = 4200;
+    const logoRun = hasLogo ? new ImageRun({ data: coverLogo, transformation: { width: 186, height: 48 }, type: "png" })
+                            : run("Integricity Technology", { size: 28, bold: true, color: C.WHITE });
+    const monthChip = run(`${NB}●${NB}Monthly${NB}IT${NB}report${NB}·${NB}${monthLabel.replace(/ /g, NB)}${NB}`, { size: 17, bold: true, color: "E8F0FF", shade: CHIP });
+    // Word cannot draw a gradient behind text, so the hero is stacked rows whose fill steps from
+    // navy to a hint of purple (the web/PDF hero's gradient), with no gaps between rows. The first
+    // row has its own right-hand cell so the month chip stays chip-sized instead of full line height.
+    const HERO = ["0B1430", "0F1A3C", "13224D", "1A2150", "231C52"];
+    const fullRow = (kids, bg, m = {}) => new TableRow({ cantSplit: true, children: [cell(kids,
+      { width: PW, span: 2, bg, margins: { top: m.top ?? 40, bottom: m.bottom ?? 40, left: 240, right: 240 } })] });
+    children.push(mkTable([PW - CHIPW, CHIPW], [
+      new TableRow({ cantSplit: true, children: [
+        cell([para([logoRun], { after: 0 })], { width: PW - CHIPW, bg: HERO[0], margins: { top: 300, bottom: 200, left: 240, right: 0 } }),
+        cell([para([monthChip], { after: 0, align: AlignmentType.RIGHT })], { width: CHIPW, bg: HERO[0], vAlign: VerticalAlign.CENTER, margins: { top: 300, bottom: 200, left: 0, right: 240 } }),
+      ] }),
+      fullRow([para([run(client, { size: 72, bold: true, color: C.WHITE })], { after: 0 })], HERO[1], { top: 160, bottom: 40 }),
+      fullRow([para([run(`Report period: ${fmt(from)} – ${fmt(to)}`, { size: 22, color: MUTED })], { after: 0 })], HERO[2], { top: 40, bottom: 160 }),
+      fullRow([para([...chip("Prepared", today), ...chip("Source", "Microsoft Intune & Graph API")], { after: 80 })], HERO[3], { top: 60, bottom: 0 }),
+      fullRow([para([
         ...(preparer ? chip("Account manager", preparer) : []),
         ...(highRisks > 0 ? chip(`${highRisks} high-priority risk${highRisks > 1 ? "s" : ""}`) : []),
-      ], { after: 0 }),
-    ], { width: PW, bg: NAVY, margins: { top: 300, bottom: 300, left: 240, right: 240 } })] })]));
+      ], { after: 0 })], HERO[4], { top: 0, bottom: 300 }),
+    ]));
     children.push(gap(200));
 
     // ── Headline strip (4 tiles on white, below the cover) ───────────────────
@@ -431,7 +447,8 @@ exports.handler = async (event) => {
       const left = [
         cardLabel("Compliance"),
         para([run(total > 0 ? `${pctComp}%` : "N/A", { size: 80, bold: true, color: total > 0 ? KPI_VALUE[pctComp >= 95 ? "good" : pctComp >= 80 ? "warn" : "bad"] : C.DARK })], { keepNext: true }),
-        para([run("compliant", { size: 17, bold: true, color: C.GRAY })], { after: 120, keepNext: true }),
+        para([run("compliant", { size: 17, bold: true, color: C.GRAY })], { after: 80, keepNext: true }),
+        ...(total > 0 ? [gauge(pctComp, KPI_ACCENT[pctComp >= 95 ? "good" : pctComp >= 80 ? "warn" : "bad"], LW - 2 * 180), gap(120)] : []),
         legendLine(C.GOOD, `${comp.compliant || 0} compliant`),
         legendLine(C.BAD, `${comp.noncompliant || 0} non-compliant`),
         legendLine(C.NEU, `${comp.unknown || 0} unknown`),
@@ -512,7 +529,8 @@ exports.handler = async (event) => {
       const left = [
         cardLabel("Microsoft Secure Score"),
         para([run(sc ? `${sc.pct}%` : "N/A", { size: 80, bold: true, color: sc ? KPI_VALUE[scoreTone(sc.pct)] : C.DARK })], { keepNext: true }),
-        para([run(sc ? `${sc.cur} / ${sc.max} points` : "Score unavailable", { size: 17, bold: true, color: C.GRAY })], { after: 100, keepNext: true }),
+        para([run(sc ? `${sc.cur} / ${sc.max} points` : "Score unavailable", { size: 17, bold: true, color: C.GRAY })], { after: 80, keepNext: true }),
+        ...(sc ? [gauge(sc.pct, KPI_ACCENT[scoreTone(sc.pct)], LW - 2 * 180), gap(120)] : []),
         ...(sc ? [
           para([run(sc.pct >= 70 ? "Strong position." : "Room to improve.", { size: 19, bold: true, color: C.DARK })], { after: 20 }),
           para([run("Above 70% is a good target.", { size: 17, color: C.GRAY })]),
@@ -736,7 +754,7 @@ exports.handler = async (event) => {
           ...((sp.classicCount || 0) > 0 ? [k(sp.classicCount, "Classic sites", "neu")] : []),
           ...((sp.otherCount || 0) > 0 ? [k(sp.otherCount, "Other (system sites)", "neu")] : []),
           k(`${(sp.totalUsedGB || 0).toLocaleString("en-NZ")} GB`, "Storage used", (sp.totalUsedGB || 0) > 3000 ? "bad" : "neu"),
-          k(sp.inactiveSiteCount || 0, "Inactive Sites and Channels 180 days +", (sp.inactiveSiteCount || 0) > 0 ? "warn" : "good"),
+          k(sp.inactiveSiteCount || 0, "Inactive Sites and Channels 180 days +", (sp.inactiveSiteCount || 0) > 0 ? "warn" : "good"),
           k(sp.securityGroupCount ?? "N/A", "Security groups", "info"),
         ];
         children.push(kpiGrid(spKpis, 3));
@@ -800,17 +818,17 @@ exports.handler = async (event) => {
     const doc = new Document({
       numbering: { config: [{ reference: "bullets", levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] }] },
       styles: {
-        default: { document: { run: { font: "Arial", size: 20 } } },
+        default: { document: { run: { font: "Calibri", size: 20 } } },
         paragraphStyles: [
-          { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Arial", color: C.BLUE }, paragraph: { spacing: { before: 360, after: 160 }, outlineLevel: 0 } },
-          { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 26, bold: true, font: "Arial", color: C.DARK }, paragraph: { spacing: { before: 280, after: 100 }, outlineLevel: 1 } },
+          { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Calibri", color: C.BLUE }, paragraph: { spacing: { before: 360, after: 160 }, outlineLevel: 0 } },
+          { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 26, bold: true, font: "Calibri", color: C.DARK }, paragraph: { spacing: { before: 280, after: 100 }, outlineLevel: 1 } },
         ],
       },
       sections: [{
         properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } } },
         // No running page header -- the cover already carries the logo and client name.
         footers: { default: new Footer({ children: [new Paragraph({
-          children: [run("Integricity Technology  ·  Confidential    ", { size: 16, color: C.LGRAY }), new TextRun({ children: [PageNumber.CURRENT], font: "Arial", size: 16, color: C.LGRAY })],
+          children: [run("Integricity Technology  ·  Confidential    ", { size: 16, color: C.LGRAY }), new TextRun({ children: [PageNumber.CURRENT], font: "Calibri", size: 16, color: C.LGRAY })],
           alignment: AlignmentType.CENTER,
           border: { top: bdr(C.BORDER, 4), bottom: none(), left: none(), right: none() },
         })] }) },
