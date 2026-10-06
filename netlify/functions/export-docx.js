@@ -63,7 +63,7 @@ const gap = (h = 120) => new Paragraph({ children: [], spacing: { before: 0, aft
 const tinyPara = () => new Paragraph({ children: [], spacing: { before: 0, after: 0, line: 20, lineRule: LineRuleType.EXACT } });
 
 const LEAD = { size: 19, color: "475569" };
-const lead = text => para([run(text, LEAD)], { after: 140, keepNext: true, align: AlignmentType.RIGHT, indent: { left: 3400 } });
+const lead = text => para([run(text, LEAD)], { after: 140, keepNext: true });
 
 // Section heading: accent bar (left border) + title + right-aligned THIS MONTH tag.
 // One top-level paragraph with keepNext so the heading always travels with the
