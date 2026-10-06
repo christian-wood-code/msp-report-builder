@@ -39,7 +39,7 @@ const ADMIN_ROLES = new Set([
 
 // Licence SKU part number → friendly name
 const SKU_MAP = {
-  "SHAREPOINTSTORAGE":"SharePoint Storage (add-on)",
+  "SHAREPOINTSTORAGE":"SharePoint Storage",
   "SPB":"Microsoft 365 Business Premium","SMB_BUSINESS_PREMIUM":"Microsoft 365 Business Premium",
   "O365_BUSINESS_PREMIUM":"Microsoft 365 Business Standard","O365_BUSINESS_ESSENTIALS":"Microsoft 365 Business Basic",
   "SMB_BUSINESS":"Microsoft 365 Apps for Business","OFFICESUBSCRIPTION":"Microsoft 365 Apps for Enterprise",
