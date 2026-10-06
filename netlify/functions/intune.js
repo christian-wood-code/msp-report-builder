@@ -915,6 +915,8 @@ exports.handler = async (event) => {
     if (totalInactive > 0) risk("low","Entra ID / Users",`${p(totalInactive,"user has","users have")} not signed in for 90+ days (${notSignedIn90Licensed.length} licensed, ${notSignedIn90Guest.length} guest)`,"Review for stale or unused accounts — disable licensed users, remove guest access");
     if (inactiveSites.length > 0) risk("low","SharePoint",`${p(inactiveSites.length,"SharePoint site has","SharePoint sites have")} had no activity in 180+ days`,"Review for archiving or deletion");
     // Unencrypted devices: alphabetical by machine name (case-insensitive, numbers in natural order) - every output uses this order
+    // Devices over 90 days: longest since last check-in first (a device that never checked in counts as longest)
+    patchOver90Devices.sort((a, b) => (a.lastSeen ? new Date(a.lastSeen).getTime() : -Infinity) - (b.lastSeen ? new Date(b.lastSeen).getTime() : -Infinity) || String(a.name || "").localeCompare(String(b.name || "")));
     // Non-compliant devices: alphabetical by machine name too
     notCompliantList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
     notEncryptedList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
