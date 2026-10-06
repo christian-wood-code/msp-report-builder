@@ -697,7 +697,7 @@ async function fetchData() {
     var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
     if (sd) {
       var fmtQ = function(ms, err){ return (err ? 'failed - ' + esc(err) : 'ok') + (ms != null ? ' (' + ms + ' ms)' : ''); };
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log query: full period ' + fmtQ(sd.fullMs, sd.fullError) + '; half period ' + fmtQ(sd.halfMs, sd.halfError) + '.</div>';
+      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log query: full period ' + fmtQ(sd.fullMs, sd.fullError) + '; half period ' + fmtQ(sd.halfMs, sd.halfError) + '; last 7 days ' + fmtQ(sd.recentMs, sd.recentError) + '.</div>';
     }
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
@@ -1147,7 +1147,7 @@ function buildReport() {
   // ── Security ───────────────────────────────────────────────────────────────
   var ca = d.conditionalAccess;
   var sec = '';
-  var idRows = '<tr><td>Security defaults</td><td class="r2-num">'+pill(d.securityDefaults?'On':'Off','neu')+'</td></tr>';
+  var idRows = '';
   if (ca) idRows += '<tr><td>Conditional Access policies</td><td class="r2-num">'+pill(num(ca.enabled)+' enforced','good')+' '+pill(num(ca.reportOnly)+' report-only', ca.reportOnly>0?'warn':'neu')+'</td></tr>';
   idRows += '<tr><td>Risky users</td><td class="r2-num">'+pill(num(d.risky),(d.risky||0)>0?'bad':'good')+'</td></tr>';
   if (d.compliancePolicies) idRows += '<tr><td>Compliance policies</td><td class="r2-num">'+pill(num(d.compliancePolicies.total),'neu')+'</td></tr>';

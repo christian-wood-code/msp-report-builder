@@ -540,7 +540,6 @@ exports.handler = async (event) => {
       ];
       const ca = d.conditionalAccess;
       const idRows = [];
-      if (d.securityDefaults !== null && d.securityDefaults !== undefined) idRows.push({ label: "Security defaults", value: [tag(d.securityDefaults ? "On" : "Off", "neu")] });
       if (ca) idRows.push({ label: "Conditional Access policies", value: [tag(`${ca.enabled} enforced`, "good"), run(" "), tag(`${ca.reportOnly} report-only`, ca.reportOnly > 0 ? "warn" : "neu")] });
       idRows.push({ label: "Risky users", value: [tag(String(d.risky || 0), (d.risky || 0) > 0 ? "bad" : "good")] });
       idRows.push({ label: "Compliance policies", value: [tag(String((d.compliancePolicies || {}).total || 0), "neu")] });

@@ -332,11 +332,15 @@ exports.handler = async (event) => {
       ? new Date(new Date(reportFrom).getTime() + Math.floor((new Date(reportTo||now_ms).getTime() - new Date(reportFrom).getTime()) / 2)).toISOString().split(".")[0] + "Z"
       : new Date(now_ms - 14 * MS_DAY).toISOString().split(".")[0] + "Z";
 
-    // Include both interactive and non-interactive to catch Windows PRT logins
+    // Date range only. The v1.0 sign-in log already returns just interactive sign-ins, and the
+    // signInEventTypes/any(...) lambda filter that used to be added here is very slow on Graph's
+    // side (it was the likely cause of the query timing out every time), so it is not used.
     const siEndClause = siPeriodEnd ? ` and createdDateTime le ${siPeriodEnd}` : "";
-    const siInteractive = " and signInEventTypes/any(t:t eq 'interactiveUser')";
-    const siF_full = encodeURIComponent(`createdDateTime ge ${siPeriodStart}${siEndClause}${siInteractive}`);
-    const siF_half = encodeURIComponent(`createdDateTime ge ${halfPeriodStart}${siEndClause}${siInteractive}`);
+    const periodEndMs = reportTo ? new Date(reportTo).getTime() + MS_DAY : now_ms;
+    const recentStart = new Date(Math.max(new Date(siPeriodStart).getTime(), periodEndMs - 7 * MS_DAY)).toISOString().split(".")[0] + "Z";
+    const siF_full = encodeURIComponent(`createdDateTime ge ${siPeriodStart}${siEndClause}`);
+    const siF_half = encodeURIComponent(`createdDateTime ge ${halfPeriodStart}${siEndClause}`);
+    const siF_recent = encodeURIComponent(`createdDateTime ge ${recentStart}${siEndClause}`);
     const siSel = "$select=userPrincipalName,location,status";
     const siHdr = { Authorization: `Bearer ${token}` };
 
@@ -360,6 +364,7 @@ exports.handler = async (event) => {
     const siPromise = Promise.all([
       withTimeout(fetchSI(siF_full), SI_MS, siTO),
       withTimeout(fetchSI(siF_half), SI_MS, siTO),
+      withTimeout(fetchSI(siF_recent), SI_MS, siTO),   // last 7 days: small enough to finish even on a busy tenant
     ]);
 
     const FAST = 8500, SLOW = 8000;
@@ -399,12 +404,14 @@ exports.handler = async (event) => {
       ? Math.round((new Date(reportTo||now_ms) - new Date(reportFrom)) / MS_DAY)
       : 30;
     const TO = { results: [], error: "timeout" };
-    const [siFull, siHalf] = await siPromise;
+    const [siFull, siHalf, siRecent] = await siPromise;
     let signInsRFinal;
     if (!siFull.error) {
       signInsRFinal = siFull; signInWindow = siWindowDays;
     } else if (!siHalf.error) {
       signInsRFinal = siHalf; signInWindow = Math.round(siWindowDays / 2);
+    } else if (!siRecent.error) {
+      signInsRFinal = siRecent; signInWindow = Math.min(7, siWindowDays);
     } else {
       signInsRFinal = TO; signInWindow = 0;
     }
@@ -889,7 +896,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
-        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, debug: { fullMs: siFull.ms ?? null, fullError: siFull.error || null, halfMs: siHalf.ms ?? null, halfError: siHalf.error || null } },
+        externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !!signInsRFinal.error, windowDays: signInWindow, debug: { fullMs: siFull.ms ?? null, fullError: siFull.error || null, halfMs: siHalf.ms ?? null, halfError: siHalf.error || null, recentMs: siRecent.ms ?? null, recentError: siRecent.error || null } },
       },
       sharepoint: {
         siteCount: spSiteCount,

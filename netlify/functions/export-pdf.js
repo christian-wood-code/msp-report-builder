@@ -594,7 +594,6 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     sectionHeader('Security posture', C.purple, null, 160);
     const sc = d.score, ca = d.conditionalAccess;
     const idRows = [];
-    if (d.securityDefaults !== null && d.securityDefaults !== undefined) idRows.push({ label: 'Security defaults', pills: [[d.securityDefaults ? 'On' : 'Off', 'neu']] });
     if (ca) idRows.push({ label: 'Conditional Access policies', pills: [[`${ca.enabled} enforced`, 'good'], [`${ca.reportOnly} report-only`, ca.reportOnly > 0 ? 'warn' : 'neu']] });
     idRows.push({ label: 'Risky users', pills: [[String(d.risky ?? 0), (d.risky ?? 0) > 0 ? 'bad' : 'good']] });
     idRows.push({ label: 'Compliance policies', pills: [[String(d.compliancePolicies?.total ?? 0), 'neu']] });
