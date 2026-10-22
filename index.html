@@ -136,6 +136,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .rpt2 .r2-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#e8f0ff}
 .rpt2 .r2-hero h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:34px 0 8px;letter-spacing:-.02em;font-weight:800;color:#fff}
 .rpt2 .r2-hero p{margin:0;color:#b9c6e6}
+.rpt2 .r2-hero .r2-disclaimer{margin-top:18px;font-size:11px;line-height:1.5;font-style:italic;color:#9fb0d6}
 .rpt2 .r2-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 /* headline strip: sits on the page background, below the hero */
 .rpt2 .r2-strip{margin-top:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
@@ -991,6 +992,14 @@ function kpi(val, lbl, cls) { return '<div class="kpi"><div class="kpi-val '+cls
     return ver + (month ? ' (' + month + ')' : '') + ' - ' + osVersion;
   }
 
+// Cover disclaimer: same wording as netlify/functions/lib/report-disclaimer.js (PDF and Word covers). Keep in sync.
+function reportDisclaimer(retained) {
+  var retention = retained
+    ? 'This report is generated directly from your live Microsoft Graph data at the time of generation. Integricity retains only a small set of summary figures from it (such as device counts and Secure Score - no raw tenant data) for up to 13 months, to show month-on-month changes; this document itself will be securely destroyed within 30 days.'
+    : 'This report is generated directly from your live Microsoft Graph data at the time of generation and nothing is retained afterward; this document itself will be securely destroyed within 30 days.';
+  return 'This report is a point-in-time, automated summary generated from data available via Microsoft Graph at the time of generation. It is provided as an informational snapshot to support your own evaluation and is not a comprehensive security audit, a compliance certification, or a guarantee of your organisation\'s security posture. Integricity Technology accepts no liability for decisions made on the basis of this report. ' + retention + ' For a full assessment and remediation plan, contact us to discuss an engagement.';
+}
+
 function buildReport() {
   var d = iData;
   var client   = v('r-client');
@@ -1059,7 +1068,8 @@ function buildReport() {
   html += '<p>Report period: '+esc(fmt(from))+' - '+esc(fmt(to))+'</p>';
   html += '<div class="r2-meta"><span class="r2-chip">Prepared <b>&nbsp;'+esc(today)+'</b></span>';
   if (preparer) html += '<span class="r2-chip">By <b>&nbsp;'+esc(preparer)+'</b></span>';
-  html += '<span class="r2-chip">Source <b>&nbsp;Microsoft Intune &amp; Graph API</b></span></div></div>';
+  html += '<span class="r2-chip">Source <b>&nbsp;Microsoft Intune &amp; Graph API</b></span></div>';
+  html += '<p class="r2-disclaimer">'+esc(reportDisclaimer(d.metricsRetained))+'</p></div>';
 
   // ── Headline strip (sits below the hero on the page background) ───────────
   var sc = d.score;

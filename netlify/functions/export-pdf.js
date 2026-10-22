@@ -12,6 +12,7 @@
 // approximated (strip gradient, flat cards) -- PDF has no CSS equivalents.
 
 const { jsPDF } = require('jspdf');
+const { disclaimerText: disclaimer } = require('./lib/report-disclaimer');
 
 const CORS = { 'Access-Control-Allow-Origin': '*' };
 
@@ -347,19 +348,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   };
 
   // ══════════════════════════════ Hero / cover ═══════════════════════════════
-  const retentionText = d.metricsRetained
-    ? 'This report is generated directly from your live Microsoft Graph data at the time of generation. '
-      + 'Integricity retains only a small set of summary figures from it (such as device counts and Secure Score - '
-      + 'no raw tenant data) for up to 13 months, to show month-on-month changes; this document itself will be '
-      + 'securely destroyed within 30 days.'
-    : 'This report is generated directly from your live Microsoft Graph data at the time of generation and '
-      + 'nothing is retained afterward; this document itself will be securely destroyed within 30 days.';
-  const disclaimerText = 'This report is a point-in-time, automated summary generated from data available via '
-    + 'Microsoft Graph at the time of generation. It is provided as an informational snapshot to support your own '
-    + 'evaluation and is not a comprehensive security audit, a compliance certification, or a guarantee of your '
-    + "organisation's security posture. Integricity Technology accepts no liability for decisions made on the basis "
-    + 'of this report. ' + retentionText
-    + ' For a full assessment and remediation plan, contact us to discuss an engagement.';
+  const disclaimerText = disclaimer(d.metricsRetained);
 
   F('italic', 7.5);
   const discLines = doc.splitTextToSize(disclaimerText, CW);

@@ -6,6 +6,7 @@ const {
   LevelFormat, Footer, PageNumber, ImageRun, HeightRule, TableLayoutType,
   VerticalAlign, LineRuleType,
 } = require("docx");
+const { disclaimerText } = require("./lib/report-disclaimer");
 
 // ── Palette (light theme of the approved design mockup) ──────────────────────
 const C = {
@@ -381,10 +382,14 @@ exports.handler = async (event) => {
       fullRow([para([run(client, { size: 72, bold: true, color: C.WHITE })], { after: 0 })], HERO[1], { top: 160, bottom: 40 }),
       fullRow([para([run(`Report period: ${fmt(from)} – ${fmt(to)}`, { size: 22, color: MUTED })], { after: 0 })], HERO[2], { top: 40, bottom: 160 }),
       fullRow([para([...chip("Prepared", today), ...chip("Source", "Microsoft Intune & Graph API")], { after: 80 })], HERO[3], { top: 60, bottom: 0 }),
-      fullRow([para([
-        ...(preparer ? chip("Account manager", preparer) : []),
-        ...(highRisks > 0 ? chip(`${highRisks} high-priority risk${highRisks > 1 ? "s" : ""}`) : []),
-      ], { after: 0 })], HERO[4], { top: 0, bottom: 300 }),
+      fullRow([
+        para([
+          ...(preparer ? chip("Account manager", preparer) : []),
+          ...(highRisks > 0 ? chip(`${highRisks} high-priority risk${highRisks > 1 ? "s" : ""}`) : []),
+        ], { after: 0 }),
+        // Disclaimer / retention statement (same wording as the PDF cover and the on-screen report)
+        para([run(disclaimerText(d.metricsRetained), { size: 14, italics: true, color: "9FB0D6" })], { before: 160, after: 0 }),
+      ], HERO[4], { top: 0, bottom: 300 }),
     ]));
     children.push(gap(200));
 

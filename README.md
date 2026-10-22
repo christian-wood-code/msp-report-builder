@@ -14,6 +14,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 - The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The panel also lists the individual sites counted as Other, with a CSV download
 - Overseas sign-ins: reads the sign-in log in four parallel date slices within a 9-second budget, counts successful *interactive* sign-ins from outside Australia, New Zealand and Malaysia, and leaves out any overseas IP address used by five or more different people (a company VPN/gateway), reporting that exclusion separately. The report states how many days were actually checked, and notes that Microsoft keeps sign-in logs for only 30 days (7 on free tenants). A per-client **Skip the overseas sign-in check** tick box (saved with the client, or `"skipOverseas": true` in `INTUNE_CLIENTS_JSON`) leaves the section out and skips that query
 - Compliance % counts evaluated devices only (compliant ÷ (compliant + non-compliant)); the ring is green at 80% or more, orange 60–79%, red below 60%. Licences are listed paid first (ordered by estimated spend, see `lib/licence-prices.js` — the prices are never shown), then free (anything with "trial" in its name counts as free); a licence bar is red only when more are assigned than purchased, blue at exactly 100%, orange at 90% or more
+- Every report cover carries a short disclaimer (point-in-time automated summary, not a security audit) and a retention statement driven by whether the month-on-month figures were actually saved
 - Exports a Word document, or use your browser's print-to-PDF; **Copy text** copies the report as plain text. (`export-pdf.js` exists and is used by report-hub, but the app's own page has no PDF-export button)
 
 ## Stack
@@ -53,6 +54,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 │           ├── metrics-commentary.js  Snapshot extraction + commentary sentences
 │           ├── site-templates.js    SharePoint site-type classification
 │           ├── licence-prices.js    Approximate licence prices, used only to order the licence list (never shown)
+│           ├── report-disclaimer.js Cover disclaimer + retention wording shared by the PDF and Word exports (index.html keeps a synced copy)
 │           ├── require-report-hub-key.js  Shared-secret gate (clients, report-data)
 │           └── require-admin-key.js       Shared-secret gate (delete-client-metrics)
 ├── fulllogo_*.b64, logo.b64, icon.b64   Logo assets (base64), used in the report cover
