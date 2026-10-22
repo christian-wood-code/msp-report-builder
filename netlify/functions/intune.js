@@ -409,7 +409,7 @@ exports.handler = async (event) => {
 
     const [
       devR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
-      usersR, rolesR, _signInsPlaceholder, spUsageR, spStorageR, skusR, roleDefsR, secGroupsR, subsR,
+      usersR, rolesR, _signInsPlaceholder, spUsageR, skusR, roleDefsR, secGroupsR, subsR,
     ] = await Promise.all([
       withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
@@ -423,7 +423,6 @@ exports.handler = async (event) => {
       withTimeout(graphAll(token, "/roleManagement/directory/roleAssignments?$expand=principal($select=id,displayName,userPrincipalName)&$top=200"), SLOW, emptyAll),
       Promise.resolve(emptyAll), // sign-in query runs separately after Promise.all
       withTimeout(graphReportCSV(token, "/reports/getSharePointSiteUsageDetail(period='D180')"), SLOW, emptyCSV),
-      withTimeout(graphReportCSV(token, "/reports/getSharePointSiteUsageStorage(period='D30')"), SLOW, emptyCSV),
       withTimeout(graphAll(token, "/subscribedSkus"), FAST, emptyAll),
       withTimeout(graphAll(token, "/roleManagement/directory/roleDefinitions?$select=id,displayName&$top=200"), FAST, emptyAll),
       withTimeout(graphOne(token, "/groups?$filter=securityEnabled+eq+true+and+mailEnabled+eq+false&$count=true&$top=1&$select=id", false, {"ConsistencyLevel":"eventual"}), FAST, emptyOne),
@@ -886,13 +885,9 @@ exports.handler = async (event) => {
     }
     spTotalUsedGB = Math.round(spTotalUsedGB * 10) / 10;
 
-    // NOTE: this used to be overwritten with a tenant-wide figure from the
-    // getSharePointSiteUsageStorage trend report ("for more accurate
-    // total") -- removed because that report has no per-site breakdown, so
-    // it always includes classic/other sites' storage with no way to
-    // exclude it, silently undoing the exclusion above. spStorageR is kept
-    // (still fetched) only as a fallback data source elsewhere if needed;
-    // spTotalUsedGB is now always the per-site sum computed above.
+    // NOTE: spTotalUsedGB is always the per-site sum computed above. The tenant-wide
+    // getSharePointSiteUsageStorage trend report is no longer requested: it has no
+    // per-site breakdown, so it could not exclude the placeholder / system sites.
 
     // ── Risk register ─────────────────────────────────────────────────────────
     const risks = [];
@@ -989,7 +984,7 @@ exports.handler = async (event) => {
         totalUsedGB: spTotalUsedGB,
         allocatedGB: null,
         inactiveSiteCount: inactiveSites.length,
-        error: spUsageR.error || spStorageR.error || null,
+        error: spUsageR.error || null,
       },
       risks,
     };
