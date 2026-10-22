@@ -351,8 +351,9 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   const disclaimerText = disclaimer(d.metricsRetained);
 
   F('italic', 7.5);
-  const discLines = doc.splitTextToSize(disclaimerText, CW);
-  const HERO_H = 176 + discLines.length * 9.4 + 14;
+  // The cover disclaimer is shown only on one-off (prospect) reports
+  const discLines = d.oneOff ? doc.splitTextToSize(disclaimerText, CW) : [];
+  const HERO_H = discLines.length ? 176 + discLines.length * 9.4 + 14 : 172;
   // navy gradient (left to right) + soft blue glow top-right
   const stops = [[0, [11, 20, 48]], [0.55, [19, 34, 77]], [1, [42, 20, 80]]];
   const gradAt = t => {
@@ -407,7 +408,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     chips.forEach(c => { cx0 += glass(cx0, 139, c, false) + 8; });
   }
   F('italic', 7.5, [150, 165, 200]);
-  doc.text(discLines, M, 177, { lineHeightFactor: 1.25 });
+  if (discLines.length) doc.text(discLines, M, 177, { lineHeightFactor: 1.25 });
   y = HERO_H + 16;
 
   // ═════════════════════════ Headline strip (4 tiles) ═════════════════════════

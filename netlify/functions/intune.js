@@ -999,6 +999,8 @@ exports.handler = async (event) => {
     // saved, so the report cover can disclose retention truthfully per run
     // (true only if the save succeeded -- never merely "we tried").
     report.metricsRetained = false;
+    // Authoritative one-off flag (the wizard's One-off report box). The cover disclaimer is shown only for one-off reports.
+    report.oneOff = !shouldRetainMetrics;
     try {
       const { snapshot, buildCommentary } = require("./lib/metrics-commentary");
       const { getLastMetrics, saveMetrics, deleteAllMetrics, prevPeriod } = require("./lib/report-archive");

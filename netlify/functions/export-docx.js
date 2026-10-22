@@ -388,7 +388,8 @@ exports.handler = async (event) => {
           ...(highRisks > 0 ? chip(`${highRisks} high-priority risk${highRisks > 1 ? "s" : ""}`) : []),
         ], { after: 0 }),
         // Disclaimer / retention statement (same wording as the PDF cover and the on-screen report)
-        para([run(disclaimerText(d.metricsRetained), { size: 14, italics: true, color: "9FB0D6" })], { before: 160, after: 0 }),
+        // Shown only on one-off (prospect) reports
+        ...(d.oneOff ? [para([run(disclaimerText(d.metricsRetained), { size: 14, italics: true, color: "9FB0D6" })], { before: 160, after: 0 })] : []),
       ], HERO[4], { top: 0, bottom: 300 }),
     ]));
     children.push(gap(200));

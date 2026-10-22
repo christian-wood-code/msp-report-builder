@@ -1069,7 +1069,9 @@ function buildReport() {
   html += '<div class="r2-meta"><span class="r2-chip">Prepared <b>&nbsp;'+esc(today)+'</b></span>';
   if (preparer) html += '<span class="r2-chip">By <b>&nbsp;'+esc(preparer)+'</b></span>';
   html += '<span class="r2-chip">Source <b>&nbsp;Microsoft Intune &amp; Graph API</b></span></div>';
-  html += '<p class="r2-disclaimer">'+esc(reportDisclaimer(d.metricsRetained))+'</p></div>';
+  // Cover disclaimer: one-off (prospect) reports only
+  if (d.oneOff) html += '<p class="r2-disclaimer">'+esc(reportDisclaimer(d.metricsRetained))+'</p>';
+  html += '</div>';
 
   // ── Headline strip (sits below the hero on the page background) ───────────
   var sc = d.score;
