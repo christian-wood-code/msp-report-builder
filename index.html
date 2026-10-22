@@ -1080,7 +1080,8 @@ function buildReport() {
   html += '<div class="r2-tile"><div class="r2-lbl">Devices compliant</div><div class="r2-val '+(pctComp>=80?'r2-good':pctComp>=60?'r2-warn':'r2-bad')+'">'+(evaluated>0?pctComp+'%':'N/A')+'</div><div class="r2-sub">'+num(comp.compliant)+' of '+num(evaluated)+' evaluated devices</div></div>';
   if (sc) html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val '+(sc.pct>=70?'r2-good':sc.pct>=50?'r2-warn':'r2-bad')+'">'+sc.pct+'%</div><div class="r2-sub">'+num(sc.cur)+' of '+num(sc.max)+' points</div></div>';
   else html += '<div class="r2-tile"><div class="r2-lbl">Secure Score</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Not available</div></div>';
-  html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val '+((d.risky||0)>0?'r2-bad':'r2-good')+'">'+num(d.risky)+'</div><div class="r2-sub">'+((d.risky||0)>0?'Accounts flagged at risk':'No accounts at risk')+'</div></div>';
+  if (d.riskyError) html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Not available (needs Entra ID P2)</div></div>';
+  else html += '<div class="r2-tile"><div class="r2-lbl">Risky users</div><div class="r2-val '+((d.risky||0)>0?'r2-bad':'r2-good')+'">'+num(d.risky)+'</div><div class="r2-sub">'+((d.risky||0)>0?'Accounts flagged at risk':'No accounts at risk')+'</div></div>';
   if (u.licenceRenewalsError) html += '<div class="r2-tile"><div class="r2-lbl">Renewals due (90 days)</div><div class="r2-val r2-neu">N/A</div><div class="r2-sub">Data unavailable</div></div>';
   else html += '<div class="r2-tile"><div class="r2-lbl">Renewals due (90 days)</div><div class="r2-val r2-info">'+renewals.length+'</div><div class="r2-sub">Next: '+esc(nextRen)+'</div></div>';
   html += '</div>';
@@ -1178,7 +1179,7 @@ function buildReport() {
   var sec = '';
   var idRows = '';
   if (ca) idRows += '<tr><td>Conditional Access policies</td><td class="r2-num">'+pill(num(ca.enabled)+' enforced','good')+' '+pill(num(ca.reportOnly)+' report-only', ca.reportOnly>0?'warn':'neu')+'</td></tr>';
-  idRows += '<tr><td>Risky users</td><td class="r2-num">'+pill(num(d.risky),(d.risky||0)>0?'bad':'good')+'</td></tr>';
+  idRows += '<tr><td>Risky users</td><td class="r2-num">'+(d.riskyError ? pill('N/A','neu') : pill(num(d.risky),(d.risky||0)>0?'bad':'good'))+'</td></tr>';
   if (d.compliancePolicies) idRows += '<tr><td>Compliance policies</td><td class="r2-num">'+pill(num(d.compliancePolicies.total),'neu')+'</td></tr>';
   if (d.appProtection) idRows += '<tr><td>App protection policies</td><td class="r2-num">'+pill(num(d.appProtection.total), d.appProtection.total===0?'warn':'neu')+'</td></tr>';
   var idCard = '<div class="r2-card"><h3 class="r2-h3" style="margin-top:0">Identity &amp; access</h3><table class="r2-nowrap"><tbody>'+idRows+'</tbody></table></div>';
@@ -1192,7 +1193,8 @@ function buildReport() {
   } else {
     sec += idCard;
   }
-  if ((d.risky||0) > 0) sec += callout('<b>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</b> by Entra ID Protection. Reset passwords immediately.', 'bad');
+  if (d.riskyError) sec += callout('<b>Risky-user detection is not available for this tenant.</b> Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.', 'info');
+  if (!d.riskyError && (d.risky||0) > 0) sec += callout('<b>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</b> by Entra ID Protection. Reset passwords immediately.', 'bad');
   var kp = d.keyPolicies || {};
   var kpStatus = { 'enforced':['Enforced','good'], 'report-only':['Report-only','warn'], 'not found':['Not found','warn'], 'disabled':['Disabled','bad'] };
   var kpRows = [['Legacy Authentication Block', kp.legacyAuthBlock],['MFA - All Users', kp.mfaAllUsers],['Admin Phishing-Resistant MFA', kp.adminMfa],['Geographic Restriction', kp.geoBlock]].map(function(p){

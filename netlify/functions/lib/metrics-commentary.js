@@ -21,7 +21,7 @@ function snapshot(d) {
     encrypted: d.encryption?.encrypted || 0,
     notEncrypted: d.encryption?.notEncrypted || 0,
     securePct: d.score?.pct ?? null,
-    riskyUsers: d.risky || 0,
+    riskyUsers: d.riskyError ? null : (d.risky || 0),   // null = unknown, so next month never reports a false change
     totalUsers: u.total || 0,
     guests: u.guests || 0,
     notSignedIn90: u.notSignedIn90Licensed || 0,

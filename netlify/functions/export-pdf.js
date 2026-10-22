@@ -426,7 +426,9 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const tiles = [
       { l: 'Devices compliant', v: pctComp === null ? 'N/A' : `${pctComp}%`, t: pctComp === null ? 'neu' : pctComp >= 80 ? 'good' : pctComp >= 60 ? 'warn' : 'bad', s: `${comp.compliant ?? 0} of ${evaluated} evaluated devices` },
       { l: 'Secure Score', v: sc ? `${sc.pct}%` : 'N/A', t: scTone, s: sc ? `${sc.cur} of ${sc.max} points` : 'Not available' },
-      { l: 'Risky users', v: String(d.risky ?? 0), t: (d.risky ?? 0) > 0 ? 'bad' : 'good', s: (d.risky ?? 0) > 0 ? 'Accounts flagged at risk' : 'No accounts at risk' },
+      d.riskyError
+        ? { l: 'Risky users', v: 'N/A', t: 'neu', s: 'Not available (needs Entra ID P2)' }
+        : { l: 'Risky users', v: String(d.risky ?? 0), t: (d.risky ?? 0) > 0 ? 'bad' : 'good', s: (d.risky ?? 0) > 0 ? 'Accounts flagged at risk' : 'No accounts at risk' },
       u0.licenceRenewalsError
         ? { l: 'Renewals due (90 days)', v: 'N/A', t: 'neu', s: 'Data unavailable' }
         : { l: 'Renewals due (90 days)', v: String(ren.length), t: 'info', s: next ? `Next: ${fmtShort(next.renewalDate)}` : 'None due' },
@@ -585,7 +587,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const sc = d.score, ca = d.conditionalAccess;
     const idRows = [];
     if (ca) idRows.push({ label: 'Conditional Access policies', pills: [[`${ca.enabled} enforced`, 'good'], [`${ca.reportOnly} report-only`, ca.reportOnly > 0 ? 'warn' : 'neu']] });
-    idRows.push({ label: 'Risky users', pills: [[String(d.risky ?? 0), (d.risky ?? 0) > 0 ? 'bad' : 'good']] });
+    idRows.push({ label: 'Risky users', pills: [d.riskyError ? ['N/A', 'neu'] : [String(d.risky ?? 0), (d.risky ?? 0) > 0 ? 'bad' : 'good']] });
     idRows.push({ label: 'Compliance policies', pills: [[String(d.compliancePolicies?.total ?? 0), 'neu']] });
     idRows.push({ label: 'App protection policies', pills: [[String(d.appProtection?.total ?? 0), (d.appProtection?.total ?? 0) === 0 ? 'warn' : 'neu']] });
 
@@ -634,7 +636,8 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     rowsCard(M, y, hw, hh, 'Key policies', kpRows);
     rowsCard(M + hw + gap, y, hw, hh, 'Authentication methods', amRows);
     y += hh + 12;
-    if ((d.risky ?? 0) > 0) callout(`${d.risky} account${d.risky > 1 ? 's are' : ' is'} flagged as at-risk by Entra ID Protection.`, 'Reset passwords immediately.', 'bad');
+    if (d.riskyError) callout('Risky-user detection is not available for this tenant.', 'Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.', 'info');
+    if (!d.riskyError && (d.risky ?? 0) > 0) callout(`${d.risky} account${d.risky > 1 ? 's are' : ' is'} flagged as at-risk by Entra ID Protection.`, 'Reset passwords immediately.', 'bad');
     if ((d.appProtection?.total ?? 0) === 0) callout('No app protection (MAM) policies found.', 'If BYOD access is permitted, this is a gap.', 'warn');
   }
 

@@ -935,6 +935,8 @@ exports.handler = async (event) => {
       av: { active: avActiveCount, notActive: avNotActiveCount, outOfDate: avOutOfDateCount, notActiveList: avNotActive.slice(0,50), outOfDateList: avOutOfDate.slice(0,50) },
       score: scoreRaw ? { pct: Math.round((scoreRaw.currentScore/scoreRaw.maxScore)*100), cur: Math.round(scoreRaw.currentScore), max: Math.round(scoreRaw.maxScore) } : null,
       risky: riskyR.results.length,
+      // Set when Microsoft refused or could not return the risky-user list (e.g. no Entra ID P2): the count above is then NOT a real zero
+      riskyError: riskyR.error || null,
       // At-risk accounts for the on-screen diagnostics panel only (names are NOT used in any report or export)
       riskyList: riskyR.results.slice(0, 50).map(r => ({
         name: r.userDisplayName || "", upn: r.userPrincipalName || "", level: r.riskLevel || "",

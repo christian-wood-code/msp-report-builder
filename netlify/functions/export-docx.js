@@ -400,7 +400,9 @@ exports.handler = async (event) => {
       const tiles = [
         { label: "Devices compliant", val: evaluated > 0 ? `${pctComp}%` : "N/A", tone: evaluated > 0 ? (pctComp >= 80 ? "good" : pctComp >= 60 ? "warn" : "bad") : "neu", sub: evaluated > 0 ? `${comp.compliant || 0} of ${evaluated} evaluated devices` : "No evaluated devices" },
         { label: "Secure Score", val: d.score ? `${d.score.pct}%` : "N/A", tone: d.score ? scoreTone(d.score.pct) : "neu", sub: d.score ? `${d.score.cur} of ${d.score.max} points` : "Unavailable" },
-        { label: "Risky users", val: String(d.risky || 0), tone: (d.risky || 0) > 0 ? "bad" : "good", sub: (d.risky || 0) > 0 ? "Accounts flagged at risk" : "No accounts at risk" },
+        d.riskyError
+          ? { label: "Risky users", val: "N/A", tone: "neu", sub: "Not available (needs Entra ID P2)" }
+          : { label: "Risky users", val: String(d.risky || 0), tone: (d.risky || 0) > 0 ? "bad" : "good", sub: (d.risky || 0) > 0 ? "Accounts flagged at risk" : "No accounts at risk" },
         { label: "Renewals due (90 days)", val: renewErr ? "N/A" : String(renew.length), tone: renewErr ? "neu" : "info", sub: renewErr ? "Data unavailable" : `Next: ${nxt ? dShort(nxt.renewalDate) : "none"}` },
       ];
       const { cols, cellW } = gridCols(4);
@@ -547,7 +549,7 @@ exports.handler = async (event) => {
       const ca = d.conditionalAccess;
       const idRows = [];
       if (ca) idRows.push({ label: "Conditional Access policies", value: [tag(`${ca.enabled} enforced`, "good"), run(" "), tag(`${ca.reportOnly} report-only`, ca.reportOnly > 0 ? "warn" : "neu")] });
-      idRows.push({ label: "Risky users", value: [tag(String(d.risky || 0), (d.risky || 0) > 0 ? "bad" : "good")] });
+      idRows.push({ label: "Risky users", value: [d.riskyError ? tag("N/A", "neu") : tag(String(d.risky || 0), (d.risky || 0) > 0 ? "bad" : "good")] });
       idRows.push({ label: "Compliance policies", value: [tag(String((d.compliancePolicies || {}).total || 0), "neu")] });
       idRows.push({ label: "App protection policies", value: [tag(String((d.appProtection || {}).total || 0), ((d.appProtection || {}).total || 0) === 0 ? "warn" : "neu")] });
       const right = [cardLabel("Identity & access"), ...labelValueRows(idRows, RW - 2 * 180)];
@@ -577,7 +579,8 @@ exports.handler = async (event) => {
         cardCell([cardLabel("Authentication methods"), ...labelValueRows(amRows, HW2 - 2 * 180)], HW2),
       ]})]));
       children.push(gap(100));
-      if ((d.risky || 0) > 0) { children.push(callout("Reset passwords immediately.", "bad", `${d.risky} account${d.risky > 1 ? "s are" : " is"} flagged as at-risk by Entra ID Protection.`)); children.push(gap(100)); }
+      if (d.riskyError) { children.push(callout("Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.", "info", "Risky-user detection is not available for this tenant.")); children.push(gap(100)); }
+      if (!d.riskyError && (d.risky || 0) > 0) { children.push(callout("Reset passwords immediately.", "bad", `${d.risky} account${d.risky > 1 ? "s are" : " is"} flagged as at-risk by Entra ID Protection.`)); children.push(gap(100)); }
       if ((d.appProtection?.total || 0) === 0) { children.push(callout("If BYOD access is permitted, this is a gap.", "warn", "No app protection (MAM) policies found.")); children.push(gap(100)); }
     }
 
