@@ -3,9 +3,16 @@
 How to get this project from local code to a live Netlify site with as
 few interactive browser steps as possible — written for a future Claude
 Code session doing this deploy (or a redeploy), not for a human reader.
-Adapted from the general pattern documented in
-`headless_github_netlify_deploy_pattern.md`, applied specifically to this
-project.
+Adapted from a general headless GitHub + Netlify deploy pattern (kept in
+the maintainer's Claude memory, not in this repo), applied specifically to
+this project.
+
+**Status:** Steps 2-6 below are first-time setup and have already been done
+for this project: the GitHub repo exists, the Netlify site is linked to it,
+and every push to `main` deploys automatically. For day-to-day changes use
+the "Quick reference" at the end. Plan: Netlify **Pro**; the function
+timeout is the 10-second default (no override). Each production deploy uses
+15 Netlify credits, so batch pushes.
 
 This project has **no scheduled functions** and **no build step** — it is
 simpler than the pattern this runbook is adapted from. Read the whole
@@ -33,7 +40,7 @@ called out explicitly near the end.
 | Functions directory | `netlify/functions` |
 | Publish directory | `.` (repo root — `index.html` sits at the top level) |
 | Build command | none — no build step |
-| Runtime dependencies | `docx`, `jspdf`, `jspdf-autotable`, `@netlify/blobs` (declared in `package.json`; `@netlify/blobs` is pinned to an exact version because a caret range on the newest patch once failed to resolve on Netlify and silently blocked two deploys) |
+| Runtime dependencies | `docx`, `jspdf`, `@netlify/blobs` (declared in `package.json`; `@netlify/blobs` is pinned to an exact version because a caret range on the newest patch once failed to resolve on Netlify and silently blocked two deploys) |
 | Scheduled functions | none in this project |
 | Env vars | none required for the browser wizard (credentials are entered in the browser, never stored as Netlify env vars). Optional/integration: `REPORT_HUB_SHARED_KEY` (auth for `clients` / `report-data`), `INTUNE_CLIENTS_JSON` (report-hub client credentials), `ARCHIVE_ADMIN_KEY` (enables `delete-client-metrics`). Netlify Blobs needs none |
 
@@ -72,7 +79,7 @@ cd /path/to/unzipped/msp-report-builder-github
 cat .gitignore
 
 git init -q
-git add -A
+git add -A          # first-time init only; for every later commit stage specific files
 git status --short   # eyeball this — node_modules should NOT appear
 git commit -q -m "Initial commit"
 git branch -M main
@@ -117,15 +124,17 @@ for f in netlify/functions/*.js netlify/functions/lib/*.js; do node --check "$f"
 netlify deploy --prod
 ```
 
-Verify the live functions actually respond (expect an auth error, not a
-parse error — a parse error like `Unexpected token '<'` means something
-is broken, an auth error means the function loaded correctly and is
-just waiting for real credentials):
+Verify the live functions actually respond. With the placeholder values
+below the function answers `400 Invalid credential format` (the IDs must
+be GUIDs and the secret at least 8 characters) — that proves it loaded. A
+parse error like `Unexpected token '<'` means something is broken. For a
+real Microsoft auth error instead, use GUID-shaped IDs and a longer fake
+secret:
 
 ```bash
 curl -s -X POST https://integricitymsp.netlify.app/.netlify/functions/intune \
   -H "Content-Type: application/json" \
-  -d '{"tenantId":"test","clientId":"test","clientSecret":"test","reportFrom":"2026-01-01","reportTo":"2026-01-31"}'
+  -d '{"tenantId":"00000000-0000-0000-0000-000000000000","clientId":"00000000-0000-0000-0000-000000000000","clientSecret":"not-a-real-secret-12345","reportFrom":"2026-01-01","reportTo":"2026-01-31"}'
 ```
 
 If this step works, the manual-deploy path is healthy and nothing is

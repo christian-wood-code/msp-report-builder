@@ -905,12 +905,12 @@ exports.handler = async (event) => {
     if (riskyR.results.length > 0) risk("high","Entra ID Protection",`${p(riskyR.results.length,"user account is","user accounts are")} flagged as at-risk`,"Review and reset passwords immediately");
     if (patchStatus.over90 > 0) risk("high","Intune / Patch Management",`${p(patchStatus.over90,"device is","devices are")} over 90 days without a check-in (3+ patch cycles)`,"Investigate — devices may be offline, lost, or unmanaged");
     if (patchStatus.over30 > 0) risk("medium","Intune / Patch Management",`${p(patchStatus.over30,"device is","devices are")} 30–90 days without a check-in (1–2 patch cycles behind)`,"Review and bring devices back under management");
-    if (externalByUser.length > 0) risk("medium","Entra ID / Sign-ins",`${p(externalByUser.length,"user has","users have")} signed in from outside AU/NZ in the last 30 days`,"Review for unexpected access — ensure MFA and CA policies are enforced");
+    if (externalByUser.length > 0) risk("medium","Entra ID / Sign-ins",`${p(externalByUser.length,"user has","users have")} signed in from outside AU/NZ/MY in the report period`,"Review for unexpected access — ensure MFA and CA policies are enforced");
     if (countType(compPolicies,"windows") === 0) risk("medium","Intune / Compliance","No explicit Windows compliance policy found","Create a Windows compliance policy");
     if (appProtPolicies.length === 0) risk("medium","Intune / App Protection","No app protection (MAM) policies found","Add MAM policies if BYOD is permitted");
     if (authMethods.smsEnabled) risk("medium","Authentication Methods","SMS sign-in enabled — weaker than phishing-resistant MFA","Review whether SMS should remain available tenant-wide");
     if (authMethods.tapEnabled && authMethods.tapReusable) risk("medium","Authentication Methods","Temporary Access Pass is reusable","Consider switching TAP to one-time-use");
-    if (!geoBlockPolicy) risk("medium","Conditional Access","No geographic restriction policy detected","Consider blocking sign-ins from outside AU/NZ");
+    if (!geoBlockPolicy) risk("medium","Conditional Access","No geographic restriction policy detected","Consider blocking sign-ins from outside AU/NZ/MY");
     if (win10 > 0) risk("medium","Intune / Patch Management",`${p(win10,"device is","devices are")} still running Windows 10 — support ended October 2025`,"Plan and execute Windows 11 upgrade");
     const totalInactive = notSignedIn90Licensed.length + notSignedIn90Guest.length;
     if (totalInactive > 0) risk("low","Entra ID / Users",`${p(totalInactive,"user has","users have")} not signed in for 90+ days (${notSignedIn90Licensed.length} licensed, ${notSignedIn90Guest.length} guest)`,"Review for stale or unused accounts — disable licensed users, remove guest access");

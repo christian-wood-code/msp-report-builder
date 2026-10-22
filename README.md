@@ -12,7 +12,9 @@ A web application that generates monthly IT health reports for client Microsoft 
 - Credentials (Tenant ID, Client ID, Client Secret) are entered in the browser and sent to the server per request only — never logged or stored server-side. If you save a client in the wizard, it is kept in that browser's local storage (secret in plain text) until you delete it; edit and delete buttons are on each saved client
 - A **One-off report** tick box skips the month-on-month store and deletes any history already held for that tenant (use it for prospects)
 - The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The panel also lists the individual sites counted as Other, with a CSV download
-- Exports a fully formatted Word document, a PDF, or use your browser's print-to-PDF
+- Overseas sign-ins: reads the sign-in log in four parallel date slices within a 9-second budget, counts successful *interactive* sign-ins from outside Australia, New Zealand and Malaysia, and leaves out any overseas IP address used by five or more different people (a company VPN/gateway), reporting that exclusion separately. The report states how many days were actually checked, and notes that Microsoft keeps sign-in logs for only 30 days (7 on free tenants). A per-client **Skip the overseas sign-in check** tick box (saved with the client, or `"skipOverseas": true` in `INTUNE_CLIENTS_JSON`) leaves the section out and skips that query
+- Compliance % counts evaluated devices only (compliant ÷ (compliant + non-compliant)); the ring is green at 80% or more, orange 60–79%, red below 60%. Licences are listed paid first (ordered by estimated spend, see `lib/licence-prices.js` — the prices are never shown), then free (anything with "trial" in its name counts as free); a licence bar is red only when more are assigned than purchased, blue at exactly 100%, orange at 90% or more
+- Exports a Word document, or use your browser's print-to-PDF; **Copy text** copies the report as plain text. (`export-pdf.js` exists and is used by report-hub, but the app's own page has no PDF-export button)
 
 ## Stack
 
@@ -20,11 +22,11 @@ A web application that generates monthly IT health reports for client Microsoft 
 |---|---|
 | Front end | Single HTML file — no framework, no build step |
 | Back end | Six Netlify serverless functions (Node.js) |
-| Data source | Microsoft Graph API v1.0 (app-only, read-only) |
+| Data source | Microsoft Graph (app-only, read-only): v1.0, plus `/beta` for managed devices, users and app-protection policies |
 | Month-on-month store | [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/) (`@netlify/blobs`, pinned to an exact version) |
 | Word export | [`docx`](https://www.npmjs.com/package/docx) npm package |
 | PDF export | `jspdf` (tables and cards drawn directly) |
-| Hosting | Netlify (free tier) |
+| Hosting | Netlify (Pro plan; default 10-second function timeout, no override set) |
 
 ## Project structure
 
@@ -33,7 +35,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 ├── index.html                       Front-end SPA (all HTML/CSS/JS inline; builds its own on-screen report)
 ├── server.js                        Local dev server (node server.js)
 ├── netlify.toml                     Netlify config, security headers
-├── package.json                     Dependencies (docx, jspdf, jspdf-autotable, @netlify/blobs)
+├── package.json                     Dependencies (docx, jspdf, @netlify/blobs)
 ├── .env.example                     Environment variables (see below)
 ├── config/clients.example.json      Shape of INTUNE_CLIENTS_JSON entries
 ├── scripts/add-client.js            Local helper to add a client to .env (not deployed)
@@ -50,6 +52,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 │           ├── report-archive.js    Netlify Blobs read/write/prune/delete for month-on-month figures
 │           ├── metrics-commentary.js  Snapshot extraction + commentary sentences
 │           ├── site-templates.js    SharePoint site-type classification
+│           ├── licence-prices.js    Approximate licence prices, used only to order the licence list (never shown)
 │           ├── require-report-hub-key.js  Shared-secret gate (clients, report-data)
 │           └── require-admin-key.js       Shared-secret gate (delete-client-metrics)
 ├── fulllogo_*.b64, logo.b64, icon.b64   Logo assets (base64), used in the report cover
@@ -81,7 +84,7 @@ Set in Netlify (Site settings → Environment variables). The browser wizard wor
 | Variable | Purpose |
 |---|---|
 | `REPORT_HUB_SHARED_KEY` | Shared secret report-hub sends as `x-report-hub-key` to `clients` and `report-data`. Every call is refused while unset |
-| `INTUNE_CLIENTS_JSON` | JSON array of client credentials used by report-hub (see `config/clients.example.json`) |
+| `INTUNE_CLIENTS_JSON` | JSON array of client credentials used by report-hub (see `config/clients.example.json`; optional per-client `"skipOverseas": true`). Report-hub runs always keep the month-on-month figures (it never sends the one-off flag) |
 | `ARCHIVE_ADMIN_KEY` | Optional. Enables `delete-client-metrics` (sent as `x-admin-key`). Every call is refused while unset |
 
 Netlify Blobs (the month-on-month store) needs no variables or credentials — access is scoped to the site automatically.
@@ -134,7 +137,7 @@ node server.js          # or: netlify dev
 ## Known limitations
 
 - Rate limiting is in-memory and resets on Netlify cold starts — not a durable limit; only `intune` and `export-docx` have it
-- Netlify free tier has a 10-second function timeout; very large tenants may see the sign-in log query fall back to a shorter window
+- Netlify's default 10-second function timeout applies (Pro plan, no override). The sign-in log read has its own 9-second budget; if Microsoft's throttling or a busy tenant stops it finishing, the report says how many days were checked instead of guessing. Microsoft only keeps sign-in logs for 30 days (7 on free tenants), so a report period older than that cannot be fully covered
 - Antivirus detection is Windows Defender-aware only; third-party AV is inferred, not identified by name
 - macOS devices are excluded from the encryption count — Intune does not reliably report FileVault state
 - SharePoint figures come from Microsoft's usage report, which runs 24–48 hours behind and includes hidden Teams-channel and system sites, so totals differ from the SharePoint admin center's Active sites list. Storage is in binary gigabytes, matching the admin center

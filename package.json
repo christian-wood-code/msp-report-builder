@@ -4,7 +4,6 @@
   "dependencies": {
     "@netlify/blobs": "11.0.3",
     "docx": "^9.6.1",
-    "jspdf": "^2.5.1",
-    "jspdf-autotable": "^3.8.2"
+    "jspdf": "^2.5.1"
   }
 }
