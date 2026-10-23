@@ -147,6 +147,7 @@ node server.js          # or: netlify dev
 - Licence renewal Monthly vs Annual/Multi-year labels are inferred from days to renewal (Graph does not expose billing frequency)
 - The manual-entry sections (Executive Summary, Ticketing & Support, Recommendations & Opportunities) are not currently collected, because the wizard's Review step was removed; they are omitted from the report
 - Saved clients' secrets sit in browser local storage in plain text on that device
+- Security: all text from a client tenant is escaped before display (a script payload injected into every field is tested not to run); the rate limit uses Netlify's own client-IP header; shared-secret checks are constant-time; CORS is same-origin only; the CSP allows `unsafe-inline` (the page uses inline scripts) so escaping is the real protection. Still open: the whole repo root is published (function source and docs are downloadable), `intune`/`export-*` are open endpoints behind only the in-memory rate limit, and `npm audit` reports dompurify advisories via jspdf (not exercised by the server-side export)
 - `npm audit` reports advisories in `jspdf`'s `dompurify` dependency; the fix is a breaking `jspdf` major upgrade (not yet done)
 - Netlify's built-in site password protection blocks serverless function calls — use an in-app password gate or Netlify Identity instead if access control is needed
 
