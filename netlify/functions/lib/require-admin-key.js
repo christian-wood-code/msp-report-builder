@@ -1,5 +1,7 @@
 "use strict";
 
+const { safeEqual } = require('./safe-equal');
+
 // Shared-secret gate for internal admin-only endpoints (currently just
 // delete-client-metrics.js) -- these take a bare tenantId with no proof the
 // caller controls that tenant, so they must never be reachable by the
@@ -21,7 +23,7 @@ function requireAdminKey(event) {
       body: JSON.stringify({ error: 'ARCHIVE_ADMIN_KEY is not configured on this site -- refusing all calls until it is set.' }),
     };
   }
-  if (!provided || provided !== expected) {
+  if (!provided || !safeEqual(provided, expected)) {
     return {
       statusCode: 401,
       headers: { 'Content-Type': 'application/json' },

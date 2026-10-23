@@ -14,7 +14,7 @@
 const { jsPDF } = require('jspdf');
 const { disclaimerText: disclaimer } = require('./lib/report-disclaimer');
 
-const CORS = { 'Access-Control-Allow-Origin': '*' };
+const CORS = { 'Access-Control-Allow-Origin': 'https://integricitymsp.netlify.app' };
 
 // ── Palette: the mockup's light-theme CSS variables, as RGB arrays ──────────
 const C = {

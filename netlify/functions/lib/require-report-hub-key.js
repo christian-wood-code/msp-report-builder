@@ -1,5 +1,7 @@
 "use strict";
 
+const { safeEqual } = require('./safe-equal');
+
 // Shared-secret gate for the two endpoints that serve report-hub
 // (clients.js, report-data.js) rather than this app's own browser wizard.
 // Those two endpoints previously had NO auth at all: clients.js publicly
@@ -33,7 +35,7 @@ function requireReportHubKey(event) {
       body: JSON.stringify({ error: 'REPORT_HUB_SHARED_KEY is not configured on this site -- refusing all calls until it is set.' }),
     };
   }
-  if (!provided || provided !== expected) {
+  if (!provided || !safeEqual(provided, expected)) {
     return {
       statusCode: 401,
       headers: { 'Content-Type': 'application/json' },

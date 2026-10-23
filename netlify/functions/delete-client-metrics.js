@@ -20,7 +20,7 @@
 const { requireAdminKey } = require("./lib/require-admin-key");
 const { deleteAllMetrics } = require("./lib/report-archive");
 
-const CORS = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
+const CORS = { "Access-Control-Allow-Origin": 'https://integricitymsp.netlify.app', "Content-Type": "application/json" };
 
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };

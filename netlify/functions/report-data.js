@@ -15,7 +15,7 @@ const { requireReportHubKey } = require('./lib/require-report-hub-key');
 const intuneHandler = require('./intune').handler;
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://integricitymsp.netlify.app',
   'Content-Type': 'application/json',
 };
 

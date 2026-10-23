@@ -297,7 +297,7 @@ function personalCard(text) {
 
 // ── CORS / response ───────────────────────────────────────────────────────────
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": 'https://integricitymsp.netlify.app',
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -318,7 +318,8 @@ function checkExportRate(ip) {
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Method not allowed" }) };
-  const clientIp = event.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() || event.headers?.["x-nf-client-connection-ip"] || "unknown";
+  // Netlify-set client IP only: X-Forwarded-For is client-supplied and spoofable.
+  const clientIp = event.headers?.["x-nf-client-connection-ip"] || "unknown";
   if (!checkExportRate(clientIp)) return { statusCode: 429, headers: CORS, body: JSON.stringify({ error: "Too many requests - please wait a few minutes." }) };
 
   // Guard against oversized payloads (logos + data can be ~200KB, 2MB is generous)

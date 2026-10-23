@@ -508,7 +508,7 @@ var iData = null;
 function err(msg) {
   var b = document.getElementById('err-box');
   if (msg) {
-    b.innerHTML = '<div class="alert alert-error" style="background:#fef2f2;border:1px solid #fca5a5;border-left:4px solid #dc2626;padding:12px 16px;font-size:14px;color:#7f1d1d;display:flex;align-items:flex-start;gap:10px;margin-bottom:1rem">⚠️ <div>' + msg + '</div></div>';
+    b.innerHTML = '<div class="alert alert-error" style="background:#fef2f2;border:1px solid #fca5a5;border-left:4px solid #dc2626;padding:12px 16px;font-size:14px;color:#7f1d1d;display:flex;align-items:flex-start;gap:10px;margin-bottom:1rem">⚠️ <div>' + esc(msg) + '</div></div>';
     b.style.display = 'block';
     b.scrollIntoView({behavior:'smooth', block:'nearest'});
   } else {
@@ -654,7 +654,7 @@ function saveCred() {
   if (editIdx >= 0) {
     // Renaming onto a *different* saved client would silently overwrite it.
     if (n !== editingCred && creds.some(function(x){ return x.name === n; })) {
-      err('A saved client called "' + n.replace(/</g, '&lt;') + '" already exists - choose a different label.');
+      err('A saved client called "' + n + '" already exists - choose a different label.');
       return;
     }
     creds[editIdx] = entry; // replace in place so the chip keeps its position
@@ -691,32 +691,7 @@ async function fetchData() {
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error ' + res.status);
     iData = data;
-    renderPreview();
-    var diag = document.getElementById('sp-detail').innerHTML;
-    var sgw = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.sharedGateway;
-    if (sgw && sgw.events > 0) {
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Shared gateway IPs left out of the overseas count (used by ' + sgw.minUsers + '+ different people): ' + sgw.ips.map(function(x){ return esc(x.ip) + ' (' + x.users + ' people, ' + x.events + ' sign-ins)'; }).join('; ') + '.</div>';
-    }
-    var ovd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug && iData.users.externalSignIns.debug.overseas;
-    if (ovd) {
-      var topL = function(a){ return (a || []).map(function(x){ return esc(x[0]) + ' (' + x[1] + ')'; }).join(', ') || '-'; };
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Overseas sign-in traffic: ' + ovd.read + ' sign-ins read; ' + ovd.overseas + ' successful from outside AU/NZ/MY, of which ' + ovd.interactive + ' interactive (counted) and ' + ovd.nonInteractive + ' background/non-interactive (not counted). Top IPs: ' + topL(ovd.topIps) + '. Top apps: ' + topL(ovd.topApps) + '.</div>';
-    }
-    var rl = (iData && iData.riskyList) || [];
-    if (rl.length) {
-      var lvl = function(l){ var k = String(l).toLowerCase(); return k === 'high' ? 'bad' : k === 'medium' ? 'warn' : 'info'; };
-      diag += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:14px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">At-risk accounts (' + rl.length + (iData.risky > rl.length ? ' of ' + iData.risky : '') + ') - not part of the report</div>';
-      diag += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>' + ['Name','Account','Risk level','Reason','Last updated'].map(function(h){ return '<th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">' + h + '</th>'; }).join('') + '</tr>';
-      rl.forEach(function(r){ var td = 'padding:4px 8px;border-bottom:1px solid var(--border)'; diag += '<tr><td style="' + td + '">' + esc(r.name) + '</td><td style="' + td + ';font-family:monospace">' + esc(r.upn) + '</td><td style="' + td + '">' + esc(r.level || '-') + '</td><td style="' + td + '">' + esc(r.detail || '-') + '</td><td style="' + td + '">' + esc(r.updated ? String(r.updated).slice(0,10) : '-') + '</td></tr>'; });
-      diag += '</table>';
-    }
-    var sd = iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.debug;
-    if (iData && iData.users && iData.users.externalSignIns && iData.users.externalSignIns.skipped) {
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Overseas sign-in check skipped for this client (setting on the saved client).</div>';
-    } else if (sd && sd.slices) {
-      var okN = sd.slices.filter(function(x){ return x.ok; }).length;
-      diag += '<div style="font-size:12px;color:var(--text-secondary);margin-top:10px;">Sign-in log: ' + okN + ' of ' + sd.slices.length + ' date slices fully retrieved. ' + sd.slices.map(function(x){ return (x.range || x.days + 'd') + ': ' + (x.ok ? 'ok' : 'failed - ' + esc(x.error || 'incomplete')) + ' (' + (x.filterError ? 'country filter rejected: ' + esc(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : '')) + (x.selectError ? 'extra fields rejected: ' + esc(x.selectError) + '; ' : '') + (x.throttled ? x.throttled + ' throttle retr' + (x.throttled === 1 ? 'y' : 'ies') + '; ' : '') + x.events + ' sign-ins, ' + x.pages + ' page' + (x.pages === 1 ? '' : 's') + ', ' + x.ms + ' ms)'; }).join('; ') + '.</div>';
-    }
+    var diag = buildDiagnosticsHtml(iData);
     document.getElementById('sp-diag-body').innerHTML = diag;
     document.getElementById('sp-diag').style.display = diag ? 'block' : 'none';
     buildReport(); // Review step skipped: build straight away and land on the Report ready step
@@ -727,237 +702,101 @@ async function fetchData() {
   }
 }
 
+// Diagnostics panel (above the report, never exported). Every dynamic value goes through E():
+// these strings come from the client's own tenant (device / user / group / site names...) and
+// must never reach innerHTML unescaped.
+function E(v) { return esc(String(v == null ? '' : v)); }
+function buildDiagnosticsHtml(d) {
+  var h = '';
+  var note = 'font-size:12px;color:var(--text-secondary);margin-top:10px;';
+  var head = 'font-size:12px;font-weight:600;color:var(--text-secondary);margin:14px 0 4px;text-transform:uppercase;letter-spacing:0.04em;';
+  var thS = 'text-align:left;padding:4px 8px;background:var(--bg-secondary)';
+  var tdS = 'padding:4px 8px;border-bottom:1px solid var(--border)';
+  // headers: plain strings; rows: arrays of ALREADY-ESCAPED cell html
+  function tbl(headers, rows) {
+    return '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>'
+      + headers.map(function(x){ return '<th style="' + thS + '">' + E(x) + '</th>'; }).join('') + '</tr>'
+      + rows.map(function(r){ return '<tr>' + r.map(function(c){ return '<td style="' + tdS + '">' + c + '</td>'; }).join('') + '</tr>'; }).join('')
+      + '</table>';
+  }
+  var mono = function(v) { return '<span style="font-family:monospace;word-break:break-all;">' + E(v) + '</span>'; };
+
+  // ---- SharePoint: template buckets, placeholders, sites counted as Other ----
+  var sp = d.sharepoint || {};
+  if (sp.error) h += '<span style="color:var(--text-danger);font-size:12px;">' + E(sp.error) + '</span>';
+  if (!sp.error && (sp.templateBreakdown || []).length > 0) {
+    var kindLabels = { group:'M365 Group sites', communication:'Communication sites', teams:'Other (team site, no group)', channel:'Teams channels', classic:'Classic sites', other:'Other' };
+    h += '<div style="' + head + 'margin-top:8px;">Site templates detected (review only - not in the exported report)</div>';
+    h += tbl(['Template value from Microsoft', 'Counted as', 'Sites', 'GB'], sp.templateBreakdown.map(function(t) {
+      var label = Object.prototype.hasOwnProperty.call(kindLabels, t.kind) ? kindLabels[t.kind] : E(t.kind);
+      return [mono(t.template), label, E(t.count), E(t.gb)];
+    }));
+  }
+  if (!sp.error && sp.excludedBlankCount > 0) {
+    h += '<div style="' + note + 'margin-top:8px;">' + E(sp.excludedBlankCount) + ' placeholder entries (no template, no activity, 0 GB) were left out of all counts above.</div>';
+  }
+  if (!sp.error && (sp.otherSites || []).length > 0) {
+    var os = sp.otherSites;
+    h += '<details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:600;color:var(--text-secondary);">Sites counted as Other ('
+      + E(os.length) + (sp.otherCount > os.length ? ' of ' + E(sp.otherCount) + ', first ' + E(os.length) + ' shown' : '') + ')</summary>'
+      + '<div style="margin:8px 0;"><button type="button" onclick="downloadOtherSites()">Download CSV</button></div>'
+      + '<div style="max-height:360px;overflow:auto;">'
+      + tbl(['Site URL', 'Template', 'Owner', 'Last activity', 'GB'], os.map(function(r) {
+          return [mono(r.url || '(none)'), E(r.template), E(r.owner || ''), E(r.lastActivity || ''), E(r.gb)];
+        }))
+      + '</div></details>';
+  }
+
+  // ---- Overseas sign-ins ----
+  var ext = (d.users && d.users.externalSignIns) || {};
+  var sgw = ext.sharedGateway;
+  if (sgw && sgw.events > 0) {
+    h += '<div style="' + note + '">Shared gateway IPs left out of the overseas count (used by ' + E(sgw.minUsers) + '+ different people): '
+      + (sgw.ips || []).map(function(x){ return E(x.ip) + ' (' + E(x.users) + ' people, ' + E(x.events) + ' sign-ins)'; }).join('; ') + '.</div>';
+  }
+  var ovd = ext.debug && ext.debug.overseas;
+  if (ovd) {
+    var topL = function(a){ return (a || []).map(function(x){ return E(x[0]) + ' (' + E(x[1]) + ')'; }).join(', ') || '-'; };
+    h += '<div style="' + note + '">Overseas sign-in traffic: ' + E(ovd.read) + ' sign-ins read; ' + E(ovd.overseas) + ' successful from outside AU/NZ/MY, of which '
+      + E(ovd.interactive) + ' interactive (counted) and ' + E(ovd.nonInteractive) + ' background/non-interactive (not counted). Top IPs: '
+      + topL(ovd.topIps) + '. Top apps: ' + topL(ovd.topApps) + '.</div>';
+  }
+
+  // ---- At-risk accounts (names: on screen only, never exported) ----
+  var rl = d.riskyList || [];
+  if (rl.length) {
+    h += '<div style="' + head + '">At-risk accounts (' + E(rl.length) + (d.risky > rl.length ? ' of ' + E(d.risky) : '') + ') - not part of the report</div>';
+    h += tbl(['Name', 'Account', 'Risk level', 'Reason', 'Last updated'], rl.map(function(r) {
+      return [E(r.name), mono(r.upn), E(r.level || '-'), E(r.detail || '-'), E(r.updated ? String(r.updated).slice(0, 10) : '-')];
+    }));
+  }
+
+  // ---- Sign-in log query diagnostics ----
+  var sd = ext.debug;
+  if (ext.skipped) {
+    h += '<div style="' + note + '">Overseas sign-in check skipped for this client (setting on the saved client).</div>';
+  } else if (sd && sd.slices) {
+    var okN = sd.slices.filter(function(x){ return x.ok; }).length;
+    h += '<div style="' + note + '">Sign-in log: ' + E(okN) + ' of ' + E(sd.slices.length) + ' date slices fully retrieved. '
+      + sd.slices.map(function(x) {
+          return E(x.range || (x.days + 'd')) + ': ' + (x.ok ? 'ok' : 'failed - ' + E(x.error || 'incomplete')) + ' ('
+            + (x.filterError ? 'country filter rejected: ' + E(x.filterError) + ' - ran unfiltered; ' : (x.filtered ? 'AU/NZ/MY filtered by Microsoft; ' : ''))
+            + (x.selectError ? 'extra fields rejected: ' + E(x.selectError) + '; ' : '')
+            + (x.throttled ? E(x.throttled) + ' throttle retr' + (x.throttled === 1 ? 'y' : 'ies') + '; ' : '')
+            + E(x.events) + ' sign-ins, ' + E(x.pages) + ' page' + (x.pages === 1 ? '' : 's') + ', ' + E(x.ms) + ' ms)';
+        }).join('; ') + '.</div>';
+  }
+  return h;
+}
+
 function downloadOtherSites() {
   var rows = (iData && iData.sharepoint && iData.sharepoint.otherSites) || [];
-  var q = function(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+  var q = function(v){ var t = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
   var csv = ['Site URL,Template,Owner,Last activity,GB'].concat(rows.map(function(r){ return [r.url, r.template, r.owner, r.lastActivity, r.gb].map(q).join(','); })).join('\r\n');
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
   a.download = 'sharepoint-other-sites.csv';
   document.body.appendChild(a); a.click(); a.remove();
-}
-
-function mc(lbl, val, cls) {
-  return '<div class="metric-card"><div class="metric-lbl">'+lbl+'</div><div class="metric-val '+(cls||'c-neu')+'">'+val+'</div></div>';
-}
-
-function pillHtml(status) {
-  if (status === 'enforced')    return '<span class="pill pill-enforced">✅ Enforced</span>';
-  if (status === 'report-only') return '<span class="pill pill-report">⚠️ Report-only</span>';
-  if (status === 'not found')   return '<span class="pill pill-missing">❌ Not found</span>';
-  if (status === 'disabled')    return '<span class="pill pill-disabled">Off</span>';
-  return '<span class="pill pill-disabled">'+status+'</span>';
-}
-
-function renderPreview() {
-  var d = iData;
-  var ps = d.patchStatus || {};
-  var u  = d.users || {};
-  var sp = d.sharepoint || {};
-
-  // Device metrics
-  document.getElementById('device-metrics').innerHTML =
-    mc('Total devices', d.total) +
-    mc('Compliant', d.comp.compliant, 'c-good') +
-    mc('Non-Compliant', d.comp.noncompliant, d.comp.noncompliant > 0 ? 'c-bad' : 'c-good') +
-    (d.comp.unknown > 0 ? mc('Not Evaluated', d.comp.unknown, 'c-warn') : '') +
-    mc('Last Checked In 90d+', d.staleCount||0, (d.staleCount||0) > 0 ? 'c-warn' : 'c-good') +
-    mc('Low Disk <15%', (d.lowDisk||[]).length, (d.lowDisk||[]).length > 0 ? 'c-warn' : 'c-good') +
-    mc('Encrypted', d.encryption.encrypted, 'c-good') +
-    mc('Not Encrypted', d.encryption.notEncrypted, d.encryption.notEncrypted > 0 ? 'c-bad' : 'c-good') +
-    ((d.av && (d.av.active + d.av.notActive + d.av.outOfDate) > 0) ? (
-      mc('AV Active', d.av.active, 'c-good') +
-      mc('AV Not Active', d.av.notActive, d.av.notActive > 0 ? 'c-bad' : 'c-good') +
-      mc('AV Out of Date', d.av.outOfDate, d.av.outOfDate > 0 ? 'c-warn' : 'c-good')
-    ) : '') +
-    (d.win25h2 > 0 ? mc('Win 11 25H2', d.win25h2, 'c-good') : '') +
-    (d.win24h2 > 0 ? mc('Win 11 24H2', d.win24h2, 'c-good') : '') +
-    (d.win11   > 0 ? mc('Windows 11',  d.win11,   'c-good') : '') +
-    (d.win10   > 0 ? mc('Windows 10',  d.win10,   'c-warn') : '') +
-    (d.macOS   > 0 ? mc('macOS',       d.macOS,   'c-neu')  : '') +
-    ('') +
-    (d.linux      > 0 ? mc('Linux',    d.linux,      'c-neu') : '') +
-    (d.iosCount   > 0 ? mc('iOS / iPad', d.iosCount,   'c-neu') : '') +
-    (d.androidCount > 0 ? mc('Android',  d.androidCount,'c-neu') : '') +
-    '';
-
-  // Device detail - unencrypted device list
-  if (document.getElementById('device-detail')) {
-    var devDetail = '';
-    if ((d.notCompliantList||[]).length > 0) {
-      devDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Non-compliant devices</div>';
-      devDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-      devDetail += '<tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Primary user</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Last seen</th></tr>';
-      d.notCompliantList.forEach(function(dev) {
-        var ls = dev.lastSync ? new Date(dev.lastSync).toLocaleDateString('en-NZ') : 'Never';
-        devDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.name||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.user||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary)">' + ls + '</td></tr>';
-      });
-      devDetail += '</table>';
-    }
-    if ((d.notEncryptedList||[]).length > 0) {
-      devDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Unencrypted devices</div>';
-      devDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
-      devDetail += '<tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Primary user</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">OS</th></tr>';
-      d.notEncryptedList.forEach(function(dev) {
-        devDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.name||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">' + (dev.user||'Unknown') + '</td><td style="padding:4px 8px;border-bottom:1px solid var(--border);color:var(--text-secondary)">' + (dev.os||'') + '</td></tr>';
-      });
-      devDetail += '</table>';
-    }
-    document.getElementById('device-detail').innerHTML = devDetail;
-  }
-
-  // Security metrics
-  document.getElementById('security-metrics').innerHTML =
-    (d.score ? mc('Secure Score', d.score.pct + '%', d.score.pct >= 70 ? 'c-good' : d.score.pct >= 50 ? 'c-warn' : 'c-bad') : '') +
-    mc('Risky Users', d.risky, d.risky > 0 ? 'c-bad' : 'c-good') +
-    mc('CA Policies', d.conditionalAccess ? d.conditionalAccess.total : 'N/A') +
-    mc('Compliance Policies', d.compliancePolicies ? d.compliancePolicies.total : 'N/A') +
-    mc('App Protection', d.appProtection ? d.appProtection.total : 'N/A', d.appProtection && d.appProtection.total === 0 ? 'c-warn' : 'c-good') +
-    mc('Security Defaults', d.securityDefaults === true ? 'On' : d.securityDefaults === false ? 'Off' : 'N/A', d.securityDefaults === true ? 'c-good' : 'c-neu');
-
-  // Key policies & auth methods
-  var kp = d.keyPolicies || {}, am = d.authMethods || {};
-  var polHtml = '<div style="margin-top:1rem;"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Key policy status</div><div class="policy-list">';
-  [['Legacy Auth Block',kp.legacyAuthBlock],['MFA - All Users',kp.mfaAllUsers],['Admin Phishing MFA',kp.adminMfa],['Geographic Restriction',kp.geoBlock]].forEach(function(p) {
-    polHtml += '<div class="policy-row"><span class="policy-name">'+p[0]+'</span>' + pillHtml((p[1]||{}).status||'not found') + '</div>';
-  });
-  polHtml += '</div></div><div style="margin-top:1rem;"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em;">Authentication methods</div><div class="policy-list">';
-  [['Microsoft Authenticator',am.authAppEnabled,false],['FIDO2 / Passkeys',am.fido2Enabled,false],['SMS sign-in',am.smsEnabled,true],['Temporary Access Pass',am.tapEnabled,false]].forEach(function(a) {
-    var cls = (a[2]&&a[1]) ? 'pill-report' : a[1] ? 'pill-enforced' : 'pill-disabled';
-    polHtml += '<div class="policy-row"><span class="policy-name">'+a[0]+'</span><span class="pill '+cls+'">'+(a[1]?((a[2]&&a[1])?'⚠️ ':'✅ ')+'Enabled':'Disabled')+'</span></div>';
-  });
-  polHtml += '</div></div>';
-  document.getElementById('policy-section').innerHTML = polHtml;
-
-  // Risk register
-  var risks = d.risks || [];
-  if (risks.length === 0) {
-    document.getElementById('risk-section').innerHTML = '<p style="font-size:13px;color:var(--text-secondary)">No risks identified.</p>';
-  } else {
-    var rHtml = '<table class="risk-table"><thead><tr><th>Severity</th><th>Area</th><th>Finding</th><th>Recommended action</th></tr></thead><tbody>';
-    risks.forEach(function(r) {
-      var cls = r.severity === 'high' ? 'sev-high' : r.severity === 'medium' ? 'sev-medium' : 'sev-low';
-      var icon = r.severity === 'high' ? '🔴' : r.severity === 'medium' ? '🟡' : '🟢';
-      rHtml += '<tr><td class="'+cls+'">'+icon+' '+r.severity.charAt(0).toUpperCase()+r.severity.slice(1)+'</td><td>'+r.area+'</td><td>'+r.finding+'</td><td>'+r.action+'</td></tr>';
-    });
-    rHtml += '</tbody></table>';
-    document.getElementById('risk-section').innerHTML = rHtml;
-  }
-
-  // Patch metrics
-  if (document.getElementById('patch-metrics')) {
-    document.getElementById('patch-metrics').innerHTML =
-      mc('Current (≤30 days)', ps.current||0, 'c-good') +
-      mc('Over 30 days', ps.over30||0, (ps.over30||0)>0?'c-warn':'c-good') +
-      mc('Over 90 days', ps.over90||0, (ps.over90||0)>0?'c-bad':'c-good');
-    var pDetail = '';
-    if ((d.patchOver90||[]).length > 0) {
-      pDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-danger);margin-bottom:4px;">Devices 90+ days (with primary user)</div>';
-      pDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Device</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">User</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Last seen</th></tr>';
-      (d.patchOver90||[]).forEach(function(dev) {
-        pDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+dev.name+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(dev.user||'Unknown')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(dev.lastSeen?new Date(dev.lastSeen).toLocaleDateString('en-NZ'):'Never')+'</td></tr>';
-      });
-      pDetail += '</table>';
-    }
-    document.getElementById('patch-detail').innerHTML = pDetail;
-  }
-
-  // User metrics
-  if (document.getElementById('user-metrics')) {
-    document.getElementById('user-metrics').innerHTML =
-      mc('Total Licensed users', u.total||0) +
-      mc('Guest users', u.guests||0, (u.guests||0)>0?'c-warn':'c-neu') +
-      mc('Licensed not signed in 60d+', u.notSignedIn90Licensed||0, (u.notSignedIn90Licensed||0)>0?'c-warn':'c-good') +
-      mc('Guest not signed in 60d+', u.notSignedIn90Guest||0, (u.notSignedIn90Guest||0)>0?'c-warn':'c-good') +
-      mc('Admin roles', (u.adminRoles||[]).length, (u.adminRoles||[]).length>0?'c-warn':'c-neu') +
-      mc('External sign-ins', (u.externalSignIns||{}).uniqueUsers||0, ((u.externalSignIns||{}).uniqueUsers||0)>0?'c-warn':'c-good');
-    var uDetail = '';
-    if ((u.licenceSummary||[]).length > 0) {
-      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Licences</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
-      u.licenceSummary.forEach(function(l) {
-        var pct2 = l.available > 0 ? l.count / l.available : null;
-        var col2 = (l.available > 0 && l.count > l.available) ? '#991b1b' : '#0D7CC4';
-        var lbl2 = l.available > 0 ? l.count+' / '+l.available : String(l.count);
-        uDetail += '<div style="background:var(--bg-secondary);padding:6px 10px;border:1px solid var(--border);border-left:3px solid '+col2+';min-width:140px">'
-          + '<div style="font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px">'+l.name+'</div>'
-          + '<div style="font-size:18px;font-weight:700;color:'+col2+'">'+lbl2+'</div>'
-          + (l.available > 0 ? '<div style="font-size:10px;color:var(--text-secondary)">used</div>' : '')
-          + '</div>';
-      });
-      uDetail += '</div>';
-    }
-    uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Upcoming licence renewals (next 90 days)</div>';
-    if (u.licenceRenewalsError) {
-      uDetail += '<div style="font-size:12px;color:var(--text-warning);margin-bottom:10px;">Licence renewal data unavailable - check that Organization.Read.All permission is granted.</div>';
-    } else if ((u.licenceRenewals||[]).length > 0) {
-      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Licence</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Seats</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Billing</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Renewal date</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Days away</th></tr>';
-      u.licenceRenewals.forEach(function(r) {
-        uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.name+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.seats+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.cycle+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(r.renewalDate?new Date(r.renewalDate).toLocaleDateString('en-NZ'):'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.daysAway+'</td></tr>';
-      });
-      uDetail += '</table>';
-    } else {
-      uDetail += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">No licence renewals due in the next 90 days.</div>';
-    }
-    if ((u.adminRoles||[]).length > 0) {
-      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Admin role holders</div>';
-      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Name</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Roles</th></tr>';
-      u.adminRoles.forEach(function(a) { uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);vertical-align:top">'+a.name+'<br><span style="color:var(--text-secondary);font-size:11px">'+a.upn+'</span></td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(a.roles||[a.role]).join('<br>')+'</td></tr>'; });
-      uDetail += '</table>';
-    }
-    var extSI = u.externalSignIns || {};
-    if (extSI.timedOut) {
-      uDetail += '<div style="font-size:12px;color:var(--text-warning)">⚠ Sign-in log query timed out - try pulling again.</div>';
-    } else if ((extSI.byUser||[]).length > 0) {
-      uDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-warning);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">External sign-ins (30 days)</div>';
-      uDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">User</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Events</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Countries</th></tr>';
-      extSI.byUser.forEach(function(e) { uDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+e.upn+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+e.eventCount+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(e.countries||[]).join(', ')+'</td></tr>'; });
-      uDetail += '</table>';
-    }
-    document.getElementById('user-detail').innerHTML = uDetail;
-  }
-
-  // SharePoint metrics
-  if (document.getElementById('sp-metrics')) {
-    document.getElementById('sp-metrics').innerHTML =
-      mc('Total sites', sp.siteCount||0) +
-      (sp.commCount > 0 ? mc('Comm. sites', sp.commCount, 'c-neu') : '') +
-      (sp.channelCount > 0 ? mc('Teams channels', sp.channelCount, 'c-neu') : '') +
-      (sp.classicCount > 0 ? mc('Classic sites', sp.classicCount, 'c-neu') : '') +
-      (sp.otherCount > 0 ? mc('Other', sp.otherCount, 'c-neu') : '') +
-      mc('Storage used', (sp.totalUsedGB||0)+' GB', 'c-neu') +
-      mc('Inactive Sites and Channels 180 days +', sp.inactiveSiteCount||0, (sp.inactiveSiteCount||0)>0?'c-warn':'c-good');
-    var spDetail = '';
-    if (sp.error) { spDetail = '<span style="color:var(--text-danger);font-size:12px;">'+sp.error+'</span>'; }
-    // Review-step only (never in the exported report): the raw "Root Web
-    // Template" values Microsoft returned and which bucket each one was counted
-    // in, so a surprising count (e.g. 0 Teams channels) can be checked at a glance.
-    if (!sp.error && (sp.templateBreakdown||[]).length > 0) {
-      var kindLabels = { group:'M365 Group sites', communication:'Communication sites', teams:'Other (team site, no group)', channel:'Teams channels', classic:'Classic sites', other:'Other' };
-      spDetail += '<div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:8px 0 4px;text-transform:uppercase;letter-spacing:0.04em;">Site templates detected (review only - not in the exported report)</div>';
-      spDetail += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Template value from Microsoft</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Counted as</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">Sites</th><th style="text-align:left;padding:4px 8px;background:var(--bg-secondary)">GB</th></tr>';
-      sp.templateBreakdown.forEach(function(t) {
-        spDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);font-family:monospace">'+esc(t.template)+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+(kindLabels[t.kind]||esc(t.kind))+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.count+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+t.gb+'</td></tr>';
-      });
-      spDetail += '</table>';
-    }
-    if (!sp.error && sp.excludedBlankCount > 0) {
-      spDetail += '<div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">'+sp.excludedBlankCount+' placeholder entries (no template, no activity, 0 GB) were left out of all counts above.</div>';
-    }
-    if (!sp.error && (sp.otherSites||[]).length > 0) {
-      var os = sp.otherSites;
-      spDetail += '<details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:600;color:var(--text-secondary);">Sites counted as Other ('+os.length+(sp.otherCount>os.length?' of '+sp.otherCount+', first '+os.length+' shown':'')+')</summary>';
-      spDetail += '<div style="margin:8px 0;"><button type="button" onclick="downloadOtherSites()">Download CSV</button></div>';
-      spDetail += '<div style="max-height:360px;overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><tr>';
-      ['Site URL','Template','Owner','Last activity','GB'].forEach(function(h){ spDetail += '<th style="text-align:left;padding:4px 8px;background:var(--bg-secondary);position:sticky;top:0;">'+h+'</th>'; });
-      spDetail += '</tr>';
-      os.forEach(function(r) {
-        spDetail += '<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border);word-break:break-all;font-family:monospace">'+esc(r.url||'(none)')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.template)+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.owner||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+esc(r.lastActivity||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+r.gb+'</td></tr>';
-      });
-      spDetail += '</table></div></details>';
-    }
-
-    document.getElementById('sp-detail').innerHTML = spDetail;
-  }
 }
 
 function v(id) { return (document.getElementById(id).value || '').trim(); }

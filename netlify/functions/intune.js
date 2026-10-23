@@ -4,7 +4,7 @@ const { sortLicences } = require("./lib/licence-prices");
 const { classifySiteTemplate } = require("./lib/site-templates");
 
 const CORS = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": 'https://integricitymsp.netlify.app',
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
@@ -278,9 +278,9 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return respond(405, { error: "Method not allowed" });
 
   // Rate limiting — 10 requests per IP per 5 minutes
-  const clientIp = event.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-    || event.headers?.["x-nf-client-connection-ip"]
-    || "unknown";
+  // x-nf-client-connection-ip is set by Netlify itself. X-Forwarded-For is client-supplied and was
+  // spoofable (rotating it bypassed the limit), so it is deliberately not used.
+  const clientIp = event.headers?.["x-nf-client-connection-ip"] || "unknown";
   if (!checkRateLimit(clientIp)) {
     return respond(429, { error: "Too many requests — please wait a few minutes before trying again." });
   }
