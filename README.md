@@ -33,8 +33,10 @@ A web application that generates monthly IT health reports for client Microsoft 
 
 ```
 .
-├── index.html                       Front-end SPA (all HTML/CSS/JS inline; builds its own on-screen report)
-├── server.js                        Local dev server (node server.js)
+├── public/                          The ONLY folder Netlify serves (publish = "public")
+│   ├── index.html                   Front-end SPA (all HTML/CSS/JS inline; builds its own on-screen report)
+│   └── fulllogo_*.b64, logo.b64, icon.b64   Logo assets (base64), used in the report cover
+├── server.js                        Local dev server (node server.js) - serves public/ and the functions
 ├── netlify.toml                     Netlify config, security headers
 ├── package.json                     Dependencies (docx, jspdf, @netlify/blobs)
 ├── .env.example                     Environment variables (see below)
@@ -57,7 +59,6 @@ A web application that generates monthly IT health reports for client Microsoft 
 │           ├── report-disclaimer.js Cover disclaimer + retention wording shared by the PDF and Word exports (index.html keeps a synced copy)
 │           ├── require-report-hub-key.js  Shared-secret gate (clients, report-data)
 │           └── require-admin-key.js       Shared-secret gate (delete-client-metrics)
-├── fulllogo_*.b64, logo.b64, icon.b64   Logo assets (base64), used in the report cover
 └── docs/
     ├── Intune_Report_Architecture.docx   System architecture and design decisions
     ├── architecture-diagram.png
@@ -123,7 +124,7 @@ npm install
 node server.js          # or: netlify dev
 ```
 
-`node server.js` serves `index.html` and the functions on http://localhost:8791. Locally the Netlify Blobs store is unavailable, so month-on-month commentary silently skips (it never blocks a report).
+`node server.js` serves `public/` (the page) and the functions on http://localhost:8791. Locally the Netlify Blobs store is unavailable, so month-on-month commentary silently skips (it never blocks a report).
 
 ## Documentation
 
@@ -147,7 +148,7 @@ node server.js          # or: netlify dev
 - Licence renewal Monthly vs Annual/Multi-year labels are inferred from days to renewal (Graph does not expose billing frequency)
 - The manual-entry sections (Executive Summary, Ticketing & Support, Recommendations & Opportunities) are not currently collected, because the wizard's Review step was removed; they are omitted from the report
 - Saved clients' secrets sit in browser local storage in plain text on that device
-- Security: all text from a client tenant is escaped before display (a script payload injected into every field is tested not to run); the rate limit uses Netlify's own client-IP header; shared-secret checks are constant-time; CORS is same-origin only; the CSP allows `unsafe-inline` (the page uses inline scripts) so escaping is the real protection. Still open: the whole repo root is published (function source and docs are downloadable), `intune`/`export-*` are open endpoints behind only the in-memory rate limit, and `npm audit` reports dompurify advisories via jspdf (not exercised by the server-side export)
+- Security: all text from a client tenant is escaped before display (a script payload injected into every field is tested not to run); the rate limit uses Netlify's own client-IP header; shared-secret checks are constant-time; CORS is same-origin only; the CSP allows `unsafe-inline` (the page uses inline scripts) so escaping is the real protection. Only `public/` is published, so function source, the docs folder, scripts and `package.json` are NOT downloadable from the site. Still open: `intune`/`export-*` are open endpoints behind only the in-memory rate limit, and `npm audit` reports dompurify advisories via jspdf (not exercised by the server-side export)
 - `npm audit` reports advisories in `jspdf`'s `dompurify` dependency; the fix is a breaking `jspdf` major upgrade (not yet done)
 - Netlify's built-in site password protection blocks serverless function calls — use an in-app password gate or Netlify Identity instead if access control is needed
 

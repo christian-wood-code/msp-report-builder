@@ -1,5 +1,5 @@
 [build]
-  publish = "."
+  publish = "public"      # ONLY this folder is served; function source, docs and scripts stay private
   functions = "netlify/functions"
 
 [[headers]]

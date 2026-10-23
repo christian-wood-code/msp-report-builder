@@ -38,7 +38,7 @@ called out explicitly near the end.
 | Existing live site | `integricitymsp.netlify.app` |
 | Netlify Site ID | *(look up with `netlify status` if a `.netlify` folder already exists, or `netlify sites:list`)* |
 | Functions directory | `netlify/functions` |
-| Publish directory | `.` (repo root — `index.html` sits at the top level) |
+| Publish directory | `public` (only `index.html` and the logo `.b64` files; set in `netlify.toml`. Function source, docs, scripts and `package.json` stay outside it and are not served) |
 | Build command | none — no build step |
 | Runtime dependencies | `docx`, `jspdf`, `@netlify/blobs` (declared in `package.json`; `@netlify/blobs` is pinned to an exact version because a caret range on the newest patch once failed to resolve on Netlify and silently blocked two deploys) |
 | Scheduled functions | none in this project |
@@ -164,7 +164,7 @@ do themselves —
 2. **Project configuration → Build & deploy → Continuous deployment**
 3. Click **Link repository** (wording may shift slightly over time)
 4. Choose GitHub, authorise, select the `msp-report-builder` repo
-5. Confirm — Netlify should auto-detect `publish = "."` and
+5. Confirm — Netlify should auto-detect `publish = "public"` and
    `functions = "netlify/functions"` from `netlify.toml`
 
 After that one click, every `git push` to `main` triggers an automatic

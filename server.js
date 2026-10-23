@@ -17,7 +17,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const PORT = process.env.PORT || 8791;
-const ROOT = __dirname;
+const ROOT = path.join(__dirname, 'public');   // mirrors netlify.toml: only public/ is served
 
 const MIME = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -78,6 +78,8 @@ const server = http.createServer(async (req, res) => {
 
   let filePath = path.join(ROOT, pathname === '/' ? 'index.html' : pathname);
   if (!path.extname(filePath)) filePath = path.join(filePath, 'index.html');
+  // never serve anything outside public/ (blocks ../ tricks)
+  if (path.relative(ROOT, filePath).startsWith('..') || path.isAbsolute(path.relative(ROOT, filePath))) { res.writeHead(403); res.end('Forbidden'); return; }
 
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
