@@ -682,7 +682,7 @@ async function fetchData() {
   try {
     var cred = creds.find(function(x){ return x.name === selCred; });
     if (!cred) { err('Selected client credentials not found.'); btn.disabled=false; btn.textContent='↻ Pull Intune data'; return; }
-    var res = await fetch('/.netlify/functions/intune', {
+    var res = await appFetch('/.netlify/functions/intune', {
       credentials: 'omit',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -801,6 +801,48 @@ function downloadOtherSites() {
 
 function v(id) { return (document.getElementById(id).value || '').trim(); }
 function has(id) { return !!v(id); }
+// ---- Staff access key ---------------------------------------------------------------------------
+// The server functions (intune, export-docx) refuse calls without the shared staff key. It is asked for
+// once, kept in this browser's localStorage and sent as x-app-key. A rejected key is cleared and asked
+// for again. (Stop-gap until Microsoft sign-in replaces it.)
+function getAccessKey() { try { return localStorage.getItem('msp_access_key') || ''; } catch (e) { return ''; } }
+function setAccessKey(k) { try { if (k) localStorage.setItem('msp_access_key', k); else localStorage.removeItem('msp_access_key'); } catch (e) {} }
+function askAccessKey(rejected) {
+  return new Promise(function(resolve) {
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg-primary,#fff);color:var(--text-primary,#0f172a);border-radius:12px;padding:22px;max-width:380px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:14px;';
+    box.innerHTML = '<div style="font-weight:600;font-size:16px;margin-bottom:6px;">Staff access key</div>'
+      + '<div style="color:var(--text-secondary,#64748b);margin-bottom:12px;">' + (rejected ? 'That key was not accepted. ' : '') + 'Enter the Integricity access key to use this tool. It is remembered on this device.</div>';
+    var inp = document.createElement('input');
+    inp.type = 'password'; inp.autocomplete = 'off'; inp.style.cssText = 'width:100%;box-sizing:border-box;margin-bottom:12px;';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+    var cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel';
+    var ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Continue';
+    row.appendChild(cancel); row.appendChild(ok); box.appendChild(inp); box.appendChild(row); ov.appendChild(box);
+    document.body.appendChild(ov); inp.focus();
+    function done(v) { document.body.removeChild(ov); resolve(v); }
+    ok.addEventListener('click', function() { var v = inp.value.trim(); if (v) { setAccessKey(v); done(v); } });
+    cancel.addEventListener('click', function() { done(''); });
+    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') ok.click(); });
+  });
+}
+async function appFetch(url, opts) {
+  var key = getAccessKey() || await askAccessKey(false);
+  if (!key) throw new Error('An access key is needed to continue.');
+  for (var attempt = 0; attempt < 2; attempt++) {
+    var o = Object.assign({}, opts, { headers: Object.assign({}, opts.headers, { 'x-app-key': key }) });
+    var res = await fetch(url, o);
+    if (res.status !== 401) return res;
+    setAccessKey('');
+    key = await askAccessKey(true);
+    if (!key) throw new Error('Access key was not accepted.');
+  }
+  return res;
+}
+
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 function kpi(val, lbl, cls) { return '<div class="kpi"><div class="kpi-val '+cls+'">'+val+'</div><div class="kpi-lbl">'+lbl+'</div></div>'; }
 
@@ -1287,7 +1329,7 @@ async function exportDocx() {
     var fullLogoHeader      = logoFetches[1].trim();
 
     btn.textContent = '⏳ Building document…';
-    var res = await fetch('/.netlify/functions/export-docx', {
+    var res = await appFetch('/.netlify/functions/export-docx', {
       method: 'POST',
       credentials: 'omit',
       headers: { 'Content-Type': 'application/json' },

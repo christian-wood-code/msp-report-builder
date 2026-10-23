@@ -13,6 +13,11 @@
 
 const { jsPDF } = require('jspdf');
 const { disclaimerText: disclaimer } = require('./lib/report-disclaimer');
+const { requireAppAccess } = require('./lib/require-app-access');
+const { checkBodySize, checkShape } = require('./lib/payload-guard');
+const { makeLimiter } = require('./lib/rate-limit');
+
+const allowExport = makeLimiter(20, 5 * 60 * 1000); // 20 PDFs per IP per 5 minutes
 
 const CORS = { 'Access-Control-Allow-Origin': 'https://integricitymsp.netlify.app' };
 
@@ -881,10 +886,20 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
+  const denied = requireAppAccess(event, CORS);
+  if (denied) return denied;
+  // Netlify-set client IP only: X-Forwarded-For is client-supplied and spoofable.
+  if (!allowExport((event.headers || {})['x-nf-client-connection-ip'] || 'unknown')) {
+    return { statusCode: 429, headers: CORS, body: 'Too many requests - please wait a few minutes.' };
+  }
+  const sizeErr = checkBodySize(event.body);
+  if (sizeErr) return { statusCode: 413, headers: CORS, body: sizeErr };
 
   let payload;
   try { payload = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers: CORS, body: 'Invalid JSON' }; }
+  const shapeErr = checkShape(payload);
+  if (shapeErr) return { statusCode: 413, headers: CORS, body: shapeErr };
 
   try {
     const doc = buildPdfDoc(payload);

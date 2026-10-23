@@ -23,3 +23,6 @@ npm-debug.log*
 
 # Local backups made before overwriting an asset in place
 *.bak
+
+# Staff access key (local copy, never commit)
+config/*.local.txt

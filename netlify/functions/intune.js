@@ -1,11 +1,12 @@
 "use strict";
+const { requireAppAccess } = require("./lib/require-app-access");
 
 const { sortLicences } = require("./lib/licence-prices");
 const { classifySiteTemplate } = require("./lib/site-templates");
 
 const CORS = {
   "Access-Control-Allow-Origin": 'https://integricitymsp.netlify.app',
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, x-app-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
   "X-Content-Type-Options": "nosniff",
@@ -276,6 +277,9 @@ function winVersionLabel(osVersion) {
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
   if (event.httpMethod !== "POST") return respond(405, { error: "Method not allowed" });
+
+  const denied = requireAppAccess(event, CORS);
+  if (denied) return denied;
 
   // Rate limiting — 10 requests per IP per 5 minutes
   // x-nf-client-connection-ip is set by Netlify itself. X-Forwarded-For is client-supplied and was
