@@ -42,7 +42,7 @@ called out explicitly near the end.
 | Build command | none — no build step |
 | Runtime dependencies | `docx`, `jspdf`, `@netlify/blobs` (declared in `package.json`; `@netlify/blobs` is pinned to an exact version because a caret range on the newest patch once failed to resolve on Netlify and silently blocked two deploys) |
 | Scheduled functions | none in this project |
-| Env vars | none required for the browser wizard (credentials are entered in the browser, never stored as Netlify env vars). Optional/integration: `REPORT_HUB_SHARED_KEY` (auth for `clients` / `report-data`), `INTUNE_CLIENTS_JSON` (report-hub client credentials), `ARCHIVE_ADMIN_KEY` (enables `delete-client-metrics`). Netlify Blobs needs none |
+| Env vars | `APP_ACCESS_KEY` (required: staff access key for the browser app; set it as a secret, give it to staff separately; client credentials are still entered in the browser, never stored as Netlify env vars). Optional/integration: `REPORT_HUB_SHARED_KEY` (auth for `clients` / `report-data` and the report-hub calls to the exports), `INTUNE_CLIENTS_JSON` (report-hub client credentials), `ARCHIVE_ADMIN_KEY` (enables `delete-client-metrics`). Netlify Blobs needs none |
 
 ## Step 1 — Get a GitHub token without `gh`
 

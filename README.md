@@ -82,11 +82,12 @@ These are entered directly into the app at runtime. Nothing per-client is config
 
 ## Environment variables
 
-Set in Netlify (Site settings → Environment variables). The browser wizard works with none of them set.
+Set in Netlify (Site settings → Environment variables). `APP_ACCESS_KEY` is required: without it every call to `intune`, `export-docx` and `export-pdf` is refused.
 
 | Variable | Purpose |
 |---|---|
-| `REPORT_HUB_SHARED_KEY` | Shared secret report-hub sends as `x-report-hub-key` to `clients` and `report-data`. Every call is refused while unset |
+| `APP_ACCESS_KEY` | Staff access key for the browser app. The page asks for it once per device, keeps it in local storage and sends it as `x-app-key` to `intune`, `export-docx` and `export-pdf`. Every call is refused while unset. Stop-gap until Microsoft sign-in replaces it |
+| `REPORT_HUB_SHARED_KEY` | Shared secret report-hub sends as `x-report-hub-key` to `clients`, `report-data` and the Intune exports (`export-docx` / `export-pdf`). Every call is refused while unset |
 | `INTUNE_CLIENTS_JSON` | JSON array of client credentials used by report-hub (see `config/clients.example.json`; optional per-client `"skipOverseas": true`). Report-hub runs always keep the month-on-month figures (it never sends the one-off flag) |
 | `ARCHIVE_ADMIN_KEY` | Optional. Enables `delete-client-metrics` (sent as `x-admin-key`). Every call is refused while unset |
 
@@ -148,7 +149,7 @@ node server.js          # or: netlify dev
 - Licence renewal Monthly vs Annual/Multi-year labels are inferred from days to renewal (Graph does not expose billing frequency)
 - The manual-entry sections (Executive Summary, Ticketing & Support, Recommendations & Opportunities) are not currently collected, because the wizard's Review step was removed; they are omitted from the report
 - Saved clients' secrets sit in browser local storage in plain text on that device
-- Security: all text from a client tenant is escaped before display (a script payload injected into every field is tested not to run); the rate limit uses Netlify's own client-IP header; shared-secret checks are constant-time; CORS is same-origin only; the CSP allows `unsafe-inline` (the page uses inline scripts) so escaping is the real protection. Only `public/` is published, so function source, the docs folder, scripts and `package.json` are NOT downloadable from the site. Still open: `intune`/`export-*` are open endpoints behind only the in-memory rate limit, and `npm audit` reports dompurify advisories via jspdf (not exercised by the server-side export)
+- Security: all text from a client tenant is escaped before display (a script payload injected into every field is tested not to run); the rate limit uses Netlify's own client-IP header; shared-secret checks are constant-time; CORS is same-origin only; the CSP allows `unsafe-inline` (the page uses inline scripts) so escaping is the real protection. Only `public/` is published, so function source, the docs folder, scripts and `package.json` are NOT downloadable from the site. `intune`, `export-docx` and `export-pdf` need the staff access key (or the report-hub key); export bodies are capped at 600 KB and `export-pdf` is rate limited like the others. Still open: Microsoft sign-in is not in place yet (a shared key is used instead), and `npm audit` reports dompurify advisories via jspdf (not exercised by the server-side export)
 - `npm audit` reports advisories in `jspdf`'s `dompurify` dependency; the fix is a breaking `jspdf` major upgrade (not yet done)
 - Netlify's built-in site password protection blocks serverless function calls — use an in-app password gate or Netlify Identity instead if access control is needed
 
