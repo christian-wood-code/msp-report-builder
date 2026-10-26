@@ -306,10 +306,10 @@ const CORS = {
   "X-Content-Type-Options": "nosniff",
 };
 
-// Rate limiter - 20 exports per IP per 5 minutes
+// Rate limiter - 30 exports per IP per 5 minutes
 const exportRateMap = new Map();
 function checkExportRate(ip) {
-  const now = Date.now(), WIN = 5*60*1000, LIMIT = 20;
+  const now = Date.now(), WIN = 5*60*1000, LIMIT = 30;
   const e = exportRateMap.get(ip) || { count:0, windowStart:now };
   if (now - e.windowStart > WIN) { e.count = 0; e.windowStart = now; }
   e.count++; exportRateMap.set(ip, e);

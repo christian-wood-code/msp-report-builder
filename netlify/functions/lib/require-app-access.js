@@ -10,6 +10,8 @@ const { safeEqual } = require('./safe-equal');
 // Fails CLOSED: with neither env var set every call is refused. This is a stop-gap until Microsoft
 // sign-in (Entra) replaces it.
 function requireAppAccess(event, corsHeaders) {
+  // Temporary switch: APP_ACCESS_DISABLED=true leaves the endpoints open (remove the variable to re-enable the gate).
+  if (process.env.APP_ACCESS_DISABLED === 'true') return null;
   const h = event.headers || {};
   const appKey = h['x-app-key'] || h['X-App-Key'];
   const hubKey = h['x-report-hub-key'] || h['X-Report-Hub-Key'];

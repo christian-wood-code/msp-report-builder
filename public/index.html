@@ -830,17 +830,16 @@ function askAccessKey(rejected) {
   });
 }
 async function appFetch(url, opts) {
-  var key = getAccessKey() || await askAccessKey(false);
-  if (!key) throw new Error('An access key is needed to continue.');
+  var key = getAccessKey(); // may be empty while the gate is switched off; the server says if one is needed
   for (var attempt = 0; attempt < 2; attempt++) {
-    var o = Object.assign({}, opts, { headers: Object.assign({}, opts.headers, { 'x-app-key': key }) });
+    var o = Object.assign({}, opts, { headers: Object.assign({}, opts.headers, key ? { 'x-app-key': key } : {}) });
     var res = await fetch(url, o);
     if (res.status !== 401) return res;
     // Only our own gate asks for a new key; a 401 from Microsoft (bad client secret) passes through.
     var j = await res.clone().json().catch(function() { return {}; });
     if (j.code !== 'ACCESS_KEY') return res;
     setAccessKey('');
-    key = await askAccessKey(true);
+    key = await askAccessKey(!!key);
     if (!key) throw new Error('Access key was not accepted.');
   }
   return res;
