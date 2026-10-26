@@ -6,7 +6,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
 
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
@@ -17,6 +16,13 @@ if (fs.existsSync(envPath)) {
 }
 
 const PORT = process.env.PORT || 8791;
+// Loopback only by default: this server proxies the Netlify functions with live
+// credentials and has no auth, so it must not be reachable from the LAN.
+// Set HOST=0.0.0.0 only if you deliberately want that.
+const HOST = process.env.HOST || '127.0.0.1';
+// Reject non-loopback Host headers (blocks DNS-rebinding: a malicious page
+// resolving its own hostname to 127.0.0.1 to read our responses).
+const LOOPBACK_HOST = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 const ROOT = path.join(__dirname, 'public');   // mirrors netlify.toml: only public/ is served
 
 const MIME = {
@@ -26,10 +32,14 @@ const MIME = {
 };
 
 const server = http.createServer(async (req, res) => {
-  const parsed = url.parse(req.url, true);
+  if (HOST === '127.0.0.1' && !LOOPBACK_HOST.test(req.headers.host || '')) {
+    res.writeHead(403); res.end('Forbidden: unexpected Host header'); return;
+  }
+  let parsed;
+  try { parsed = new URL(req.url, 'http://localhost'); } catch { res.writeHead(400); res.end('Bad request'); return; }
   const pathname = parsed.pathname;
 
-  const fnMatch = pathname.match(/^\/.netlify\/functions\/([^/?]+)/);
+  const fnMatch = pathname.match(/^\/\.netlify\/functions\/([A-Za-z0-9_-]+)(?:\/|$)/);
   if (fnMatch) {
     const fnName = fnMatch[1];
     const fnPath = path.join(__dirname, 'netlify', 'functions', `${fnName}.js`);
@@ -47,9 +57,7 @@ const server = http.createServer(async (req, res) => {
           const event = {
             httpMethod: req.method,
             path: pathname,
-            queryStringParameters: Object.fromEntries(
-              Object.entries(parsed.query).map(([k, v]) => [k, String(v)])
-            ),
+            queryStringParameters: Object.fromEntries(parsed.searchParams),
             headers: req.headers,
             body: body.length ? Buffer.concat(body).toString('utf8') : null,
             isBase64Encoded: false,
@@ -76,7 +84,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  let filePath = path.join(ROOT, pathname === '/' ? 'index.html' : pathname);
+  let rel;
+  try { rel = decodeURIComponent(pathname); } catch { res.writeHead(400); res.end('Bad request'); return; }
+  if (rel.includes('\0')) { res.writeHead(400); res.end('Bad request'); return; }
+  let filePath = path.resolve(ROOT, '.' + (rel === '/' ? '/index.html' : rel));
+  // Never serve anything outside the static root ("/../server.js" style traversal).
+  if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) { res.writeHead(403); res.end('Forbidden'); return; }
   if (!path.extname(filePath)) filePath = path.join(filePath, 'index.html');
   // never serve anything outside public/ (blocks ../ tricks)
   if (path.relative(ROOT, filePath).startsWith('..') || path.isAbsolute(path.relative(ROOT, filePath))) { res.writeHead(403); res.end('Forbidden'); return; }
@@ -89,6 +102,6 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`\n  MSP Report Builder (Intune) running at http://localhost:${PORT}\n`);
 });
