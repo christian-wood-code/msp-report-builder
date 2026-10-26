@@ -17,7 +17,7 @@ const { requireAppAccess } = require('./lib/require-app-access');
 const { checkBodySize, checkShape } = require('./lib/payload-guard');
 const { makeLimiter } = require('./lib/rate-limit');
 
-const allowExport = makeLimiter(20, 5 * 60 * 1000); // 20 PDFs per IP per 5 minutes
+const allowExport = makeLimiter(30, 5 * 60 * 1000); // 30 PDFs per IP per 5 minutes
 
 const CORS = { 'Access-Control-Allow-Origin': 'https://integricitymsp.netlify.app' };
 
