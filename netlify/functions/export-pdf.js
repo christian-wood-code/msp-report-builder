@@ -566,9 +566,17 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
       const n = d.comp.noncompliant;
       callout(`${n} device${n > 1 ? 's are' : ' is'} non-compliant with your organisation's policies.`, '', 'bad');
     }
+    if ((d.win10List || []).length) {
+      dataTable([{ h: 'Device', w: 24, k: 'b' }, { h: 'Primary user', w: 28 }, { h: 'Windows version', w: 34 }, { h: 'Last seen', w: 14 }],
+        d.win10List.map(x => [x.name || '', x.user || 'Unknown', (x.label ? x.label + ' - ' : '') + (x.version || ''), x.lastSync ? fmtShort(x.lastSync) : 'Never']), 'Windows 10 devices');
+    }
     if ((d.notCompliantList || []).length) {
-      dataTable([{ h: 'Device', w: 26, k: 'b' }, { h: 'Primary user', w: 32 }, { h: 'OS', w: 20 }, { h: 'Last seen', w: 14 }],
-        d.notCompliantList.map(x => [x.name || '', x.user || 'Unknown', x.os || '', x.lastSync ? fmtShort(x.lastSync) : 'Never']), 'Non-compliant devices');
+      if ((d.nonComplianceReasons || []).length) {
+        dataTable([{ h: 'Setting', w: 80, k: 'b' }, { h: 'Devices', w: 20 }],
+          d.nonComplianceReasons.map(x => [x.setting || '', String(x.devices)]), 'Most common non-compliance reasons');
+      }
+      dataTable([{ h: 'Device', w: 17, k: 'b' }, { h: 'Primary user', w: 20 }, { h: 'OS', w: 19 }, { h: 'Reason', w: 28 }, { h: 'Last seen', w: 16 }],
+        d.notCompliantList.map(x => [x.name || '', x.user || 'Unknown', x.os || '', x.reason || 'Not available', x.lastSync ? fmtShort(x.lastSync) : 'Never']), 'Non-compliant devices');
     }
     if ((d.encryption?.notEncrypted ?? 0) > 0) {
       const n = d.encryption.notEncrypted;

@@ -508,11 +508,23 @@ exports.handler = async (event) => {
       const n = d.comp.noncompliant;
       children.push(callout(`${n} device${n > 1 ? "s are" : " is"} non-compliant with your organisation's policies.`, "bad")); children.push(gap(100));
     }
+    if ((d.win10List || []).length > 0) {
+      children.push(subLabel("Windows 10 devices"));
+      children.push(dataTable(["Device", "Primary user", "Windows version", "Last seen"],
+        d.win10List.map(x => [{ t: x.name, b: true }, x.user || "Unknown", { t: (x.label ? x.label + " - " : "") + x.version, size: 16 }, dOrNever(x.lastSync)]),
+        colsFrom([0.24, 0.28, 0.32, 0.16])));
+      children.push(gap(100));
+    }
     if ((d.notCompliantList || []).length > 0) {
+      if ((d.nonComplianceReasons || []).length > 0) {
+        children.push(subLabel("Most common non-compliance reasons"));
+        children.push(dataTable(["Setting", "Devices"], d.nonComplianceReasons.map(x => [x.setting, String(x.devices)]), colsFrom([0.8, 0.2])));
+        children.push(gap(100));
+      }
       children.push(subLabel("Non-compliant devices"));
-      children.push(dataTable(["Device", "Primary user", "OS", "Last seen"],
-        d.notCompliantList.map(x => [{ t: x.name, b: true }, x.user || "Unknown", { t: x.os || "", size: 16 }, dOrNever(x.lastSync)]),
-        colsFrom([0.25, 0.32, 0.25, 0.18])));
+      children.push(dataTable(["Device", "Primary user", "OS", "Reason", "Last seen"],
+        d.notCompliantList.map(x => [{ t: x.name, b: true }, x.user || "Unknown", { t: x.os || "", size: 16 }, { t: x.reason || "Not available", size: 16 }, dOrNever(x.lastSync)]),
+        colsFrom([0.17, 0.2, 0.19, 0.28, 0.16])));
       children.push(gap(100));
     }
     if ((d.encryption?.notEncrypted || 0) > 0) {

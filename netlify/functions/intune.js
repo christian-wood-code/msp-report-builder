@@ -248,6 +248,63 @@ function checkRateLimit(ip) {
   return entry.count <= RATE_LIMIT;
 }
 
+// ── Why are devices non-compliant? ────────────────────────────────────────────
+// Per failing device: which compliance policy it fails and (best effort) which setting inside it.
+// Plus a tenant-wide list of the settings that fail most. Bounded: it stops starting new calls once
+// the deadline passes and returns what it has, so it can never hold up the report.
+const FAIL_STATES = new Set(["nonCompliant", "error", "conflict"]);
+async function collectNonCompliance(token, devices, deadlineMs) {
+  const diag = { devices: 0, policyResolved: 0, settingResolved: 0, partial: false, error: null };
+  const byDevice = {};
+  const failing = devices.filter(d => d.complianceState === "noncompliant" && d.id).slice(0, 80);
+  diag.devices = failing.length;
+  if (!failing.length) return { byDevice, topSettings: [], diag };
+
+  const summaryP = graphAll(token, "/deviceManagement/deviceCompliancePolicySettingStateSummaries?$top=200");
+  const queue = failing.slice();
+  const worker = async () => {
+    while (queue.length) {
+      if (Date.now() > deadlineMs) { diag.partial = true; return; }
+      const d = queue.shift();
+      const ps = await graphAll(token, `/deviceManagement/managedDevices/${encodeURIComponent(d.id)}/deviceCompliancePolicyStates`);
+      if (ps.error && !ps.results.length) { diag.error = diag.error || ps.error; continue; }
+      const bad = ps.results.filter(x => FAIL_STATES.has(x.state));
+      if (!bad.length) continue;
+      const entry = { policies: [] };
+      for (const p of bad) {
+        const item = { policy: p.displayName || "Compliance policy", settings: [] };
+        if (Date.now() <= deadlineMs) {
+          const ss = await graphAll(token, `/deviceManagement/managedDevices/${encodeURIComponent(d.id)}/deviceCompliancePolicyStates/${encodeURIComponent(p.id)}/settingStates`, true);
+          for (const s of ss.results) {
+            if (FAIL_STATES.has(s.state)) {
+              const nm = s.settingName || s.setting;
+              if (nm && !item.settings.includes(nm)) item.settings.push(nm);
+            }
+          }
+        }
+        if (item.settings.length) diag.settingResolved++;
+        entry.policies.push(item);
+      }
+      diag.policyResolved++;
+      byDevice[d.id] = entry;
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, worker));
+
+  const sum = await summaryP;
+  const topSettings = (sum.results || [])
+    .filter(s => (s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0) > 0)
+    .map(s => ({ setting: s.settingName || s.setting || "Unknown setting", devices: (s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0) }))
+    .sort((a, b) => b.devices - a.devices).slice(0, 15);
+  if (sum.error && !topSettings.length) diag.error = diag.error || sum.error;
+  return { byDevice, topSettings, diag };
+}
+
+function reasonText(entry) {
+  if (!entry || !entry.policies.length) return "";
+  return entry.policies.map(p => p.settings.length ? `${p.policy}: ${p.settings.join(", ")}` : p.policy).join("; ");
+}
+
 function winVersionLabel(osVersion) {
   if (!osVersion) return "";
   const parts = osVersion.split(".");
@@ -411,11 +468,14 @@ exports.handler = async (event) => {
     const emptyOne = { data: null, error: "timeout" };
     const emptyCSV = { rows: [], error: "timeout" };
 
+    const devP = withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll);
+    const ncDeadline = Date.now() + FAST - 500;
     const [
-      devR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
+      devR, ncR, scoreR, riskyR, caR, secDefaultsR, authMethodsR, compPoliciesR, appProtR,
       usersR, rolesR, _signInsPlaceholder, spUsageR, skusR, roleDefsR, secGroupsR, subsR,
     ] = await Promise.all([
-      withTimeout(graphAll(token, "/deviceManagement/managedDevices?$top=200&$expand=windowsProtectionState", true), SLOW, emptyAll),
+      devP,
+      devP.then(r => collectNonCompliance(token, r.results, ncDeadline)).catch(e => ({ byDevice: {}, topSettings: [], diag: { devices: 0, policyResolved: 0, settingResolved: 0, partial: false, error: e.message } })),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
       withTimeout(graphAll(token, "/identityProtection/riskyUsers?$top=500&$filter=riskState eq 'atRisk'"), FAST, emptyAll),
       withTimeout(graphAll(token, "/identity/conditionalAccess/policies?$top=200"), FAST, emptyAll),
@@ -462,6 +522,7 @@ exports.handler = async (event) => {
     let avActiveCount = 0, avNotActiveCount = 0, avOutOfDateCount = 0;
     const patchStatus = { current: 0, over30: 0, over90: 0 };
     let staleCount = 0;
+    const win10List = [];
     let win10 = 0, win11 = 0, win24h2 = 0, win25h2 = 0, macOS = 0, linux = 0;
 
     for (const d of devR.results) {
@@ -478,9 +539,10 @@ exports.handler = async (event) => {
       comp[cs]++;
       if (cs === "noncompliant") {
         notCompliantList.push({
+          _id: d.id,
           name: d.deviceName || "Unknown",
           user: d.userPrincipalName || d.emailAddress || "Unknown",
-          os:   `${d.operatingSystem || ""}${d.osVersion ? " " + d.osVersion.split(".").slice(0,2).join(".") : ""}`,
+          os:   /windows/i.test(d.operatingSystem || "") && d.osVersion ? winVersionLabel(d.osVersion) : `${d.operatingSystem || ""}${d.osVersion ? " " + d.osVersion : ""}`,
           lastSync: d.lastSyncDateTime || null,
         });
       }
@@ -514,7 +576,10 @@ exports.handler = async (event) => {
       else if (ver.includes("26200"))       win25h2++;
       else if (ver.includes("26100"))       win24h2++;
       else if (ver.startsWith("10.0.2"))   win11++;
-      else if (ver.startsWith("10.0.1"))   win10++;
+      else if (ver.startsWith("10.0.1")) {
+        win10++;
+        win10List.push({ name: d.deviceName || "Unknown", user: d.userPrincipalName || d.emailAddress || "Unknown", version: ver, label: winVersionLabel(ver).split(" \u2014 ")[0], lastSync: d.lastSyncDateTime || null });
+      }
 
       // Antivirus state (Windows only — from windowsProtectionState expand)
       if (os.includes("windows")) {
@@ -923,6 +988,8 @@ exports.handler = async (event) => {
     // Devices over 90 days: longest since last check-in first (a device that never checked in counts as longest)
     patchOver90Devices.sort((a, b) => (a.lastSeen ? new Date(a.lastSeen).getTime() : -Infinity) - (b.lastSeen ? new Date(b.lastSeen).getTime() : -Infinity) || String(a.name || "").localeCompare(String(b.name || "")));
     // Non-compliant devices: alphabetical by machine name too
+    for (const x of notCompliantList) { x.reason = reasonText(ncR.byDevice[x._id]); delete x._id; }
+    win10List.sort((a, b) => String(b.version).localeCompare(String(a.version), "en", { numeric: true }) || String(a.name).localeCompare(String(b.name), "en", { sensitivity: "base", numeric: true }));
     notCompliantList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
     notEncryptedList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
     // Lowest free space first (percent free, then GB free) - every output uses this order
@@ -935,7 +1002,7 @@ exports.handler = async (event) => {
     const report = {
       total: devR.results.length,
       comp, staleCount, lowDisk, mobileCount, iosCount, androidCount, win10, win11, win24h2, win25h2, macOS, linux,
-      encryption, notEncryptedList, notCompliantList, patchStatus, patchOver90: patchOver90Devices, // full list — no cap
+      encryption, notEncryptedList, notCompliantList, nonComplianceReasons: ncR.topSettings, nonComplianceDiag: ncR.diag, win10List, patchStatus, patchOver90: patchOver90Devices, // full list — no cap
       av: { active: avActiveCount, notActive: avNotActiveCount, outOfDate: avOutOfDateCount, notActiveList: avNotActive.slice(0,50), outOfDateList: avOutOfDate.slice(0,50) },
       score: scoreRaw ? { pct: Math.round((scoreRaw.currentScore/scoreRaw.maxScore)*100), cur: Math.round(scoreRaw.currentScore), max: Math.round(scoreRaw.maxScore) } : null,
       risky: riskyR.results.length,

@@ -1026,9 +1026,19 @@ function buildReport() {
     dev += '<div class="r2-card" style="margin-top:14px"><h3 class="r2-h3" style="margin-top:0">Operating systems</h3>'+stackBar(osList, osTot)+legend(osList.map(function(o){ return {l:esc(o.label), n:o.n, c:o.c}; }))+'</div>';
   }
   if (d.win10 > 0) dev += callout('<b>'+d.win10+' device'+(d.win10>1?'s are':' is')+' still running Windows 10.</b> Microsoft ended support October 2025. Upgrade recommended.', 'warn');
+  if ((d.win10List||[]).length > 0) {
+    dev += h3('Windows 10 devices') + table(['Device','Primary user','Windows version','Last seen'], d.win10List.map(function(x){
+      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc((x.label ? x.label + ' - ' : '') + x.version), x.lastSync ? shortDate(x.lastSync) : 'Never'];
+    }));
+  }
   if ((d.notCompliantList||[]).length > 0) {
-    dev += h3('Non-compliant devices') + table(['Device','Primary user','OS','Last seen'], d.notCompliantList.map(function(x){
-      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc(x.os||''), x.lastSync ? shortDate(x.lastSync) : 'Never'];
+    if ((d.nonComplianceReasons||[]).length > 0) {
+      dev += h3('Most common non-compliance reasons') + table(['Setting','Devices'], d.nonComplianceReasons.map(function(x){
+        return [esc(x.setting), esc(x.devices)];
+      }));
+    }
+    dev += h3('Non-compliant devices') + table(['Device','Primary user','OS','Reason','Last seen'], d.notCompliantList.map(function(x){
+      return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc(x.os||''), esc(x.reason||'Not available'), x.lastSync ? shortDate(x.lastSync) : 'Never'];
     }));
   }
   if ((d.notEncryptedList||[]).length > 0) {
