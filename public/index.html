@@ -1032,11 +1032,6 @@ function buildReport() {
     }));
   }
   if ((d.notCompliantList||[]).length > 0) {
-    if ((d.nonComplianceReasons||[]).length > 0) {
-      dev += h3('Most common non-compliance reasons') + table(['Setting','Devices'], d.nonComplianceReasons.map(function(x){
-        return [esc(x.setting), esc(x.devices)];
-      }));
-    }
     dev += h3('Non-compliant devices') + table(['Device','Primary user','OS','Reason','Last seen'], d.notCompliantList.map(function(x){
       return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc(x.os||''), esc(x.reason||'Not available'), x.lastSync ? shortDate(x.lastSync) : 'Never'];
     }));

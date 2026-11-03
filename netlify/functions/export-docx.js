@@ -516,11 +516,6 @@ exports.handler = async (event) => {
       children.push(gap(100));
     }
     if ((d.notCompliantList || []).length > 0) {
-      if ((d.nonComplianceReasons || []).length > 0) {
-        children.push(subLabel("Most common non-compliance reasons"));
-        children.push(dataTable(["Setting", "Devices"], d.nonComplianceReasons.map(x => [x.setting, String(x.devices)]), colsFrom([0.8, 0.2])));
-        children.push(gap(100));
-      }
       children.push(subLabel("Non-compliant devices"));
       children.push(dataTable(["Device", "Primary user", "OS", "Reason", "Last seen"],
         d.notCompliantList.map(x => [{ t: x.name, b: true }, x.user || "Unknown", { t: x.os || "", size: 16 }, { t: x.reason || "Not available", size: 16 }, dOrNever(x.lastSync)]),
