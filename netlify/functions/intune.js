@@ -252,13 +252,30 @@ function checkRateLimit(ip) {
 // Per failing device: which compliance policy it fails and (best effort) which setting inside it.
 // Plus a tenant-wide list of the settings that fail most. Bounded: it stops starting new calls once
 // the deadline passes and returns what it has, so it can never hold up the report.
+// Plain-English names for the settings Intune reports. Unknown ones are tidied (prefix dropped, camelCase split).
+const SETTING_NAMES = {
+  "defaultdevicecompliancepolicy.requireremaincontact": "Device has not checked in to Intune recently",
+  "defaultdevicecompliancepolicy.requiredevicecompliancepolicyassigned": "No compliance policy is assigned to the device",
+};
+function prettySetting(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  const known = SETTING_NAMES[s.toLowerCase()];
+  if (known) return known;
+  if (!/^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)+$/.test(s)) return s; // already a readable name
+  const last = s.split(".").pop().replace(/^Require/, "");
+  const words = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : s;
+}
+
 const FAIL_STATES = new Set(["nonCompliant", "error", "conflict"]);
 async function collectNonCompliance(token, devices, deadlineMs) {
   const diag = { devices: 0, policyResolved: 0, settingResolved: 0, partial: false, error: null };
   const byDevice = {};
+  const bySetting = {}; // device id / lower-case name -> translated failing settings (tenant-wide setting view)
   const failing = devices.filter(d => d.complianceState === "noncompliant" && d.id).slice(0, 80);
   diag.devices = failing.length;
-  if (!failing.length) return { byDevice, topSettings: [], diag };
+  if (!failing.length) return { byDevice, bySetting, topSettings: [], diag };
 
   const summaryP = graphAll(token, "/deviceManagement/deviceCompliancePolicySettingStateSummaries?$top=200");
   const queue = failing.slice();
@@ -277,7 +294,7 @@ async function collectNonCompliance(token, devices, deadlineMs) {
           const ss = await graphAll(token, `/deviceManagement/managedDevices/${encodeURIComponent(d.id)}/deviceCompliancePolicyStates/${encodeURIComponent(p.id)}/settingStates`, true);
           for (const s of ss.results) {
             if (FAIL_STATES.has(s.state)) {
-              const nm = s.settingName || s.setting;
+              const nm = prettySetting(s.settingName || s.setting);
               if (nm && !item.settings.includes(nm)) item.settings.push(nm);
             }
           }
@@ -292,17 +309,38 @@ async function collectNonCompliance(token, devices, deadlineMs) {
   await Promise.all(Array.from({ length: 8 }, worker));
 
   const sum = await summaryP;
+  // Per-setting device lists: catches devices whose failure is not in their own policy list (Intune's built-in
+  // default policy: not checked in, no policy assigned).
+  const failingSummaries = (sum.results || []).filter(s => s.id && ((s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0)) > 0).slice(0, 12);
+  await Promise.all(failingSummaries.map(async s => {
+    if (Date.now() > deadlineMs) { diag.partial = true; return; }
+    const ds = await graphAll(token, `/deviceManagement/deviceCompliancePolicySettingStateSummaries/${encodeURIComponent(s.id)}/deviceComplianceSettingStates?$top=200`);
+    if (ds.error && !ds.results.length) { diag.error = diag.error || ds.error; return; }
+    const nm = prettySetting(s.settingName || s.setting);
+    for (const st of ds.results) {
+      if (!FAIL_STATES.has(st.state)) continue;
+      for (const key of [st.deviceId, String(st.deviceName || "").toLowerCase()]) {
+        if (!key) continue;
+        (bySetting[key] = bySetting[key] || []);
+        if (!bySetting[key].includes(nm)) bySetting[key].push(nm);
+      }
+    }
+  }));
   const topSettings = (sum.results || [])
     .filter(s => (s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0) > 0)
-    .map(s => ({ setting: s.settingName || s.setting || "Unknown setting", devices: (s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0) }))
+    .map(s => ({ setting: prettySetting(s.settingName || s.setting) || "Unknown setting", devices: (s.nonCompliantDeviceCount || 0) + (s.errorDeviceCount || 0) + (s.conflictDeviceCount || 0) }))
     .sort((a, b) => b.devices - a.devices).slice(0, 15);
   if (sum.error && !topSettings.length) diag.error = diag.error || sum.error;
-  return { byDevice, topSettings, diag };
+  return { byDevice, bySetting, topSettings, diag };
 }
 
-function reasonText(entry) {
-  if (!entry || !entry.policies.length) return "";
-  return entry.policies.map(p => p.settings.length ? `${p.policy}: ${p.settings.join(", ")}` : p.policy).join("; ");
+function reasonText(entry, extra) {
+  const policies = entry ? entry.policies : [];
+  const extras = (extra || []).filter(x => !policies.some(p => p.settings.includes(x)));
+  const parts = policies.map(p => p.settings.length ? `${p.policy}: ${p.settings.join(", ")}` : (extras.length ? `${p.policy}: ${extras.join(", ")}` : p.policy));
+  if (!policies.length && extras.length) parts.push(extras.join("; "));
+  else if (policies.length && policies.every(p => p.settings.length) && extras.length) parts.push(extras.join("; "));
+  return parts.join("; ");
 }
 
 function winVersionLabel(osVersion) {
@@ -475,7 +513,7 @@ exports.handler = async (event) => {
       usersR, rolesR, _signInsPlaceholder, spUsageR, skusR, roleDefsR, secGroupsR, subsR,
     ] = await Promise.all([
       devP,
-      devP.then(r => collectNonCompliance(token, r.results, ncDeadline)).catch(e => ({ byDevice: {}, topSettings: [], diag: { devices: 0, policyResolved: 0, settingResolved: 0, partial: false, error: e.message } })),
+      devP.then(r => collectNonCompliance(token, r.results, ncDeadline)).catch(e => ({ byDevice: {}, bySetting: {}, topSettings: [], diag: { devices: 0, policyResolved: 0, settingResolved: 0, partial: false, error: e.message } })),
       withTimeout(graphOne(token, "/security/secureScores?$top=1"), FAST, emptyOne),
       withTimeout(graphAll(token, "/identityProtection/riskyUsers?$top=500&$filter=riskState eq 'atRisk'"), FAST, emptyAll),
       withTimeout(graphAll(token, "/identity/conditionalAccess/policies?$top=200"), FAST, emptyAll),
@@ -988,7 +1026,7 @@ exports.handler = async (event) => {
     // Devices over 90 days: longest since last check-in first (a device that never checked in counts as longest)
     patchOver90Devices.sort((a, b) => (a.lastSeen ? new Date(a.lastSeen).getTime() : -Infinity) - (b.lastSeen ? new Date(b.lastSeen).getTime() : -Infinity) || String(a.name || "").localeCompare(String(b.name || "")));
     // Non-compliant devices: alphabetical by machine name too
-    for (const x of notCompliantList) { x.reason = reasonText(ncR.byDevice[x._id]); delete x._id; }
+    for (const x of notCompliantList) { x.reason = reasonText(ncR.byDevice[x._id], ncR.bySetting[x._id] || ncR.bySetting[String(x.name || "").toLowerCase()]); delete x._id; }
     win10List.sort((a, b) => String(b.version).localeCompare(String(a.version), "en", { numeric: true }) || String(a.name).localeCompare(String(b.name), "en", { sensitivity: "base", numeric: true }));
     notCompliantList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
     notEncryptedList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));

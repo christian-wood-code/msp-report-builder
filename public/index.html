@@ -771,6 +771,14 @@ function buildDiagnosticsHtml(d) {
     }));
   }
 
+  // ---- Non-compliance reason lookup ----
+  var nd = d.nonComplianceDiag;
+  if (nd && nd.devices > 0) {
+    var withReason = (d.notCompliantList || []).filter(function(x){ return x.reason; }).length;
+    h += '<div style="' + note + '">Non-compliance reasons: ' + E(withReason) + ' of ' + E((d.notCompliantList || []).length) + ' non-compliant devices have a reason (' + E(nd.policyResolved) + ' policy lookups, ' + E(nd.settingResolved) + ' with setting detail)'
+      + (nd.partial ? '; lookup stopped early on time' : '') + (nd.error ? '; Microsoft said: ' + E(nd.error) : '') + '.</div>';
+  }
+
   // ---- Sign-in log query diagnostics ----
   var sd = ext.debug;
   if (ext.skipped) {
