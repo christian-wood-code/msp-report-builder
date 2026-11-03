@@ -807,10 +807,17 @@ exports.handler = async (event) => {
     const roleDefMap = {};
     for (const rd of roleDefsR.results) { if (rd.id) roleDefMap[rd.id] = rd.displayName || rd.id; }
 
+    // Partner access (Microsoft 365 Lighthouse / GDAP) is granted to the partner's own security groups, which
+    // appear here as groups from another tenant (unresolved, or named like AdminAgents / GDAP). That is the
+    // service provider's access, not the client's own administrators, so it is left out of this list.
+    const PARTNER_NAME = /gdap|lighthouse|delegated admin|adminagents|helpdeskagents|foreign/i;
+    let partnerAssignmentsIgnored = 0;
+    const isPartnerPrincipal = p => !p || !(p.displayName || p.userPrincipalName) || /foreign/i.test(String(p["@odata.type"] || "")) || (!p.userPrincipalName && PARTNER_NAME.test(p.displayName || ""));
     const adminByUser = {};
     for (const a of rolesR.results) {
       const roleName = roleDefMap[a.roleDefinitionId] || a.roleDefinitionId;
       if (!ADMIN_ROLES.has(roleName)) continue;
+      if (isPartnerPrincipal(a.principal)) { partnerAssignmentsIgnored++; continue; }
       const p = a.principal || {};
       const uid = p.id || p.userPrincipalName;
       if (!uid) continue;
@@ -1074,6 +1081,7 @@ exports.handler = async (event) => {
         licenceRenewals,
         licenceRenewalsError,
         adminRoles: adminRoleMembers,
+        adminRolesPartnerIgnored: partnerAssignmentsIgnored,
         externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !signInSkipped && !!signInsRFinal.error, skipped: signInSkipped, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInSkipped ? null : signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
       },
       sharepoint: {

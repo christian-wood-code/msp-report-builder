@@ -771,6 +771,9 @@ function buildDiagnosticsHtml(d) {
     }));
   }
 
+  var pIgn = d.users && d.users.adminRolesPartnerIgnored;
+  if (pIgn > 0) h += '<div style="' + note + '">' + E(pIgn) + ' admin role assignment' + (pIgn === 1 ? '' : 's') + ' held by partner (Lighthouse / GDAP) groups were left out of the admin roles list.</div>';
+
   // ---- Non-compliance reason lookup ----
   var nd = d.nonComplianceDiag;
   if (nd && nd.devices > 0) {
