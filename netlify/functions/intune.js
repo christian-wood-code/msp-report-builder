@@ -6,7 +6,7 @@ const { classifySiteTemplate } = require("./lib/site-templates");
 
 const CORS = {
   "Access-Control-Allow-Origin": 'https://integricitymsp.netlify.app',
-  "Access-Control-Allow-Headers": "Content-Type, x-app-key",
+  "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
   "X-Content-Type-Options": "nosniff",

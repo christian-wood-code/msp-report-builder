@@ -82,11 +82,14 @@ These are entered directly into the app at runtime. Nothing per-client is config
 
 ## Environment variables
 
-Set in Netlify (Site settings → Environment variables). `APP_ACCESS_KEY` is required: without it every call to `intune`, `export-docx` and `export-pdf` is refused.
+Set in Netlify (Site settings → Environment variables). Microsoft sign-in (`ENTRA_*`, `ALLOWED_EMAIL_DOMAINS`, `SESSION_JWT_SECRET`) gates every call to `intune`, `export-docx` and `export-pdf`.
 
 | Variable | Purpose |
 |---|---|
-| `APP_ACCESS_KEY` | Staff access key for the browser app. The page asks for it once per device, keeps it in local storage and sends it as `x-app-key` to `intune`, `export-docx` and `export-pdf`. Every call is refused while unset. Stop-gap until Microsoft sign-in replaces it |
+| `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID` | Microsoft sign-in for staff (the same single-tenant SPA app registration the dashboard uses; add `https://integricitymsp.netlify.app/` as a Single-page application redirect URI). Public ids, not secrets |
+| `ALLOWED_EMAIL_DOMAINS` | Comma-separated staff email domains allowed to sign in, e.g. `integricity.co.nz`. Guests are always refused |
+| `SESSION_JWT_SECRET` | Random 32+ character secret that signs the 8-hour staff session cookie. Set as a secret. Sign-in is refused while unset |
+| `APP_ACCESS_DISABLED` | Temporary switch: `true` leaves `intune`, `export-docx` and `export-pdf` open and the page does not ask for sign-in. Remove it to enforce Microsoft sign-in |
 | `REPORT_HUB_SHARED_KEY` | Shared secret report-hub sends as `x-report-hub-key` to `clients`, `report-data` and the Intune exports (`export-docx` / `export-pdf`). Every call is refused while unset |
 | `INTUNE_CLIENTS_JSON` | JSON array of client credentials used by report-hub (see `config/clients.example.json`; optional per-client `"skipOverseas": true`). Report-hub runs always keep the month-on-month figures (it never sends the one-off flag) |
 | `ARCHIVE_ADMIN_KEY` | Optional. Enables `delete-client-metrics` (sent as `x-admin-key`). Every call is refused while unset |
