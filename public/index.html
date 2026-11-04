@@ -895,7 +895,8 @@ startAuth();
 // Calls to our own functions. A 401 with code SIGN_IN means the session is missing or expired: show the
 // sign-in box. (A 401 from Microsoft, e.g. a bad client secret, passes through untouched.)
 async function appFetch(url, opts) {
-  var res = await fetch(url, Object.assign({ credentials: 'same-origin' }, opts));
+  // credentials is forced after the caller's options: some callers pass 'omit', which would drop the session cookie.
+  var res = await fetch(url, Object.assign({}, opts, { credentials: 'same-origin' }));
   if (res.status !== 401) return res;
   var j = await res.clone().json().catch(function() { return {}; });
   if (j.code !== 'SIGN_IN') return res;
