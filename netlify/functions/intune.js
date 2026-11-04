@@ -776,11 +776,14 @@ exports.handler = async (event) => {
     // /directory/subscriptions (companySubscription) is a different resource
     // from /subscribedSkus above -- it carries nextLifecycleDateTime, the date
     // a subscription moves to its next state if not renewed. That field alone
-    // doesn't distinguish monthly vs annual billing (no such field exists on
-    // this resource), but a monthly-billed subscription's next lifecycle date
-    // is always <=~31 days away by definition, so that gap is used purely to
-    // LABEL each row "Monthly" vs "Annual/Multi-year" for the reader -- both
-    // are now included, not just annual, per client request.
+    // doesn't say monthly vs annual billing (no such field exists on this
+    // resource). The billing term is worked out from the length of the current
+    // term instead: createdDateTime (when this subscription record started)
+    // to nextLifecycleDateTime. About a month = Monthly, a whole number of
+    // years = Annual/Multi-year, anything else (or no start date) = "Not
+    // confirmed" rather than a guess. NOTE: the old test (renewal <=35 days
+    // away = Monthly) mislabelled every yearly subscription that was within
+    // a month of its anniversary as Monthly.
     //
     // Note: Microsoft creates a NEW subscription record each renewal and
     // leaves the prior one behind as status "Suspended"/"LockedOut" with a
@@ -792,12 +795,21 @@ exports.handler = async (event) => {
       .filter(s => s.nextLifecycleDateTime && s.status === "Enabled" && !s.isTrial)
       .map(s => {
         const daysAway = Math.round((new Date(s.nextLifecycleDateTime).getTime() - now_ms) / MS_DAY);
+        const created = s.createdDateTime ? Date.parse(s.createdDateTime) : NaN;
+        const termDays = Number.isNaN(created) ? null : Math.round((Date.parse(s.nextLifecycleDateTime) - created) / MS_DAY);
+        let cycle = "Not confirmed";
+        if (termDays !== null && termDays > 0) {
+          const months = Math.round(termDays / 30.4375);
+          if (termDays <= 35) cycle = "Monthly";
+          else if (months >= 12 && months % 12 === 0) cycle = "Annual/Multi-year";
+        }
         return {
           name: skuNames[s.skuId] || s.skuPartNumber || "Unknown licence",
           seats: s.totalLicenses || 0,
           renewalDate: s.nextLifecycleDateTime,
           daysAway,
-          cycle: daysAway <= 35 ? "Monthly" : "Annual/Multi-year",
+          cycle,
+          termDays,
         };
       })
       .filter(r => r.daysAway >= 0 && r.daysAway <= 90)
@@ -1080,6 +1092,7 @@ exports.handler = async (event) => {
         licenceSummary,
         licenceRenewals,
         licenceRenewalsError,
+        licenceCycleDiag: { total: licenceRenewals.length, monthly: licenceRenewals.filter(r => r.cycle === "Monthly").length, annual: licenceRenewals.filter(r => r.cycle === "Annual/Multi-year").length, unconfirmed: licenceRenewals.filter(r => r.cycle === "Not confirmed").length, terms: licenceRenewals.map(r => r.name + ": " + (r.termDays === null ? "no start date" : r.termDays + " days")) },
         adminRoles: adminRoleMembers,
         adminRolesPartnerIgnored: partnerAssignmentsIgnored,
         externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !signInSkipped && !!signInsRFinal.error, skipped: signInSkipped, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInSkipped ? null : signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
