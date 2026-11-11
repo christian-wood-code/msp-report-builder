@@ -774,7 +774,7 @@ function buildDiagnosticsHtml(d) {
   }
 
   var lc = d.users && d.users.licenceCycleDiag;
-  if (lc && lc.total > 0) h += '<div style="' + note + '">Licence billing term (from each subscription’s current term length): ' + E(lc.monthly) + ' monthly, ' + E(lc.annual) + ' annual / multi-year, ' + E(lc.unconfirmed) + ' not confirmed. Term lengths: ' + E((lc.terms || []).join('; ')) + '.</div>';
+  if (lc && lc.total > 0) h += '<div style="' + note + '">Licence billing term (from each subscription’s current term length): ' + E(lc.monthly) + ' monthly, ' + E(lc.annual) + ' annual / multi-year, ' + E(lc.unconfirmed) + ' shown as Monthly because the term could not be read. Term lengths: ' + E((lc.terms || []).join('; ')) + '.</div>';
 
   var pIgn = d.users && d.users.adminRolesPartnerIgnored;
   if (pIgn > 0) h += '<div style="' + note + '">' + E(pIgn) + ' admin role assignment' + (pIgn === 1 ? '' : 's') + ' held by partner (Lighthouse / GDAP) groups were left out of the admin roles list.</div>';

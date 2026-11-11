@@ -797,11 +797,13 @@ exports.handler = async (event) => {
         const daysAway = Math.round((new Date(s.nextLifecycleDateTime).getTime() - now_ms) / MS_DAY);
         const created = s.createdDateTime ? Date.parse(s.createdDateTime) : NaN;
         const termDays = Number.isNaN(created) ? null : Math.round((Date.parse(s.nextLifecycleDateTime) - created) / MS_DAY);
-        let cycle = "Not confirmed";
+        // Default is Monthly: when the term can't be read (the usual case for a subscription that has
+        // renewed in place) the row shows Monthly, per Integricity's decision. `assumed` records that.
+        let cycle = "Monthly", assumed = true;
         if (termDays !== null && termDays > 0) {
           const months = Math.round(termDays / 30.4375);
-          if (termDays <= 35) cycle = "Monthly";
-          else if (months >= 12 && months % 12 === 0) cycle = "Annual/Multi-year";
+          if (termDays <= 35) assumed = false;
+          else if (months >= 12 && months % 12 === 0) { cycle = "Annual/Multi-year"; assumed = false; }
         }
         return {
           name: skuNames[s.skuId] || s.skuPartNumber || "Unknown licence",
@@ -809,6 +811,7 @@ exports.handler = async (event) => {
           renewalDate: s.nextLifecycleDateTime,
           daysAway,
           cycle,
+          assumed,
           termDays,
         };
       })
@@ -1092,7 +1095,7 @@ exports.handler = async (event) => {
         licenceSummary,
         licenceRenewals,
         licenceRenewalsError,
-        licenceCycleDiag: { total: licenceRenewals.length, monthly: licenceRenewals.filter(r => r.cycle === "Monthly").length, annual: licenceRenewals.filter(r => r.cycle === "Annual/Multi-year").length, unconfirmed: licenceRenewals.filter(r => r.cycle === "Not confirmed").length, terms: licenceRenewals.map(r => r.name + ": " + (r.termDays === null ? "no start date" : r.termDays + " days")) },
+        licenceCycleDiag: { total: licenceRenewals.length, monthly: licenceRenewals.filter(r => r.cycle === "Monthly" && !r.assumed).length, annual: licenceRenewals.filter(r => r.cycle === "Annual/Multi-year").length, unconfirmed: licenceRenewals.filter(r => r.assumed).length, terms: licenceRenewals.map(r => r.name + ": " + (r.termDays === null ? "no start date" : r.termDays + " days")) },
         adminRoles: adminRoleMembers,
         adminRolesPartnerIgnored: partnerAssignmentsIgnored,
         externalSignIns: { total: totalOverseasLogins, uniqueUsers: externalByUser.length, byUser: externalByUser.slice(0, 30), timedOut: !signInSkipped && !!signInsRFinal.error, skipped: signInSkipped, windowDays: signInWindow, periodDays, partial: signInPartial, missing: signInMissing, retentionFrom: signInSkipped ? null : signInRetentionFrom, sharedGateway: sharedGatewaySummary, debug: { overseas: { ...ovStat, topIps: [...ovIps].sort((a, b) => b[1] - a[1]).slice(0, 5), topApps: [...ovApps].sort((a, b) => b[1] - a[1]).slice(0, 5) }, slices: siRes.map(x => ({ range: `${fmtDay(x.startMs)} - ${fmtDay(x.endMs - 1)}`, days: Math.round((x.endMs - x.startMs) / MS_DAY * 10) / 10, ok: x.complete, pages: x.pages, events: x.results.length, ms: x.ms, error: x.error || null, filtered: !!x.filtered, filterError: x.filterError || null, selectError: x.selectError || null, throttled: x.throttled || 0 })) } },
