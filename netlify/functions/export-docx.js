@@ -880,7 +880,7 @@ exports.handler = async (event) => {
       headers: CORS,
       body: JSON.stringify({
         base64: buffer.toString("base64"),
-        filename: client.replace(/[^a-zA-Z0-9]/g, "_") + "_" + new Date(from).toLocaleDateString("en-NZ", {month:"long",year:"numeric"}).replace(/ /g,"_") + "_IT_Report.docx",
+        filename: `${String(client).replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim()} - IT Report - ${new Date(from).toLocaleDateString("en-NZ", {month:"long",year:"numeric"})}.docx`,
       }),
     };
   } catch (e) {

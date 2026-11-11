@@ -521,13 +521,17 @@ function err(msg) {
 // Pre-load a sensible PDF filename: the browser takes it from document.title at print time,
 // so set it on beforeprint (covers the Print button and Ctrl+P) and restore afterwards.
 var _origTitle = document.title;
+// File name for every export: "[Company Name] - IT Report - [Month] [Year]" (no extension).
+function reportFileBase() {
+  var from = document.getElementById('r-from').value;
+  var client = (document.getElementById('r-client').value || '').trim().replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  var month = from ? new Date(from + 'T00:00:00').toLocaleDateString('en-NZ', {month:'long', year:'numeric'}) : '';
+  return [client, 'IT Report', month].filter(Boolean).join(' - ');
+}
 window.addEventListener('beforeprint', function() {
   var rp = document.getElementById('page-4');
   if (!rp || !rp.classList.contains('active')) return;
-  var from = document.getElementById('r-from').value;
-  var client = document.getElementById('r-client').value.trim();
-  var month = from ? new Date(from + 'T00:00:00').toLocaleDateString('en-NZ', {month:'long', year:'numeric'}) : '';
-  document.title = (client && month) ? client + ' - ' + month + ' IT Report' : (client ? client + ' - IT Report' : 'Monthly IT Report');
+  document.title = reportFileBase();
 });
 window.addEventListener('afterprint', function() { document.title = _origTitle; });
 
@@ -948,6 +952,7 @@ function buildReport() {
   var from     = document.getElementById('r-from').value;
   var to       = document.getElementById('r-to').value;
   var preparer = v('r-preparer');
+  document.title = reportFileBase(); // also the default name when saving as PDF from the browser
   var fmt = function(dt){ return new Date(dt).toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'}); };
   var today = fmt(new Date().toISOString().split('T')[0]);
   var shortDate = function(s){ return s ? new Date(s).toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'numeric'}) : 'Never'; };
@@ -1423,7 +1428,7 @@ async function exportDocx() {
     var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = data.filename; a.click();
+    a.href = url; a.download = reportFileBase() + '.docx'; a.click();
     URL.revokeObjectURL(url);
   } catch(e) {
     alert('Export failed: ' + e.message);

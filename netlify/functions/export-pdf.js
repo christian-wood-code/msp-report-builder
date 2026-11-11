@@ -908,7 +908,8 @@ exports.handler = async (event) => {
   try {
     const doc = buildPdfDoc(payload);
     const buffer = Buffer.from(doc.output('arraybuffer'));
-    const filename = `${payload.client} IT Health Report.pdf`;
+    const mon = payload.from ? new Date(payload.from).toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' }) : '';
+    const filename = `${String(payload.client || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim()} - IT Report${mon ? ' - ' + mon : ''}.pdf`;
     return {
       statusCode: 200,
       headers: { ...CORS, 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '')}"` },
