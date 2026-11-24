@@ -7,14 +7,14 @@ A web application that generates monthly IT health reports for client Microsoft 
 ## What it does
 
 - Pulls 50+ metrics from Microsoft Graph across six areas: Device & Asset Management, Patch Status, Security Posture, User Data (including upcoming licence renewals), SharePoint / MS Teams, and an auto-generated Security Risk Register
-- Adds a **Month-on-Month Changes** section comparing against the previous month's report for the same tenant (deterministic template sentences — no AI-generated text)
+- Saves a small snapshot of summary figures for each tenant after every run. The reports no longer show a Month-on-Month Changes section (the comparison goes in the monthly client email)
 - Runs as a static front end plus six Netlify serverless functions. There is no database; the only stored data is a small Netlify Blobs store of per-tenant summary figures (device counts, Secure Score and similar — no raw tenant data, no credentials) kept for up to 13 months
 - Credentials (Tenant ID, Client ID, Client Secret) are entered in the browser and sent to the server per request only — never logged or stored server-side. If you save a client in the wizard, it is kept in that browser's local storage (secret in plain text) until you delete it; edit and delete buttons are on each saved client
 - A **One-off report** tick box skips the month-on-month store and deletes any history already held for that tenant (use it for prospects)
 - The wizard builds the report straight after **Pull data** (no review step). A collapsed *SharePoint template diagnostics* panel above the report shows the raw SharePoint template values and how each was bucketed; it is never exported. The panel also lists the individual sites counted as Other, with a CSV download
 - Overseas sign-ins: reads the sign-in log in four parallel date slices within a 9-second budget, counts successful *interactive* sign-ins from outside Australia, New Zealand and Malaysia, and leaves out any overseas IP address used by five or more different people (a company VPN/gateway), reporting that exclusion separately. The report states how many days were actually checked, and notes that Microsoft keeps sign-in logs for only 30 days (7 on free tenants). A per-client **Skip the overseas sign-in check** tick box (saved with the client, or `"skipOverseas": true` in `INTUNE_CLIENTS_JSON`) leaves the section out and skips that query
 - Compliance % counts evaluated devices only (compliant ÷ (compliant + non-compliant)); the ring is green at 80% or more, orange 60–79%, red below 60%. Licences are listed paid first (ordered by estimated spend, see `lib/licence-prices.js` — the prices are never shown), then free (anything with "trial" in its name counts as free); a licence bar is red only when more are assigned than purchased, blue at exactly 100%, orange at 90% or more
-- One-off reports (the **One-off report** box ticked, used for prospects) carry a cover disclaimer (point-in-time automated summary, not a security audit) and a statement that nothing is retained, in the on-screen report, Word export and PDF export; regular client reports do not
+- One-off reports (the **One-off report** box ticked, used for prospects) carry a disclaimer at the very end of the report (automated summary, not a security audit) and a statement that nothing is retained, in the on-screen report, Word export and PDF export; regular client reports do not
 - Exports a Word document, or use your browser's print-to-PDF; **Copy text** copies the report as plain text. (`export-pdf.js` exists and is used by report-hub, but the app's own page has no PDF-export button)
 
 ## Stack
@@ -56,7 +56,7 @@ A web application that generates monthly IT health reports for client Microsoft 
 │           ├── metrics-commentary.js  Snapshot extraction + commentary sentences
 │           ├── site-templates.js    SharePoint site-type classification
 │           ├── licence-prices.js    Approximate licence prices, used only to order the licence list (never shown)
-│           ├── report-disclaimer.js Cover disclaimer + retention wording shared by the PDF and Word exports (index.html keeps a synced copy)
+│           ├── report-disclaimer.js Disclaimer + retention wording shared by the PDF and Word exports (index.html keeps a synced copy)
 │           ├── require-report-hub-key.js  Shared-secret gate (clients, report-data)
 │           └── require-admin-key.js       Shared-secret gate (delete-client-metrics)
 └── docs/

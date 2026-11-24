@@ -355,10 +355,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   // ══════════════════════════════ Hero / cover ═══════════════════════════════
   const disclaimerText = disclaimer(d.metricsRetained);
 
-  F('italic', 7.5);
-  // The cover disclaimer is shown only on one-off (prospect) reports
-  const discLines = d.oneOff ? doc.splitTextToSize(disclaimerText, CW) : [];
-  const HERO_H = discLines.length ? 176 + discLines.length * 9.4 + 14 : 172;
+  const HERO_H = 172;
   // navy gradient (left to right) + soft blue glow top-right
   const stops = [[0, [11, 20, 48]], [0.55, [19, 34, 77]], [1, [42, 20, 80]]];
   const gradAt = t => {
@@ -412,8 +409,6 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     if (hi > 0) chips.push([{ t: `${hi} high-priority ${hi === 1 ? 'risk' : 'risks'}`, b: false }]);
     chips.forEach(c => { cx0 += glass(cx0, 139, c, false) + 8; });
   }
-  F('italic', 7.5, [150, 165, 200]);
-  if (discLines.length) doc.text(discLines, M, 177, { lineHeightFactor: 1.25 });
   y = HERO_H + 16;
 
   // ═════════════════════════ Headline strip (4 tiles) ═════════════════════════
@@ -463,20 +458,6 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     if (manual.highlights) callout('Highlights:', manual.highlights, 'good');
     if (manual.concerns) callout('Concerns:', manual.concerns, 'warn');
     if (manual.projects) callout('Projects:', manual.projects, 'info');
-  }
-
-  // ══════════════════════ Month-on-Month Changes (iData.commentary) ═══════════
-  if (d.commentary && d.commentary.length) {
-    sectionHeader('Month-on-Month Changes', C.orange, null, 50);
-    d.commentary.forEach(line => {
-      const lines = richLines([{ t: clean(line), b: false }], CW - 46, 9);
-      const h = lines.length * 12.5 + 14;
-      ensure(h + 8);
-      box(M, y, CW, h, 8, C.surf2);
-      fill(C.info); doc.circle(M + 15, y + h / 2, 2.8, 'F');
-      drawRich(lines, M + 27, y + 17.5, 12.5, 9, C.text);
-      y += h + 8;
-    });
   }
 
   // ══════════════════════════ Device & asset management ═══════════════════════
@@ -872,6 +853,19 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     const sev = { high: ['High', 'bad'], medium: ['Medium', 'warn'], low: ['Low', 'info'] };
     dataTable([{ h: 'Risk', w: 34, k: 'b' }, { h: 'Area', w: 17 }, { h: 'Rating', w: 11, k: 'pill' }, { h: 'Recommended action', w: 38 }],
       d.risks.map(r => [r.finding || '', r.area || '', sev[r.severity] || [String(r.severity || ''), 'neu'], r.action || '']));
+  }
+
+  // -- One-off (new-client) report: disclaimer at the very bottom --
+  if (d.oneOff) {
+    F('italic', 8, C.muted);
+    const dl = doc.splitTextToSize(clean(disclaimerText), CW);
+    const h = dl.length * 11 + 22;
+    ensure(h + 16);
+    y += 14;
+    stroke(C.line); doc.setLineWidth(0.5); doc.line(M, y, PW - M, y);
+    F('italic', 8, C.muted);
+    doc.text(dl, M, y + 14, { lineHeightFactor: 1.3 });
+    y += h;
   }
 
   // ── Footers ────────────────────────────────────────────────────────────────

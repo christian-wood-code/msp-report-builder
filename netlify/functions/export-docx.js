@@ -396,9 +396,6 @@ exports.handler = async (event) => {
           ...(preparer ? chip("Account manager", preparer) : []),
           ...(highRisks > 0 ? chip(`${highRisks} high-priority risk${highRisks > 1 ? "s" : ""}`) : []),
         ], { after: 0 }),
-        // Disclaimer / retention statement (same wording as the PDF cover and the on-screen report)
-        // Shown only on one-off (prospect) reports
-        ...(d.oneOff ? [para([run(disclaimerText(d.metricsRetained), { size: 14, italics: true, color: "9FB0D6" })], { before: 160, after: 0 })] : []),
       ], HERO[4], { top: 0, bottom: 300 }),
     ]));
     children.push(gap(200));
@@ -436,14 +433,6 @@ exports.handler = async (event) => {
       if (manual.highlights) { children.push(callout(manual.highlights, "good", "Highlights:")); children.push(gap(120)); }
       if (manual.concerns)   { children.push(callout(manual.concerns,   "warn", "Concerns:"));   children.push(gap(120)); }
       if (manual.projects)   { children.push(callout(manual.projects,   "info", "Projects:"));   children.push(gap(120)); }
-    }
-
-    // ── Month-on-Month Changes ────────────────────────────────────────────────
-    // Deterministic template commentary (lib/metrics-commentary.js); omitted when null.
-    if (d.commentary && d.commentary.length) {
-      children.push(...sectionHeaderBlock("Month-on-Month Changes", C.ORANGE));
-      children.push(lead("Notable changes since last month's report, based on the summary metrics from each run."));
-      d.commentary.forEach(line => { children.push(callout(line, "info")); children.push(gap(100)); });
     }
 
     // ── Devices ──────────────────────────────────────────────────────────────
@@ -854,6 +843,9 @@ exports.handler = async (event) => {
       spacing: { before: 320, after: 0 },
       border: { top: bdr(C.BORDER, 6), bottom: none(), left: none(), right: none() },
     }));
+
+    // ── One-off (new-client) report: disclaimer at the very bottom ──────────
+    if (d.oneOff) children.push(para([run(disclaimerText(d.metricsRetained), { size: 16, italics: true, color: C.GRAY })], { before: 200, after: 0 }));
 
     // ── Document ──────────────────────────────────────────────────────────────
     const doc = new Document({
