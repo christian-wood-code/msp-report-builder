@@ -1084,7 +1084,7 @@ function buildReport() {
     var osTot = osList.reduce(function(a,o){ return a + o.n; }, 0);
     dev += '<div class="r2-card" style="margin-top:14px"><h3 class="r2-h3" style="margin-top:0">Operating systems</h3>'+stackBar(osList, osTot)+legend(osList.map(function(o){ return {l:esc(o.label), n:o.n, c:o.c}; }))+'</div>';
   }
-  if (d.win10 > 0) dev += callout('<b>'+d.win10+' device'+(d.win10>1?'s are':' is')+' still running Windows 10.</b> Microsoft ended support October 2025. Upgrade recommended.', 'warn');
+  if (d.win10 > 0) dev += callout('<b>'+d.win10+' device'+(d.win10>1?'s use':' uses')+' Windows 10.</b> Microsoft ended support in October 2025. Plan the upgrade to Windows 11.', 'warn');
   if ((d.win10List||[]).length > 0) {
     dev += h3('Windows 10 devices') + table(['Device','Primary user','Windows version','Last seen'], d.win10List.map(function(x){
       return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), esc((x.label ? x.label + ' - ' : '') + x.version), x.lastSync ? shortDate(x.lastSync) : 'Never'];
@@ -1101,13 +1101,13 @@ function buildReport() {
     }));
   }
   if (av && av.notActive > 0) {
-    dev += callout('<b>'+av.notActive+' device'+(av.notActive>1?'s have':' has')+' antivirus and real-time protection both disabled</b> - no active AV protection detected. Investigate and re-enable immediately.', 'bad');
+    dev += callout('<b>'+av.notActive+' device'+(av.notActive>1?'s have':' has')+' antivirus and real-time protection both off.</b> The app detects no active AV protection. Find the cause. Turn antivirus on again now.', 'bad');
     if ((av.notActiveList||[]).length > 0) {
       dev += h3('Devices with antivirus not active') + table(['Device','Primary user'], av.notActiveList.map(function(x){ return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown')]; }));
     }
   }
   if (av && av.outOfDate > 0) {
-    dev += callout('<b>'+av.outOfDate+' device'+(av.outOfDate>1?'s have':' has')+' antivirus definitions more than 30 days out of date.</b> Force a definition update via Intune.', 'warn');
+    dev += callout('<b>'+av.outOfDate+' device'+(av.outOfDate>1?'s have':' has')+' antivirus definitions that are more than 30 days old.</b> Start a definition update in Intune.', 'warn');
     if ((av.outOfDateList||[]).length > 0) {
       dev += h3('Devices with outdated antivirus definitions') + table(['Device','Primary user','Last updated','Days old'], av.outOfDateList.map(function(x){
         return ['<b>'+esc(x.name)+'</b>', esc(x.user||'Unknown'), x.lastUpdated ? shortDate(x.lastUpdated) : 'Unknown', pill(esc(x.ageDays)+'d','warn')];
