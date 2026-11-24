@@ -390,7 +390,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   const pf = ymd(from), pt = ymd(to);
   const monthYear = pf ? `${MON_L[pf.m]} ${pf.y}` : '';
   {
-    const parts = [{ t: `${d.oneOff ? 'IT Health Report' : 'Monthly IT report'} · ${monthYear}`, b: false }];
+    const parts = [{ t: d.oneOff ? 'IT Health Report' : `Monthly IT report · ${monthYear}`, b: false }];
     let tw = W(parts[0].t, 'normal', 8);
     const w = tw + 32;
     glass(PW - M - w, 30, parts, true);
@@ -545,7 +545,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
 
     if ((d.comp?.noncompliant ?? 0) > 0) {
       const n = d.comp.noncompliant;
-      callout(`${n} device${n > 1 ? 's are' : ' is'} non-compliant with your organisation's policies.`, '', 'bad');
+      callout(`${n} device${n > 1 ? 's do' : ' does'} not meet the policies of your organisation.`, '', 'bad');
     }
     if ((d.win10List || []).length) {
       dataTable([{ h: 'Device', w: 24, k: 'b' }, { h: 'Primary user', w: 28 }, { h: 'Windows version', w: 34 }, { h: 'Last seen', w: 14 }],
@@ -557,7 +557,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     }
     if ((d.encryption?.notEncrypted ?? 0) > 0) {
       const n = d.encryption.notEncrypted;
-      callout(`${n} device${n > 1 ? 's are' : ' is'} not encrypted.`, 'This is a significant data protection risk.', 'bad');
+      callout(`${n} device${n > 1 ? 's are' : ' is'} not encrypted.`, 'This is a major risk to data protection.', 'bad');
     }
     if ((d.notEncryptedList || []).length) {
       dataTable([{ h: 'Device', w: 28, k: 'b' }, { h: 'Primary user', w: 34 }, { h: 'OS', w: 28 }],
@@ -565,7 +565,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     }
     if ((d.lowDisk || []).length) {
       const n = d.lowDisk.length;
-      callout(`${n} device${n > 1 ? 's have' : ' has'} low disk space (less than 15% free).`, '', 'warn');
+      callout(`${n} device${n > 1 ? 's have' : ' has'} less than 15% free disk space.`, '', 'warn');
       dataTable([{ h: 'Device', w: 28, k: 'b' }, { h: 'Primary user', w: 34 }, { h: 'Free', w: 12, a: 'r' }, { h: 'Free %', w: 12, k: 'pill', a: 'r' }],
         d.lowDisk.map(x => [x.name || '', x.user || '', `${x.gb} GB`, [`${x.pct}%`, x.pct < 5 ? 'bad' : 'warn']]), 'Low disk space');
     }
@@ -626,9 +626,9 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     rowsCard(M, y, hw, hh, 'Key policies', kpRows);
     rowsCard(M + hw + gap, y, hw, hh, 'Authentication methods', amRows);
     y += hh + 12;
-    if (d.riskyError) callout('Risky-user detection is not available for this tenant.', 'Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.', 'info');
-    if (!d.riskyError && (d.risky ?? 0) > 0) callout(`${d.risky} account${d.risky > 1 ? 's are' : ' is'} flagged as at-risk by Entra ID Protection.`, 'Reset passwords immediately.', 'bad');
-    if ((d.appProtection?.total ?? 0) === 0) callout('No app protection (MAM) policies found.', 'If BYOD access is permitted, this is a gap.', 'warn');
+    if (d.riskyError) callout('Risky-user detection is not available for this tenant.', 'Microsoft Entra ID Protection needs Entra ID P2 (included in Microsoft 365 E5). Or the app could not read the data in this run. For this reason, the report cannot confirm that there are no risky users.', 'info');
+    if (!d.riskyError && (d.risky ?? 0) > 0) callout(`Entra ID Protection flags ${d.risky} account${d.risky > 1 ? 's' : ''} as at-risk.`, 'Reset the passwords now.', 'bad');
+    if ((d.appProtection?.total ?? 0) === 0) callout('No app protection (MAM) policies found.', 'If users can access company data on personal devices (BYOD), this is a gap.', 'warn');
   }
 
   // ══════════════════════════ Patch status ═════════════════════════════════════
@@ -650,7 +650,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
       drawLegend(legend, M + 14, y + 14 + 12 + 17, CW - 28, 8.5);
       y += h + 12;
       if ((d.patchOver90 || []).length) {
-        callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? 's have' : ' has'} not checked in for 90+ days - 3 or more patch cycles behind.`, '', 'bad');
+        callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? 's did' : ' did'} not check in for 90 or more days.`, 'These devices are 3 or more patch cycles behind.', 'bad');
                 dataTable([{ h: 'Device', w: 24, k: 'b' }, { h: 'Primary user', w: 30 }, { h: 'Last seen', w: 14 }, { h: 'OS', w: 32 }],
           d.patchOver90.map(x => [x.name || '', x.user || 'Unknown', x.lastSeen ? fmtShort(x.lastSeen) : 'Never', x.os || 'Unknown']), 'Devices over 90 days without a check-in');
       }
@@ -673,16 +673,16 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
 
     if (ext && !ext.timedOut && ext.sharedGateway && ext.sharedGateway.events > 0) {
       const sg = ext.sharedGateway;
-      callout(`${sg.events.toLocaleString('en-NZ')} sign-ins through ${sg.ips.length} shared IP address${sg.ips.length > 1 ? 'es' : ''} were left out.`, `An overseas IP address used by ${sg.minUsers} or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.`, 'info');
+      callout(`The report left out ${sg.events.toLocaleString('en-NZ')} sign-ins from ${sg.ips.length} shared IP address${sg.ips.length > 1 ? 'es' : ''}.`, `The report treats an overseas IP address that ${sg.minUsers} or more different people use as shared infrastructure, for example a company VPN or gateway. It does not count these as individual overseas logins.`, 'info');
     }
     if (ext && !ext.timedOut && ext.retentionFrom) {
-      callout('Sign-in history limit.', `Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${ext.retentionFrom} can no longer be retrieved and are not covered by this check.`, 'info');
+      callout('Sign-in history limit.', `Microsoft keeps sign-in logs for only 30 days (7 days on free tenants). The app cannot get sign-ins from before ${ext.retentionFrom}. This check does not cover them.`, 'info');
     }
     if (ext && !ext.timedOut && ext.partial) {
-      callout(`Overseas sign-ins: only ${ext.windowDays} of ${ext.periodDays} days could be checked.`, `The sign-in log could not be fully retrieved in time, so results may be incomplete.${(ext.missing || []).length ? ' Not checked: ' + ext.missing.join(', ') + '.' : ''}`, 'info');
+      callout(`The app could check only ${ext.windowDays} of ${ext.periodDays} days of overseas sign-ins.`, `The app could not read the full sign-in log in time. The results can be incomplete.${(ext.missing || []).length ? ' Not checked: ' + ext.missing.join(', ') + '.' : ''}`, 'info');
     }
     if (ext && ext.timedOut) {
-      callout('Overseas sign-in data unavailable this run.', 'The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Re-pulling usually resolves it.', 'info');
+      callout('Overseas sign-in data is not available in this run.', 'The sign-in log query timed out. For this reason, the report does not show unexpected overseas sign-ins. Pull the data again. This usually solves the problem.', 'info');
     }
 
     if ((u.licenceSummary || []).length) {
@@ -730,23 +730,23 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
 
     h3('Upcoming licence renewals · next 90 days', 80);
     if (u.licenceRenewalsError) {
-      callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', '', 'warn');
+      callout('Licence renewal data is not available. Make sure that the app has the Organization.Read.All permission.', '', 'warn');
     } else if ((u.licenceRenewals || []).length) {
       const rn = u.licenceRenewals.slice().sort((a, b) => String(a.renewalDate).localeCompare(String(b.renewalDate)));
-      calloutSplit(`${rn.length} licence ${rn.length === 1 ? 'subscription is' : 'subscriptions are'} due for renewal within 90 days.`,
-        'Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.', 'info');
+      calloutSplit(`${rn.length} licence ${rn.length === 1 ? 'subscription renews' : 'subscriptions renew'} in the next 90 days.`,
+        'Monthly subscriptions renew automatically each month. Check the annual and multi-year subscriptions.', 'info');
       dataTable([{ h: 'Licence', w: 34, k: 'b' }, { h: 'Seats', w: 9, a: 'r' }, { h: 'Billing', w: 22, k: 'pill' }, { h: 'Renewal date', w: 16 }, { h: 'Days away', w: 13, k: 'pill', a: 'r' }],
         rn.map(r => [r.name || '', num(r.seats ?? 0),
           [String(r.cycle || '').replace(/Annual\/Multi-year/i, 'Annual / multi-year') || 'Unknown', /monthly/i.test(r.cycle || '') ? 'neu' : 'info'],
           fmtShort(r.renewalDate), [`${r.daysAway} days`, (r.daysAway ?? 99) <= 14 ? 'warn' : 'neu']]));
     } else {
-      callout('No licence renewals due in the next 90 days.', '', 'good');
+      callout('No licence renews in the next 90 days.', '', 'good');
     }
 
     const dayText = x => (x.daysSince ? `${x.daysSince} days` : 'Never signed in');
     if ((u.notSignedIn90Licensed ?? 0) > 0) {
       const n = u.notSignedIn90Licensed;
-      callout(`${n} M365 licensed user${n > 1 ? 's have' : ' has'} not signed in for 90+ days.`, 'Service accounts and unlicensed accounts are excluded.', 'warn');
+      callout(`${n} M365 licensed user${n > 1 ? 's did' : ' did'} not sign in for 90 or more days.`, 'The count does not include service accounts and unlicensed accounts.', 'warn');
     }
     if ((u.notSignedIn90LicensedList || []).length) {
       dataTable([{ h: 'User', w: 28, k: 'b' }, { h: 'Account', w: 34 }, { h: 'Last sign-in', w: 16 }, { h: 'Inactive', w: 16 }],
@@ -754,7 +754,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     }
     if ((u.notSignedIn90Guest ?? 0) > 0) {
       const n = u.notSignedIn90Guest;
-      callout(`${n} guest account${n > 1 ? 's have' : ' has'} not signed in for 90+ days.`, 'Review for stale guest access and remove if no longer needed.', 'warn');
+      callout(`${n} guest account${n > 1 ? 's' : ''} did not sign in for 90 or more days.`, 'Check for old guest access. Remove the access if the guest does not need it.', 'warn');
     }
     if ((u.notSignedIn90GuestList || []).length) {
       dataTable([{ h: 'Guest', w: 28, k: 'b' }, { h: 'Account', w: 34 }, { h: 'Last sign-in', w: 16 }, { h: 'Inactive', w: 16 }],
@@ -768,8 +768,8 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     if (extUsers.length) {
       const extTotal = ext.total ?? 0;
       h3(`Unexpected overseas sign-ins · ${ext.partial ? `${ext.windowDays} of ${ext.periodDays} days checked` : `report period, ${ext.periodDays ?? 30} days`}`, 90);
-      callout(`${extTotal} successful login${extTotal > 1 ? 's' : ''} from unexpected locations by ${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? 's' : ''}.`,
-        'Australia, New Zealand and Malaysia are excluded as expected locations.', 'warn');
+      callout(`${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? 's had' : ' had'} ${extTotal} successful login${extTotal > 1 ? 's' : ''} from unexpected locations.`,
+        'The report does not count Australia, New Zealand and Malaysia. These are expected locations.', 'warn');
       dataTable([{ h: 'Name', w: 22, k: 'b' }, { h: 'Email', w: 32 }, { h: 'Country / Territory', w: 32 }, { h: 'Logins', w: 10, a: 'r' }],
         extUsers.map(e => [e.name || (e.upn || '').split('@')[0], e.upn || '', (e.countries || []).join(', '), String(e.eventCount ?? 0)]));
     }
@@ -779,10 +779,10 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   {
     const sp = d.sharepoint || {};
     if ((sp.siteCount ?? 0) > 0 || sp.error) {
-      const intro = 'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.';
+      const intro = 'This section shows the SharePoint Online sites and the storage use of this tenant. The site counts come from the Microsoft 365 usage reports. They do not include personal OneDrive sites.';
       if (sp.error) {
         sectionHeader('SharePoint / MS Teams', C.teal, intro, 60);
-        callout('SharePoint data unavailable - check that Reports.Read.All permission is granted.', '', 'warn');
+        callout('SharePoint data is not available. Make sure that the app has the Reports.Read.All permission.', '', 'warn');
       } else {
         const usedPct = (sp.allocatedGB && sp.totalUsedGB) ? Math.round((sp.totalUsedGB / sp.allocatedGB) * 100) : null;
         const spKpis = [
@@ -805,7 +805,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
         kpiGrid(spKpis, 3);
         if ((sp.inactiveSiteCount ?? 0) > 0) {
           const n = sp.inactiveSiteCount;
-          callout(`${n} site${n > 1 ? 's have' : ' has'} had no recorded file activity in 180+ days.`, 'Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
+          callout(`${n} site${n > 1 ? 's' : ''} had no recorded file activity for 180 or more days.`, 'Check these sites for archive or deletion. Note: the count can include archived sites.', 'warn');
         }
         if (usedPct !== null) {
           callout(`Storage: ${sp.totalUsedGB} GB used of ${sp.allocatedGB} GB allocated (${usedPct}% used).`, '', usedPct > 80 ? 'bad' : usedPct > 60 ? 'warn' : 'good');

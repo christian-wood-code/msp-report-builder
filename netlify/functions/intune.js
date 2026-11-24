@@ -1023,27 +1023,27 @@ exports.handler = async (event) => {
     const risk = (sev, area, finding, action) => risks.push({ severity: sev, area, finding, action });
     const p = (n, s, pl) => `${n} ${n === 1 ? s : pl}`;
 
-    if (!legacyAuthPolicy) risk("high","Conditional Access","No legacy authentication block policy found","Create and enforce a CA policy to block legacy auth");
-    else if (policyStatus(legacyAuthPolicy) === "report-only") risk("high","Conditional Access","Legacy authentication block is report-only — not enforced","Switch to enforced after validating exceptions");
-    if (adminMfaPolicy && policyStatus(adminMfaPolicy) === "report-only") risk("high","Conditional Access","Admin phishing-resistant MFA is report-only","Switch to enforced once admin readiness confirmed");
-    if (avNotActiveCount > 0) risk("high","Intune / Antivirus",`${p(avNotActiveCount,"device has","devices have")} antivirus disabled or not reporting`,"Investigate and re-enable antivirus immediately");
-    if (avOutOfDateCount > 0) risk("medium","Intune / Antivirus",`${p(avOutOfDateCount,"device has","devices have")} antivirus definitions more than 30 days out of date`,"Force a definition update via Intune or investigate connectivity issues");
-    if (encryption.notEncrypted > 0) risk("high","Intune / Device Security",`${p(encryption.notEncrypted,"device is","devices are")} not encrypted`,"Enable BitLocker via Intune encryption policy");
-    if (comp.noncompliant > 0) risk("high","Intune / Compliance",`${p(comp.noncompliant,"device is","devices are")} non-compliant`,"Review and remediate non-compliant devices");
-    if (secDefaultsR.data?.isEnabled === false && caEnabled < 3) risk("high","Entra ID","Security Defaults disabled with fewer than 3 enforced CA policies","Ensure CA fully covers Security Defaults protections");
-    if (riskyR.results.length > 0) risk("high","Entra ID Protection",`${p(riskyR.results.length,"user account is","user accounts are")} flagged as at-risk`,"Review and reset passwords immediately");
-    if (patchStatus.over90 > 0) risk("high","Intune / Patch Management",`${p(patchStatus.over90,"device is","devices are")} over 90 days without a check-in (3+ patch cycles)`,"Investigate — devices may be offline, lost, or unmanaged");
-    if (patchStatus.over30 > 0) risk("medium","Intune / Patch Management",`${p(patchStatus.over30,"device is","devices are")} 30–90 days without a check-in (1–2 patch cycles behind)`,"Review and bring devices back under management");
-    if (externalByUser.length > 0) risk("medium","Entra ID / Sign-ins",`${p(externalByUser.length,"user has","users have")} signed in from outside AU/NZ/MY in the report period`,"Review for unexpected access — ensure MFA and CA policies are enforced");
-    if (countType(compPolicies,"windows") === 0) risk("medium","Intune / Compliance","No explicit Windows compliance policy found","Create a Windows compliance policy");
-    if (appProtPolicies.length === 0) risk("medium","Intune / App Protection","No app protection (MAM) policies found","Add MAM policies if BYOD is permitted");
-    if (authMethods.smsEnabled) risk("medium","Authentication Methods","SMS sign-in enabled — weaker than phishing-resistant MFA","Review whether SMS should remain available tenant-wide");
-    if (authMethods.tapEnabled && authMethods.tapReusable) risk("medium","Authentication Methods","Temporary Access Pass is reusable","Consider switching TAP to one-time-use");
-    if (!geoBlockPolicy) risk("medium","Conditional Access","No geographic restriction policy detected","Consider blocking sign-ins from outside AU/NZ/MY");
-    if (win10 > 0) risk("medium","Intune / Patch Management",`${p(win10,"device is","devices are")} still running Windows 10 — support ended October 2025`,"Plan and execute Windows 11 upgrade");
+    if (!legacyAuthPolicy) risk("high","Conditional Access","The tenant has no policy that blocks legacy authentication.","Create a CA policy that blocks legacy authentication. Enforce the policy.");
+    else if (policyStatus(legacyAuthPolicy) === "report-only") risk("high","Conditional Access","The block of legacy authentication is in report-only mode. It is not enforced.","Switch the policy to enforced after you check the exceptions.");
+    if (adminMfaPolicy && policyStatus(adminMfaPolicy) === "report-only") risk("high","Conditional Access","The phishing-resistant MFA policy for admins is in report-only mode.","Switch the policy to enforced when the admins are ready.");
+    if (avNotActiveCount > 0) risk("high","Intune / Antivirus",`${p(avNotActiveCount,"device has","devices have")} antivirus that is off or does not report.`,"Find the cause. Turn antivirus on again now.");
+    if (avOutOfDateCount > 0) risk("medium","Intune / Antivirus",`${p(avOutOfDateCount,"device has","devices have")} antivirus definitions that are more than 30 days old.`,"Start a definition update in Intune. Or find the cause of a connection problem.");
+    if (encryption.notEncrypted > 0) risk("high","Intune / Device Security",`${p(encryption.notEncrypted,"device is","devices are")} not encrypted.`,"Turn on BitLocker with an Intune encryption policy.");
+    if (comp.noncompliant > 0) risk("high","Intune / Compliance",`${p(comp.noncompliant,"device is","devices are")} non-compliant.`,"Check the non-compliant devices. Correct the problems.");
+    if (secDefaultsR.data?.isEnabled === false && caEnabled < 3) risk("high","Entra ID","Security Defaults is off and the tenant has fewer than 3 enforced CA policies.","Make sure that the CA policies give the same protection as Security Defaults.");
+    if (riskyR.results.length > 0) risk("high","Entra ID Protection",`${p(riskyR.results.length,"user account is","user accounts are")} flagged as at-risk.`,"Check the accounts. Reset the passwords now.");
+    if (patchStatus.over90 > 0) risk("high","Intune / Patch Management",`${p(patchStatus.over90,"device","devices")} did not check in for more than 90 days (3 or more patch cycles).`,"Find the cause. The devices can be offline, lost or not managed.");
+    if (patchStatus.over30 > 0) risk("medium","Intune / Patch Management",`${p(patchStatus.over30,"device","devices")} did not check in for 30 to 90 days (1 or 2 patch cycles behind).`,"Check the devices. Put them under management again.");
+    if (externalByUser.length > 0) risk("medium","Entra ID / Sign-ins",`${p(externalByUser.length,"user","users")} signed in from outside AU/NZ/MY in the report period.`,"Check for unexpected access. Make sure that MFA and CA policies are enforced.");
+    if (countType(compPolicies,"windows") === 0) risk("medium","Intune / Compliance","The tenant has no Windows compliance policy.","Create a Windows compliance policy.");
+    if (appProtPolicies.length === 0) risk("medium","Intune / App Protection","The tenant has no app protection (MAM) policies.","Add MAM policies if users can use personal devices (BYOD).");
+    if (authMethods.smsEnabled) risk("medium","Authentication Methods","SMS sign-in is on. It gives less protection than phishing-resistant MFA.","Review whether SMS should remain available tenant-wide");
+    if (authMethods.tapEnabled && authMethods.tapReusable) risk("medium","Authentication Methods","Temporary Access Pass (TAP) is reusable.","Change TAP to one-time use.");
+    if (!geoBlockPolicy) risk("medium","Conditional Access","The tenant has no geographic restriction policy.","Consider blocking sign-ins from outside AU/NZ/MY");
+    if (win10 > 0) risk("medium","Intune / Patch Management",`${p(win10,"device uses","devices use")} Windows 10. Microsoft ended support in October 2025.`,"Plan the upgrade to Windows 11. Do the upgrade.");
     const totalInactive = notSignedIn90Licensed.length + notSignedIn90Guest.length;
-    if (totalInactive > 0) risk("low","Entra ID / Users",`${p(totalInactive,"user has","users have")} not signed in for 90+ days (${notSignedIn90Licensed.length} licensed, ${notSignedIn90Guest.length} guest)`,"Review for stale or unused accounts — disable licensed users, remove guest access");
-    if (inactiveSites.length > 0) risk("low","SharePoint",`${p(inactiveSites.length,"SharePoint site has","SharePoint sites have")} had no activity in 180+ days`,"Review for archiving or deletion");
+    if (totalInactive > 0) risk("low","Entra ID / Users",`${p(totalInactive,"user","users")} did not sign in for 90 or more days (${notSignedIn90Licensed.length} licensed, ${notSignedIn90Guest.length} guest).`,"Review for stale or unused accounts — disable licensed users, remove guest access");
+    if (inactiveSites.length > 0) risk("low","SharePoint",`${p(inactiveSites.length,"SharePoint site","SharePoint sites")} had no activity for 180 or more days.`,"Check the sites for archive or deletion.");
     // Unencrypted devices: alphabetical by machine name (case-insensitive, numbers in natural order) - every output uses this order
     // Devices over 90 days: longest since last check-in first (a device that never checked in counts as longest)
     patchOver90Devices.sort((a, b) => (a.lastSeen ? new Date(a.lastSeen).getTime() : -Infinity) - (b.lastSeen ? new Date(b.lastSeen).getTime() : -Infinity) || String(a.name || "").localeCompare(String(b.name || "")));
@@ -1054,7 +1054,7 @@ exports.handler = async (event) => {
     notEncryptedList.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "en", { sensitivity: "base", numeric: true }));
     // Lowest free space first (percent free, then GB free) - every output uses this order
     lowDisk.sort((a, b) => (a.pct - b.pct) || (a.gb - b.gb));
-    if (lowDisk.length > 0) risk("low","Intune / Device Health",`${p(lowDisk.length,"device has","devices have")} less than 15% disk space remaining`,"Clean up disk space or expand storage");
+    if (lowDisk.length > 0) risk("low","Intune / Device Health",`${p(lowDisk.length,"device has","devices have")} less than 15% free disk space.`,"Remove files to make free disk space, or add storage.");
     risks.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
 
     const scoreRaw = scoreR.data?.value?.[0] ?? null;

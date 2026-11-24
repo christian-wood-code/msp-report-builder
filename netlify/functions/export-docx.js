@@ -376,7 +376,7 @@ exports.handler = async (event) => {
     const CHIPW = 4200;
     const logoRun = hasLogo ? new ImageRun({ data: coverLogo, transformation: { width: 186, height: 48 }, type: "png" })
                             : run("Integricity Technology", { size: 28, bold: true, color: C.WHITE });
-    const monthChip = run(`${NB}●${NB}${d.oneOff ? `IT${NB}Health${NB}Report` : `Monthly${NB}IT${NB}report`}${NB}·${NB}${monthLabel.replace(/ /g, NB)}${NB}`, { size: 17, bold: true, color: "E8F0FF", shade: CHIP });
+    const monthChip = run(d.oneOff ? `${NB}●${NB}IT${NB}Health${NB}Report${NB}` : `${NB}●${NB}Monthly${NB}IT${NB}report${NB}·${NB}${monthLabel.replace(/ /g, NB)}${NB}`, { size: 17, bold: true, color: "E8F0FF", shade: CHIP });
     // Word cannot draw a gradient behind text, so the hero is stacked rows whose fill steps from
     // navy to a hint of purple (the web/PDF hero's gradient), with no gaps between rows. The first
     // row has its own right-hand cell so the month chip stays chip-sized instead of full line height.
@@ -498,7 +498,7 @@ exports.handler = async (event) => {
 
     if ((d.comp?.noncompliant || 0) > 0) {
       const n = d.comp.noncompliant;
-      children.push(callout(`${n} device${n > 1 ? "s are" : " is"} non-compliant with your organisation's policies.`, "bad")); children.push(gap(100));
+      children.push(callout(`${n} device${n > 1 ? "s do" : " does"} not meet the policies of your organisation.`, "bad")); children.push(gap(100));
     }
     if ((d.win10List || []).length > 0) {
       children.push(subLabel("Windows 10 devices"));
@@ -516,7 +516,7 @@ exports.handler = async (event) => {
     }
     if ((d.encryption?.notEncrypted || 0) > 0) {
       const n = d.encryption.notEncrypted;
-      children.push(callout("This is a significant data protection risk.", "bad", `${n} device${n > 1 ? "s are" : " is"} not encrypted.`)); children.push(gap(100));
+      children.push(callout("This is a major risk to data protection.", "bad", `${n} device${n > 1 ? "s are" : " is"} not encrypted.`)); children.push(gap(100));
     }
     if ((d.notEncryptedList || []).length > 0) {
       children.push(subLabel("Devices not encrypted"));
@@ -526,7 +526,7 @@ exports.handler = async (event) => {
       children.push(gap(100));
     }
     if (lowDisk.length > 0) {
-      children.push(callout(`${lowDisk.length} device${lowDisk.length > 1 ? "s have" : " has"} low disk space (less than 15% free).`, "warn")); children.push(gap(100));
+      children.push(callout(`${lowDisk.length} device${lowDisk.length > 1 ? "s have" : " has"} less than 15% free disk space.`, "warn")); children.push(gap(100));
       children.push(subLabel("Low disk space"));
       children.push(dataTable(["Device", "Primary user", "Free", "Free %"],
         lowDisk.map(x => [{ t: x.name, b: true }, x.user || "Unknown", `${x.gb} GB`, { runs: [tag(`${x.pct}%`, x.pct < 5 ? "bad" : "warn")] }]),
@@ -584,9 +584,9 @@ exports.handler = async (event) => {
         cardCell([cardLabel("Authentication methods"), ...labelValueRows(amRows, HW2 - 2 * 180)], HW2),
       ]})]));
       children.push(gap(100));
-      if (d.riskyError) { children.push(callout("Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.", "info", "Risky-user detection is not available for this tenant.")); children.push(gap(100)); }
-      if (!d.riskyError && (d.risky || 0) > 0) { children.push(callout("Reset passwords immediately.", "bad", `${d.risky} account${d.risky > 1 ? "s are" : " is"} flagged as at-risk by Entra ID Protection.`)); children.push(gap(100)); }
-      if ((d.appProtection?.total || 0) === 0) { children.push(callout("If BYOD access is permitted, this is a gap.", "warn", "No app protection (MAM) policies found.")); children.push(gap(100)); }
+      if (d.riskyError) { children.push(callout("Microsoft Entra ID Protection needs Entra ID P2 (included in Microsoft 365 E5). Or the app could not read the data in this run. For this reason, the report cannot confirm that there are no risky users.", "info", "Risky-user detection is not available for this tenant.")); children.push(gap(100)); }
+      if (!d.riskyError && (d.risky || 0) > 0) { children.push(callout("Reset the passwords now.", "bad", `Entra ID Protection flags ${d.risky} account${d.risky > 1 ? "s" : ""} as at-risk.`)); children.push(gap(100)); }
+      if ((d.appProtection?.total || 0) === 0) { children.push(callout("If users can access company data on personal devices (BYOD), this is a gap.", "warn", "No app protection (MAM) policies found.")); children.push(gap(100)); }
     }
 
     // ── Patch Status ─────────────────────────────────────────────────────────
@@ -605,7 +605,7 @@ exports.handler = async (event) => {
       ], PW)] })]));
       children.push(gap(100));
       if ((d.patchOver90 || []).length > 0) {
-        children.push(callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? "s have" : " has"} not checked in for 90+ days - 3 or more patch cycles behind.`, "bad")); children.push(gap(100));
+        children.push(callout(`${d.patchOver90.length} device${d.patchOver90.length > 1 ? "s" : ""} did not check in for 90 or more days. These devices are 3 or more patch cycles behind.`, "bad")); children.push(gap(100));
         children.push(subLabel("Devices over 90 days without a check-in"));
         children.push(dataTable(["Device", "Primary user", "Last seen", "OS"],
           d.patchOver90.map(x => [{ t: x.name, b: true }, x.user || "Unknown", dOrNever(x.lastSeen), { t: x.os || "Unknown", size: 16 }]),
@@ -627,20 +627,20 @@ exports.handler = async (event) => {
       children.push(gap(120));
       if ((u.externalSignIns || {}).sharedGateway && u.externalSignIns.sharedGateway.events > 0 && !u.externalSignIns.timedOut) {
         const sg = u.externalSignIns.sharedGateway;
-        children.push(callout(`An overseas IP address used by ${sg.minUsers} or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.`, "info", `${sg.events.toLocaleString("en-NZ")} sign-ins through ${sg.ips.length} shared IP address${sg.ips.length > 1 ? "es" : ""} were left out.`));
+        children.push(callout(`The report treats an overseas IP address that ${sg.minUsers} or more different people use as shared infrastructure, for example a company VPN or gateway. It does not count these as individual overseas logins.`, "info", `The report left out ${sg.events.toLocaleString("en-NZ")} sign-ins from ${sg.ips.length} shared IP address${sg.ips.length > 1 ? "es" : ""}.`));
         children.push(gap(100));
       }
       if ((u.externalSignIns || {}).retentionFrom && !(u.externalSignIns || {}).timedOut) {
-        children.push(callout(`Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before ${u.externalSignIns.retentionFrom} can no longer be retrieved and are not covered by this check.`, "info", "Sign-in history limit."));
+        children.push(callout(`Microsoft keeps sign-in logs for only 30 days (7 days on free tenants). The app cannot get sign-ins from before ${u.externalSignIns.retentionFrom}. This check does not cover them.`, "info", "Sign-in history limit."));
         children.push(gap(100));
       }
       if ((u.externalSignIns || {}).partial && !(u.externalSignIns || {}).timedOut) {
         const e0 = u.externalSignIns;
-        children.push(callout(`The sign-in log could not be fully retrieved in time, so results may be incomplete.${(e0.missing || []).length ? " Not checked: " + e0.missing.join(", ") + "." : ""}`, "info", `Overseas sign-ins: only ${e0.windowDays} of ${e0.periodDays} days could be checked.`));
+        children.push(callout(`The app could not read the full sign-in log in time. The results can be incomplete.${(e0.missing || []).length ? " Not checked: " + e0.missing.join(", ") + "." : ""}`, "info", `The app could check only ${e0.windowDays} of ${e0.periodDays} days of overseas sign-ins.`));
         children.push(gap(100));
       }
       if ((u.externalSignIns || {}).timedOut) {
-        children.push(callout("The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Re-pulling usually resolves it.", "info", "Overseas sign-in data unavailable this run."));
+        children.push(callout("The sign-in log query timed out. For this reason, the report does not show unexpected overseas sign-ins. Pull the data again. This usually solves the problem.", "info", "Overseas sign-in data is not available in this run."));
         children.push(gap(100));
       }
 
@@ -691,12 +691,12 @@ exports.handler = async (event) => {
       {
         children.push(subLabel("Upcoming licence renewals · next 90 days"));
         if (renewErr) {
-          children.push(callout("Licence renewal data unavailable - check that Organization.Read.All permission is granted.", "warn"));
+          children.push(callout("Licence renewal data is not available. Make sure that the app has the Organization.Read.All permission.", "warn"));
           children.push(gap(100));
         } else if (renew.length > 0) {
           children.push(splitCallout(
-            `${renew.length} licence subscription${renew.length > 1 ? "s are" : " is"} due for renewal within 90 days.`,
-            "Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.", "info"));
+            `${renew.length} licence subscription${renew.length > 1 ? "s renew" : " renews"} in the next 90 days.`,
+            "Monthly subscriptions renew automatically each month. Check the annual and multi-year subscriptions.", "info"));
           children.push(gap(100));
           const sorted = [...renew].sort((a, b) => String(a.renewalDate || "").localeCompare(String(b.renewalDate || "")));
           children.push(dataTable(["Licence", "Seats", "Billing", "Renewal date", "Days away"],
@@ -710,14 +710,14 @@ exports.handler = async (event) => {
             colsFrom([0.31, 0.10, 0.22, 0.20, 0.17]), { num: [1, 4] }));
           children.push(gap(100));
         } else {
-          children.push(callout("No licence renewals due in the next 90 days.", "good"));
+          children.push(callout("No licence renews in the next 90 days.", "good"));
           children.push(gap(100));
         }
       }
 
       if ((u.notSignedIn90Licensed || 0) > 0) {
         const n = u.notSignedIn90Licensed;
-        children.push(callout("Service accounts and unlicensed accounts are excluded.", "warn", `${n} M365 licensed user${n > 1 ? "s have" : " has"} not signed in for 90+ days.`)); children.push(gap(100));
+        children.push(callout("The count does not include service accounts and unlicensed accounts.", "warn", `${n} M365 licensed user${n > 1 ? "s" : ""} did not sign in for 90 or more days.`)); children.push(gap(100));
       }
       if ((u.notSignedIn90LicensedList || []).length > 0) {
         children.push(subLabel("Licensed users inactive for 90+ days"));
@@ -728,7 +728,7 @@ exports.handler = async (event) => {
       }
       if ((u.notSignedIn90Guest || 0) > 0) {
         const n = u.notSignedIn90Guest;
-        children.push(callout("Review for stale guest access and remove if no longer needed.", "warn", `${n} guest account${n > 1 ? "s have" : " has"} not signed in for 90+ days.`)); children.push(gap(100));
+        children.push(callout("Check for old guest access. Remove the access if the guest does not need it.", "warn", `${n} guest account${n > 1 ? "s" : ""} did not sign in for 90 or more days.`)); children.push(gap(100));
       }
       if ((u.notSignedIn90GuestList || []).length > 0) {
         children.push(subLabel("Guest accounts inactive for 90+ days"));
@@ -758,7 +758,7 @@ exports.handler = async (event) => {
         const extTotal = ext.total || 0;
         const extWindow = ext.partial ? `${ext.windowDays} of ${ext.periodDays} days checked` : `report period, ${ext.periodDays || 30} days`;
         children.push(subLabel(`Unexpected overseas sign-ins - ${extWindow}`));
-        children.push(callout(`${extTotal} successful login${extTotal > 1 ? "s" : ""} from unexpected locations by ${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? "s" : ""}. Australia, New Zealand and Malaysia are excluded as expected locations.`, "warn"));
+        children.push(callout(`${ext.uniqueUsers} user${ext.uniqueUsers > 1 ? "s" : ""} had ${extTotal} successful login${extTotal > 1 ? "s" : ""} from unexpected locations. The report does not count Australia, New Zealand and Malaysia. These are expected locations.`, "warn"));
         children.push(gap(100));
         children.push(dataTable(["Name", "Email", "Country / Territory", "Logins"],
           extUsers.map(e => [{ t: e.name || String(e.upn || "").split("@")[0], b: true }, { t: e.upn || "", size: 16 }, (e.countries || []).join(", "), String(e.eventCount || 0)]),
@@ -771,9 +771,9 @@ exports.handler = async (event) => {
     const sp = d.sharepoint || {};
     if ((sp.siteCount || 0) > 0 || sp.error) {
       children.push(...sectionHeaderBlock("SharePoint / MS Teams", C.TEAL));
-      children.push(lead("Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites."));
+      children.push(lead("This section shows the SharePoint Online sites and the storage use of this tenant. The site counts come from the Microsoft 365 usage reports. They do not include personal OneDrive sites."));
       if (sp.error) {
-        children.push(callout("SharePoint data unavailable - check that Reports.Read.All permission is granted.", "warn"));
+        children.push(callout("SharePoint data is not available. Make sure that the app has the Reports.Read.All permission.", "warn"));
         children.push(gap(100));
       } else {
         const spKpis = [
@@ -791,8 +791,8 @@ exports.handler = async (event) => {
         children.push(gap(120));
         if ((sp.inactiveSiteCount || 0) > 0) {
           const n = sp.inactiveSiteCount;
-          children.push(callout("Review for archiving or deletion. Note: archived sites may appear in this count.", "warn",
-            `${n} site${n > 1 ? "s have" : " has"} had no recorded file activity in 180+ days.`));
+          children.push(callout("Check these sites for archive or deletion. Note: the count can include archived sites.", "warn",
+            `${n} site${n > 1 ? "s" : ""} had no recorded file activity for 180 or more days.`));
           children.push(gap(100));
         }
       }

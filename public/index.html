@@ -1015,7 +1015,7 @@ function buildReport() {
   var monthLbl = new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'});
   html += '<div class="r2-hero"><div class="r2-hero-top">';
   html += '<img alt="Integricity Technology" src="data:image/png;base64,'+HERO_LOGO+'">';
-  html += '<span class="r2-chip">● '+(d.oneOff ? 'IT Health Report' : 'Monthly IT report')+' · '+esc(monthLbl)+'</span></div>';
+  html += '<span class="r2-chip">● '+(d.oneOff ? 'IT Health Report' : 'Monthly IT report · '+esc(monthLbl))+'</span></div>';
   html += '<h1>'+esc(client)+'</h1>';
   html += '<p>'+(d.oneOff ? 'Data as at '+esc(today) : 'Report period: '+esc(fmt(from))+' - '+esc(fmt(to)))+'</p>';
   html += '<div class="r2-meta"><span class="r2-chip">Prepared <b>&nbsp;'+esc(today)+'</b></span>';
@@ -1140,8 +1140,8 @@ function buildReport() {
   } else {
     sec += idCard;
   }
-  if (d.riskyError) sec += callout('<b>Risky-user detection is not available for this tenant.</b> Microsoft Entra ID Protection needs Entra ID P2 (included with Microsoft 365 E5), or the data could not be read this run - so ‘no risky users’ cannot be confirmed.', 'info');
-  if (!d.riskyError && (d.risky||0) > 0) sec += callout('<b>'+d.risky+' account'+(d.risky>1?'s are':' is')+' flagged as at-risk</b> by Entra ID Protection. Reset passwords immediately.', 'bad');
+  if (d.riskyError) sec += callout('<b>Risky-user detection is not available for this tenant.</b> Microsoft Entra ID Protection needs Entra ID P2 (included in Microsoft 365 E5). Or the app could not read the data in this run. For this reason, the report cannot confirm that there are no risky users.', 'info');
+  if (!d.riskyError && (d.risky||0) > 0) sec += callout('<b>Entra ID Protection flags '+d.risky+' account'+(d.risky>1?'s':'')+' as at-risk.</b> Reset the passwords now.', 'bad');
   var kp = d.keyPolicies || {};
   var kpStatus = { 'enforced':['Enforced','good'], 'report-only':['Report-only','warn'], 'not found':['Not found','warn'], 'disabled':['Disabled','bad'] };
   var kpRows = [['Legacy Authentication Block', kp.legacyAuthBlock],['MFA - All Users', kp.mfaAllUsers],['Admin Phishing-Resistant MFA', kp.adminMfa],['Geographic Restriction', kp.geoBlock]].map(function(p){
@@ -1186,20 +1186,20 @@ function buildReport() {
       + kpi(num(u.notSignedIn90Guest),'Guests not signed in 90+ days',(u.notSignedIn90Guest||0)>0?'warn':'good')
       + (extSkip ? '' : kpi(extNA?'N/A':num(ext.total),'Overseas sign-ins (30d)',extNA?'neu':((ext.total||0)>0?'warn':'good'))) + '</div>';
     if (!extNA && ext.sharedGateway && ext.sharedGateway.events > 0) {
-      ub += callout('<b>'+num(ext.sharedGateway.events)+' sign-ins through '+ext.sharedGateway.ips.length+' shared IP address'+(ext.sharedGateway.ips.length>1?'es':'')+' were left out.</b> An overseas IP address used by '+ext.sharedGateway.minUsers+' or more different people is treated as shared infrastructure (typically a company VPN or gateway) rather than individual overseas logins.', 'info');
+      ub += callout('<b>The report left out '+num(ext.sharedGateway.events)+' sign-ins from '+ext.sharedGateway.ips.length+' shared IP address'+(ext.sharedGateway.ips.length>1?'es':'')+'.</b> The report treats an overseas IP address that '+ext.sharedGateway.minUsers+' or more different people use as shared infrastructure, for example a company VPN or gateway. It does not count these as individual overseas logins.', 'info');
     }
     if (!extNA && ext.retentionFrom) {
-      ub += callout('<b>Sign-in history limit.</b> Microsoft only keeps sign-in logs for 30 days (7 days on free tenants), so sign-ins before '+esc(ext.retentionFrom)+' can no longer be retrieved and are not covered by this check.', 'info');
+      ub += callout('<b>Sign-in history limit.</b> Microsoft keeps sign-in logs for only 30 days (7 days on free tenants). The app cannot get sign-ins from before '+esc(ext.retentionFrom)+'. This check does not cover them.', 'info');
     }
     if (!extNA && ext.partial) {
-      ub += callout('<b>Overseas sign-ins: only '+ext.windowDays+' of '+ext.periodDays+' days could be checked.</b> The sign-in log could not be fully retrieved in time, so results may be incomplete.'+((ext.missing||[]).length?' <b>Not checked: '+esc(ext.missing.join(', '))+'.</b>':'')+' Pulling the data again may cover the rest.', 'info');
+      ub += callout('<b>The app could check only '+ext.windowDays+' of '+ext.periodDays+' days of overseas sign-ins.</b> The app could not read the full sign-in log in time. The results can be incomplete.'+((ext.missing||[]).length?' <b>Not checked: '+esc(ext.missing.join(', '))+'.</b>':'')+' Pull the data again. This can cover the rest.', 'info');
     }
     if (extNA) {
-      ub += callout('<b>Overseas sign-in data unavailable this run.</b> The sign-in log query timed out, so unexpected overseas sign-ins are not reported. Pulling the data again usually resolves it.', 'info');
+      ub += callout('<b>Overseas sign-in data is not available in this run.</b> The sign-in log query timed out. For this reason, the report does not show unexpected overseas sign-ins. Pull the data again. This usually solves the problem.', 'info');
     } else if (extUsers.length > 0) {
       var windowLabel = ext.partial ? (ext.windowDays + ' of ' + ext.periodDays + ' days checked') : ('report period, ' + (ext.periodDays || 30) + ' days');
       ub += h3('Unexpected overseas sign-ins - '+esc(windowLabel));
-      ub += callout('<b>'+ext.total+' successful login'+(ext.total>1?'s':'')+'</b> from unexpected locations by <b>'+ext.uniqueUsers+' user'+(ext.uniqueUsers>1?'s':'')+'</b>. Australia, New Zealand and Malaysia are excluded as expected locations. Review for suspicious access.', 'warn');
+      ub += callout('<b>'+ext.uniqueUsers+' user'+(ext.uniqueUsers>1?'s':'')+'</b> had <b>'+ext.total+' successful login'+(ext.total>1?'s':'')+'</b> from unexpected locations. The report does not count Australia, New Zealand and Malaysia. These are expected locations. Check for suspicious access.', 'warn');
       ub += table(['Name','Email','Country / Territory','Successful logins'], extUsers.map(function(x){
         return ['<b>'+esc(x.name||String(x.upn||'').split('@')[0])+'</b>', esc(x.upn||''), esc((x.countries||[]).join(', ')), esc(x.eventCount)];
       }), [3]);
@@ -1232,9 +1232,9 @@ function buildReport() {
     // Upcoming renewals: list / none due / data unavailable
     ub += h3('Upcoming licence renewals · next 90 days');
     if (u.licenceRenewalsError) {
-      ub += callout('Licence renewal data unavailable - check that Organization.Read.All permission is granted.', 'warn');
+      ub += callout('Licence renewal data is not available. Make sure that the app has the Organization.Read.All permission.', 'warn');
     } else if (renewals.length > 0) {
-      ub += '<div class="r2-callout r2-info"><span class="r2-ci">🔔</span><div class="r2-split"><b>'+renewals.length+' licence subscription'+(renewals.length>1?'s are':' is')+' due for renewal within 90 days.</b><span>Monthly-billed subscriptions renew automatically each cycle; annual/multi-year ones are worth a closer look.</span></div></div>';
+      ub += '<div class="r2-callout r2-info"><span class="r2-ci">🔔</span><div class="r2-split"><b>'+renewals.length+' licence subscription'+(renewals.length>1?'s renew':' renews')+' in the next 90 days.</b><span>Monthly subscriptions renew automatically each month. Check the annual and multi-year subscriptions.</span></div></div>';
       ub += table(['Licence','Seats','Billing','Renewal date','Days away'], renewals.map(function(r){
         var cyc = String(r.cycle||'');
         var cycLbl = cyc.replace(/Annual\/Multi-year/i, 'Annual / multi-year');
@@ -1242,16 +1242,16 @@ function buildReport() {
           r.daysAway!=null ? pill(esc(r.daysAway)+' days', r.daysAway<=14?'warn':'neu') : ''];
       }), [1,4]);
     } else {
-      ub += callout('No licence renewals due in the next 90 days.', 'good');
+      ub += callout('No licence renews in the next 90 days.', 'good');
     }
     if ((u.notSignedIn90LicensedList||[]).length > 0) {
-      ub += h3('M365 licensed users - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Licensed+' M365 licensed user'+(u.notSignedIn90Licensed>1?'s have':' has')+' not signed in for 90+ days.</b> Service accounts and unlicensed accounts are excluded. Review for stale accounts - consider disabling or removing licences.', 'warn')
+      ub += h3('M365 licensed users - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Licensed+' M365 licensed user'+(u.notSignedIn90Licensed>1?'s':'')+' did not sign in for 90 or more days.</b> The count does not include service accounts and unlicensed accounts. Check for old accounts. You can disable them or remove their licences.', 'warn')
         + table(['User','Account','Last sign-in','Inactive'], u.notSignedIn90LicensedList.map(function(x){
           return ['<b>'+esc(x.name||'')+'</b>', esc(x.upn||''), x.lastSignIn ? shortDate(x.lastSignIn) : 'Never', (x.daysSince!=null && x.daysSince) ? esc(x.daysSince)+' days' : 'Never signed in'];
         }));
     }
     if ((u.notSignedIn90GuestList||[]).length > 0) {
-      ub += h3('Guest accounts - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Guest+' guest account'+(u.notSignedIn90Guest>1?'s have':' has')+' not signed in for 90+ days.</b> Review for stale guest access and remove if no longer needed.', 'warn')
+      ub += h3('Guest accounts - not signed in 90+ days') + callout('<b>'+u.notSignedIn90Guest+' guest account'+(u.notSignedIn90Guest>1?'s':'')+' did not sign in for 90 or more days.</b> Check for old guest access. Remove the access if the guest does not need it.', 'warn')
         + table(['Guest','Account','Last sign-in','Inactive'], u.notSignedIn90GuestList.map(function(x){
           return ['<b>'+esc(x.name||'')+'</b>', esc(String(x.upn||'').split('#EXT#')[0]), x.lastSignIn ? shortDate(x.lastSignIn) : 'Never', (x.daysSince!=null && x.daysSince) ? esc(x.daysSince)+' days' : 'Never signed in'];
         }));
@@ -1269,7 +1269,7 @@ function buildReport() {
   if ((sp.siteCount||0) > 0 || sp.error) {
     var spb = '';
     if (sp.error) {
-      spb += callout('SharePoint data unavailable - check that Reports.Read.All permission is granted. Error: '+esc(sp.error), 'warn');
+      spb += callout('SharePoint data is not available. Make sure that the app has the Reports.Read.All permission. Error: '+esc(sp.error), 'warn');
     } else {
       var spCells = [
         [num(sp.siteCount),    'Total sites', 'info'],
@@ -1284,10 +1284,10 @@ function buildReport() {
       spCells.push([(sp.securityGroupCount!==null && sp.securityGroupCount!==undefined) ? num(sp.securityGroupCount) : 'N/A', 'Security groups', 'info']);
       spb += '<div class="r2-grid r2-g3">' + spCells.map(function(c){ return kpi(c[0], c[1], c[2]); }).join('') + '</div>';
       if ((sp.inactiveSiteCount||0) > 0) {
-        spb += callout('<b>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s have':' has')+' had no recorded file activity in 180+ days.</b> Review for archiving or deletion. Note: archived sites may appear in this count.', 'warn');
+        spb += callout('<b>'+sp.inactiveSiteCount+' site'+(sp.inactiveSiteCount>1?'s':'')+' had no recorded file activity for 180 or more days.</b> Check these sites for archive or deletion. Note: the count can include archived sites.', 'warn');
       }
     }
-    html += section('🗂️', 'SharePoint / MS Teams', spb, 'Overview of SharePoint Online sites and storage usage for this tenant. Site counts are sourced from the Microsoft 365 usage reports and exclude personal OneDrive sites.');
+    html += section('🗂️', 'SharePoint / MS Teams', spb, 'This section shows the SharePoint Online sites and the storage use of this tenant. The site counts come from the Microsoft 365 usage reports. They do not include personal OneDrive sites.');
   }
 
   // ── Ticketing (manual; omitted when empty) ─────────────────────────────────
