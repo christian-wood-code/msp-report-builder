@@ -127,7 +127,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
     fill(mix(color, C.white, 0.86)); doc.roundedRect(M, y, 24, 24, 7, 7, 'F');
     fill(color); doc.roundedRect(M + 8, y + 8, 8, 8, 2.5, 2.5, 'F');
     F('bold', 16, C.text); doc.text(clean(title), M + 34, y + 17.5);
-    spaced('THIS MONTH', PW - M, y + 16, 7, C.muted, 0.8, { align: 'right' });
+    spaced(d.oneOff ? 'CURRENT' : 'THIS MONTH', PW - M, y + 16, 7, C.muted, 0.8, { align: 'right' });
     y += 24 + 12;
     if (introLines.length) {
       F('normal', 9, C.muted); doc.text(introLines, M, y + 2, { lineHeightFactor: 1.35 });
@@ -393,13 +393,13 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   const pf = ymd(from), pt = ymd(to);
   const monthYear = pf ? `${MON_L[pf.m]} ${pf.y}` : '';
   {
-    const parts = [{ t: `Monthly IT report · ${monthYear}`, b: false }];
+    const parts = [{ t: `${d.oneOff ? 'IT Health Report' : 'Monthly IT report'} · ${monthYear}`, b: false }];
     let tw = W(parts[0].t, 'normal', 8);
     const w = tw + 32;
     glass(PW - M - w, 30, parts, true);
   }
   F('bold', 30, C.white); doc.text(clean(client), M, 106);
-  const period = (pf && pt) ? `Report period: ${fmtLong(from)} - ${fmtLong(to)}` : '';
+  const period = d.oneOff ? `Data as at ${clean(today)}` : (pf && pt) ? `Report period: ${fmtLong(from)} - ${fmtLong(to)}` : '';
   if (period) { F('normal', 10.5, [185, 198, 230]); doc.text(period, M, 125); }
   {
     let cx0 = M;

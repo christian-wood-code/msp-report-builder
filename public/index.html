@@ -980,7 +980,7 @@ function buildReport() {
     return '<div class="r2-card r2-tw" style="padding:6px 8px"><table'+(cls?' class="'+cls+'"':'')+'><thead><tr>'+th+'</tr></thead><tbody>'+tr+'</tbody></table></div>';
   }
   function section(icon, title, body, lead, tag) {
-    return '<section class="r2-sec"><div class="r2-sec-head"><div class="r2-icon">'+icon+'</div><h2>'+title+'</h2><span class="r2-tag">'+(tag||'This month')+'</span></div>'
+    return '<section class="r2-sec"><div class="r2-sec-head"><div class="r2-icon">'+icon+'</div><h2>'+title+'</h2><span class="r2-tag">'+(tag||(d.oneOff ? 'Current' : 'This month'))+'</span></div>'
       + (lead ? '<p class="r2-lead">'+lead+'</p>' : '') + body + '</section>';
   }
   function donut(pct, color, big, small) {
@@ -1010,9 +1010,9 @@ function buildReport() {
   var monthLbl = new Date(from).toLocaleDateString('en-NZ',{month:'long',year:'numeric'});
   html += '<div class="r2-hero"><div class="r2-hero-top">';
   html += '<img alt="Integricity Technology" src="data:image/png;base64,'+HERO_LOGO+'">';
-  html += '<span class="r2-chip">● Monthly IT report · '+esc(monthLbl)+'</span></div>';
+  html += '<span class="r2-chip">● '+(d.oneOff ? 'IT Health Report' : 'Monthly IT report')+' · '+esc(monthLbl)+'</span></div>';
   html += '<h1>'+esc(client)+'</h1>';
-  html += '<p>Report period: '+esc(fmt(from))+' - '+esc(fmt(to))+'</p>';
+  html += '<p>'+(d.oneOff ? 'Data as at '+esc(today) : 'Report period: '+esc(fmt(from))+' - '+esc(fmt(to)))+'</p>';
   html += '<div class="r2-meta"><span class="r2-chip">Prepared <b>&nbsp;'+esc(today)+'</b></span>';
   if (preparer) html += '<span class="r2-chip">By <b>&nbsp;'+esc(preparer)+'</b></span>';
   html += '<span class="r2-chip">Source <b>&nbsp;Microsoft Intune &amp; Graph API</b></span></div>';

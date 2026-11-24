@@ -73,6 +73,8 @@ const lead = text => para([run(text, LEAD)], { after: 140, keepNext: true });
 // Section heading: accent bar (left border) + title + right-aligned THIS MONTH tag.
 // One top-level paragraph with keepNext so the heading always travels with the
 // block that follows it (paragraphs nested in table cells cannot chain).
+// Section tag: "THIS MONTH" for regular reports, "CURRENT" for one-off / new-client reports (set per request).
+let SECTION_TAG = "THIS MONTH";
 const sectionHeader = (title, color) => new Paragraph({
   tabStops: [{ type: TabStopType.RIGHT, position: PW }],
   border: { left: bdr(color, 72), bottom: bdr(C.BORDER, 4), top: none(), right: none() },
@@ -81,7 +83,7 @@ const sectionHeader = (title, color) => new Paragraph({
   keepNext: true,
   children: [
     run(title, { size: 32, bold: true, color: C.DARK }),
-    run("\tTHIS MONTH", { size: 15, bold: true, color: C.GRAY }),
+    run("\t" + SECTION_TAG, { size: 15, bold: true, color: C.GRAY }),
   ],
 });
 const sectionHeaderBlock = (title, color) => [sectionHeader(title, color)];
@@ -337,6 +339,7 @@ exports.handler = async (event) => {
 
   try {
     const { client, from, to, preparer, today, iData: d } = payload;
+    SECTION_TAG = d && d.oneOff ? "CURRENT" : "THIS MONTH";
     const manual = payload.manual || {};
     if (!client || !from || !to || !d) throw new Error("Missing required report data");
     const fmt = dt => new Date(dt).toLocaleDateString("en-NZ", { day: "numeric", month: "long", year: "numeric" });
@@ -373,7 +376,7 @@ exports.handler = async (event) => {
     const CHIPW = 4200;
     const logoRun = hasLogo ? new ImageRun({ data: coverLogo, transformation: { width: 186, height: 48 }, type: "png" })
                             : run("Integricity Technology", { size: 28, bold: true, color: C.WHITE });
-    const monthChip = run(`${NB}●${NB}Monthly${NB}IT${NB}report${NB}·${NB}${monthLabel.replace(/ /g, NB)}${NB}`, { size: 17, bold: true, color: "E8F0FF", shade: CHIP });
+    const monthChip = run(`${NB}●${NB}${d.oneOff ? `IT${NB}Health${NB}Report` : `Monthly${NB}IT${NB}report`}${NB}·${NB}${monthLabel.replace(/ /g, NB)}${NB}`, { size: 17, bold: true, color: "E8F0FF", shade: CHIP });
     // Word cannot draw a gradient behind text, so the hero is stacked rows whose fill steps from
     // navy to a hint of purple (the web/PDF hero's gradient), with no gaps between rows. The first
     // row has its own right-hand cell so the month chip stays chip-sized instead of full line height.
@@ -386,7 +389,7 @@ exports.handler = async (event) => {
         cell([para([monthChip], { after: 0, align: AlignmentType.RIGHT })], { width: CHIPW, bg: HERO[0], vAlign: VerticalAlign.CENTER, margins: { top: 300, bottom: 200, left: 0, right: 240 } }),
       ] }),
       fullRow([para([run(client, { size: 72, bold: true, color: C.WHITE })], { after: 0 })], HERO[1], { top: 160, bottom: 40 }),
-      fullRow([para([run(`Report period: ${fmt(from)} – ${fmt(to)}`, { size: 22, color: MUTED })], { after: 0 })], HERO[2], { top: 40, bottom: 160 }),
+      fullRow([para([run(d.oneOff ? `Data as at ${today}` : `Report period: ${fmt(from)} – ${fmt(to)}`, { size: 22, color: MUTED })], { after: 0 })], HERO[2], { top: 40, bottom: 160 }),
       fullRow([para([...chip("Prepared", today), ...chip("Source", "Microsoft Intune & Graph API")], { after: 80 })], HERO[3], { top: 60, bottom: 0 }),
       fullRow([
         para([
