@@ -136,7 +136,7 @@ button:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 .rpt2 .r2-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#e8f0ff}
 .rpt2 .r2-hero h1{font-size:clamp(28px,5vw,42px);line-height:1.1;margin:34px 0 8px;letter-spacing:-.02em;font-weight:800;color:#fff}
 .rpt2 .r2-hero p{margin:0;color:#b9c6e6}
-.rpt2 .r2-end-disclaimer{margin:22px 0 4px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.5;font-style:italic;color:#64748b}
+.rpt2 .r2-end-disclaimer{margin:22px 0 4px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:11px;line-height:1.5;font-style:italic;color:#64748b}.rpt2 .r2-end-disclaimer p{margin:0 0 8px}
 .rpt2 .r2-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 /* headline strip: sits on the page background, below the hero */
 .rpt2 .r2-strip{margin-top:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
@@ -940,15 +940,12 @@ function kpi(val, lbl, cls) { return '<div class="kpi"><div class="kpi-val '+cls
 
 // Disclaimer (bottom of one-off reports): same wording as netlify/functions/lib/report-disclaimer.js. Keep in sync.
 function reportDisclaimer(retained) {
-  var retention = retained
-    ? 'The app reads your live Microsoft Graph data to make this report. Integricity keeps only a small set of summary figures, for example device counts and Secure Score, for up to 13 months. The app keeps no raw tenant data. Integricity will securely destroy this document within 30 days.'
-    : 'The app reads your live Microsoft Graph data to make this report. The app keeps no data after that. Integricity will securely destroy this document within 30 days.';
-  return 'This report is an automated summary of the data that Microsoft Graph gives at the time of the report. '
-    + 'The report is information to help your own evaluation. '
-    + 'It is not a full security audit, a compliance certification or a guarantee of the security of your organisation. '
-    + 'Integricity Technology accepts no liability for decisions that you make from this report. '
-    + retention
-    + ' For a full assessment and a remediation plan, contact us to discuss an engagement.';
+  // Three paragraphs; one-off reports never keep data, so the text does not depend on retained.
+  return [
+    'This report is for information, to help your own evaluation. It is not a full security audit, a compliance certification or a guarantee of the security of your organisation. Integricity Technology Limited ("Integricity") accepts no liability for decisions you make based on this report.',
+    'This report is an automated summary of the live data that Microsoft Intune provided through the Microsoft Graph API at the time the report was generated. The reporting tool does not keep any of this data afterwards.',
+    'Integricity will securely destroy this document within 30 days. For a full assessment and a remediation plan, contact us to discuss an engagement.'
+  ];
 }
 
 function buildReport() {
@@ -1337,7 +1334,7 @@ function buildReport() {
   html += '<footer class="r2-footer">Prepared by Integricity &middot; '+esc(today)+' &middot; Microsoft Intune &amp; Graph API &middot; Confidential</footer>';
 
   // One-off (new-client) report: disclaimer at the very bottom
-  if (d.oneOff) html += '<p class="r2-end-disclaimer">'+esc(reportDisclaimer(d.metricsRetained))+'</p>';
+  if (d.oneOff) html += '<div class="r2-end-disclaimer">'+reportDisclaimer(d.metricsRetained).map(function(t){ return '<p>'+esc(t)+'</p>'; }).join('')+'</div>';
 
   document.getElementById('report-out').innerHTML = html;
   showPage(4);

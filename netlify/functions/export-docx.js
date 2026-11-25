@@ -845,7 +845,7 @@ exports.handler = async (event) => {
     }));
 
     // ── One-off (new-client) report: disclaimer at the very bottom ──────────
-    if (d.oneOff) children.push(para([run(disclaimerText(d.metricsRetained), { size: 16, italics: true, color: C.GRAY })], { before: 200, after: 0 }));
+    if (d.oneOff) disclaimerText(d.metricsRetained).split("\n\n").forEach((txt, i) => children.push(para([run(txt, { size: 16, italics: true, color: C.GRAY })], { before: i === 0 ? 200 : 100, after: 0 })));
 
     // ── Document ──────────────────────────────────────────────────────────────
     const doc = new Document({

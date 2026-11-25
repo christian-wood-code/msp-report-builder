@@ -858,7 +858,7 @@ function buildPdfDoc({ client, from, to, preparer, today, iData: d, manual = {},
   // -- One-off (new-client) report: disclaimer at the very bottom --
   if (d.oneOff) {
     F('italic', 8, C.muted);
-    const dl = doc.splitTextToSize(clean(disclaimerText), CW);
+    const dl = disclaimerText.split('\n\n').flatMap((para, i) => [...(i ? [''] : []), ...doc.splitTextToSize(clean(para), CW)]);
     const h = dl.length * 11 + 22;
     ensure(h + 16);
     y += 14;
